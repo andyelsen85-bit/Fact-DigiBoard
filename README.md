@@ -88,18 +88,63 @@ L'application est accessible sur `http://localhost:18576`.
 
 ### Production (Docker)
 
-```bash
-# Lancer toute la stack (app + PostgreSQL)
-docker compose up -d
+Prérequis : [Docker](https://docs.docker.com/get-docker/) et [Docker Compose](https://docs.docker.com/compose/) installés sur la machine hôte.
 
-# Variables d'environnement (créer un fichier .env) :
-# POSTGRES_PASSWORD=votre_mot_de_passe   (défaut : digiboard_secret)
-# SESSION_SECRET=une_clé_secrète_longue  (OBLIGATOIRE en production)
-# APP_PORT=80                            (port exposé, défaut : 80)
+```bash
+# 1. Cloner le dépôt
+git clone https://github.com/votre-organisation/digiboard.git
+cd digiboard
+
+# 2. Créer le fichier de variables d'environnement
+cp .env.example .env
 ```
 
-L'image Docker est construite en multi-stage : dépendances → build → image finale légère.  
-L'API et le frontend React sont servis par le même container Express.
+Éditer `.env` et définir au minimum :
+
+| Variable | Description | Défaut |
+|----------|-------------|--------|
+| `POSTGRES_PASSWORD` | Mot de passe PostgreSQL | `digiboard_secret` |
+| `SESSION_SECRET` | Clé secrète Bearer/session — **changer obligatoirement** | _(valeur faible)_ |
+| `APP_PORT` | Port exposé sur l'hôte | `80` |
+
+Générer un `SESSION_SECRET` robuste :
+```bash
+openssl rand -hex 64
+```
+
+```bash
+# 3. Construire l'image Docker
+docker compose build
+
+# 4. Démarrer la stack en arrière-plan (app + PostgreSQL)
+docker compose up -d
+
+# 5. Vérifier que les containers tournent correctement
+docker compose ps
+
+# 6. Consulter les logs de démarrage
+docker compose logs -f app
+```
+
+L'application est accessible sur `http://localhost` (ou le port défini par `APP_PORT`).
+
+> Au premier démarrage, les migrations sont appliquées automatiquement et la base est initialisée avec le compte administrateur par défaut.
+
+**Mise à jour :**
+```bash
+git pull
+docker compose build
+docker compose up -d
+```
+
+**Arrêt :**
+```bash
+docker compose down          # conserve les données PostgreSQL
+docker compose down -v       # supprime aussi le volume (⚠️ perte de données)
+```
+
+L'image est construite en multi-stage : dépendances → build TypeScript/Vite → image finale légère.  
+L'API et le frontend React sont servis par le même container Express sur le port 80.
 
 ---
 
