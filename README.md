@@ -4,6 +4,9 @@ Application web de gestion de patients psychiatriques pour les case managers lux
 
 ![DigiBoard Login](screenshots/board-view.jpg)
 
+<img width="2267" height="1083" alt="Screenshot 2026-04-24 at 23 37 38" src="https://github.com/user-attachments/assets/eedb0c2c-3712-4d8a-bc7c-6eafa42be271" />
+
+
 ---
 
 ## Fonctionnalités principales
@@ -92,8 +95,8 @@ Prérequis : [Docker](https://docs.docker.com/get-docker/) et [Docker Compose](h
 
 ```bash
 # 1. Cloner le dépôt
-git clone https://github.com/votre-organisation/digiboard.git
-cd digiboard
+git clone https://github.com/andyelsen85-bit/Fact-DigiBoard.git
+cd Fact-DigiBoard
 
 # 2. Créer le fichier de variables d'environnement
 cp .env.example .env
@@ -114,7 +117,7 @@ openssl rand -hex 64
 
 ```bash
 # 3. Construire l'image Docker
-docker compose build
+docker compose build --no-cache
 
 # 4. Démarrer la stack en arrière-plan (app + PostgreSQL)
 docker compose up -d
