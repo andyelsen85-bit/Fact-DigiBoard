@@ -2,22 +2,7 @@ FROM node:22-alpine AS base
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # ────────────────────────────────────────────
-# Stage 1: Install all workspace dependencies
-# ────────────────────────────────────────────
-FROM base AS deps
-WORKDIR /app
-
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY lib/db/package.json                    lib/db/
-COPY lib/api-client-react/package.json      lib/api-client-react/
-COPY lib/api-zod/package.json               lib/api-zod/
-COPY artifacts/api-server/package.json      artifacts/api-server/
-COPY artifacts/factboard/package.json       artifacts/factboard/
-
-RUN pnpm install --frozen-lockfile --ignore-scripts
-
-# ────────────────────────────────────────────
-# Stage 2: Build all packages
+# Stage 1: Build
 # ────────────────────────────────────────────
 FROM base AS builder
 WORKDIR /app
@@ -29,7 +14,7 @@ COPY lib/api-zod/package.json               lib/api-zod/
 COPY artifacts/api-server/package.json      artifacts/api-server/
 COPY artifacts/factboard/package.json       artifacts/factboard/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 COPY . .
 
