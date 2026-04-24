@@ -48,6 +48,21 @@ docker compose up -d
 
 The Docker image builds and serves both the API and the React frontend from a single container.
 
+## ICD-10 Code Management
+
+Codes stored in `icd10_codes` table (not a static file):
+- `code` TEXT PRIMARY KEY, `title`, `description`, `risks`, `is_favorite` BOOLEAN, `created_at`
+- API: `GET /api/icd10`, `POST /api/icd10`, `PATCH /api/icd10/:code`, `DELETE /api/icd10/:code`
+- Frontend hook: `artifacts/factboard/src/hooks/use-icd10.ts` (uses `localStorage["auth-token"]` for auth)
+- Settings page: `ICD10ManagementTable` component — shows all DB codes with ★ favorite toggle, edit, delete
+- Favorites (★) = codes where `is_favorite = true` — shown first in patient form dropdown
+- Seeded automatically on first run via `seedIcd10Codes()` in `api-server/src/lib/seed.ts`
+- **cim10.ts** static file kept for reference only (not imported anywhere)
+
+## Docker Fix
+
+`pnpm rebuild rollup` added in builder stage (after `pnpm install --ignore-scripts`) to download the rollup native binary for linux-x64-musl. Required for Vite to build inside Alpine containers.
+
 ## Orval Codegen Workaround
 
 After running orval: set `lib/api-zod/src/index.ts` to only `export * from "./generated/api";`

@@ -26,6 +26,8 @@ COPY . .
 RUN pnpm --filter @workspace/api-zod       run build || true
 RUN pnpm --filter @workspace/api-client-react run build || true
 
+RUN pnpm rebuild rollup
+
 RUN PORT=80 BASE_PATH=/ NODE_ENV=production \
     pnpm --filter @workspace/factboard run build
 

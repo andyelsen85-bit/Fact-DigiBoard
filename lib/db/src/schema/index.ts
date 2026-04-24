@@ -5,4 +5,5 @@ export * from "./history_entries";
 export * from "./act_regions";
 export * from "./act_notes";
 export * from "./settings";
+export * from "./icd10_codes";
 export * from "./sessions";

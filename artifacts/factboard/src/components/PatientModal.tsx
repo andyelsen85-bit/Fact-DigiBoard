@@ -15,8 +15,8 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { CIM10_DATA } from "@/data/cim10";
 import { useGetSettings, getGetSettingsQueryKey } from "@workspace/api-client-react";
+import { useIcd10Codes } from "@/hooks/use-icd10";
 import { BOARDS } from "./BoardBadge";
 
 const patientSchema = z.object({
@@ -87,14 +87,9 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
   const medecinsfamille: string[] = (settings as any)?.medecinsfamille ?? [];
   const articles: string[] = (settings as any)?.articles ?? [];
   const curatelles: string[] = (settings as any)?.curatelles ?? [];
-  const rawFavorites: unknown = (settings as any)?.icd10favorites;
-  const icd10favorites: Array<{ c: string; t: string; d?: string; r?: string }> = Array.isArray(rawFavorites)
-    ? rawFavorites.map((item) =>
-        typeof item === "string"
-          ? (CIM10_DATA.find((d) => d.c === item) ?? { c: item, t: item })
-          : (item as { c: string; t: string; d?: string; r?: string })
-      )
-    : [];
+
+  const { data: icd10Codes = [] } = useIcd10Codes();
+  const favoriteCim10 = icd10Codes.filter((c) => c.isFavorite);
 
   const form = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
@@ -110,15 +105,13 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
   }, [open]);
 
   const pathoValue = form.watch("patho");
-  const pathoInfo = icd10favorites.find((e) => e.c === pathoValue) ?? CIM10_DATA.find((d) => d.c === pathoValue);
-
-  const favoriteCim10 = icd10favorites;
+  const pathoInfo = icd10Codes.find((d) => d.code === pathoValue);
 
   const filteredCim10 = pathoSearch.length >= 1
-    ? CIM10_DATA.filter(
+    ? icd10Codes.filter(
         (d) =>
-          d.c.toLowerCase().includes(pathoSearch.toLowerCase()) ||
-          d.t.toLowerCase().includes(pathoSearch.toLowerCase())
+          d.code.toLowerCase().includes(pathoSearch.toLowerCase()) ||
+          d.title.toLowerCase().includes(pathoSearch.toLowerCase())
       ).slice(0, 8)
     : [];
 
@@ -384,17 +377,17 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                     {pathoSearch.length === 0 && favoriteCim10.length > 0 && (
                       <>
                         <div className="px-3 py-1 text-xs font-medium text-muted-foreground bg-muted/40 border-b">
-                          Pathologies favorites
+                          Pathologies favorites ★
                         </div>
                         {favoriteCim10.map((item) => (
                           <button
-                            key={item.c}
+                            key={item.code}
                             type="button"
                             className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex gap-2"
-                            onMouseDown={() => handlePathoSelect(item.c)}
+                            onMouseDown={() => handlePathoSelect(item.code)}
                           >
-                            <span className="font-mono text-xs font-medium text-muted-foreground w-10 shrink-0">{item.c}</span>
-                            <span className="truncate">{item.t}</span>
+                            <span className="font-mono text-xs font-medium text-muted-foreground w-10 shrink-0">{item.code}</span>
+                            <span className="truncate">{item.title}</span>
                           </button>
                         ))}
                         <div className="px-3 py-1 text-xs text-muted-foreground bg-muted/20 border-t border-b italic">
@@ -404,13 +397,13 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                     )}
                     {pathoSearch.length > 0 && filteredCim10.map((item) => (
                       <button
-                        key={item.c}
+                        key={item.code}
                         type="button"
                         className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex gap-2"
-                        onMouseDown={() => handlePathoSelect(item.c)}
+                        onMouseDown={() => handlePathoSelect(item.code)}
                       >
-                        <span className="font-mono text-xs font-medium text-muted-foreground w-10 shrink-0">{item.c}</span>
-                        <span className="truncate">{item.t}</span>
+                        <span className="font-mono text-xs font-medium text-muted-foreground w-10 shrink-0">{item.code}</span>
+                        <span className="truncate">{item.title}</span>
                       </button>
                     ))}
                   </div>
@@ -418,8 +411,8 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
               </div>
               {pathoInfo && (
                 <div className="mt-2 p-3 bg-muted/50 rounded-md text-sm space-y-1">
-                  <p className="text-foreground">{pathoInfo.d}</p>
-                  <p className="text-destructive text-xs">Risques : {pathoInfo.r}</p>
+                  {pathoInfo.description && <p className="text-foreground">{pathoInfo.description}</p>}
+                  {pathoInfo.risks && <p className="text-destructive text-xs">Risques : {pathoInfo.risks}</p>}
                 </div>
               )}
             </div>

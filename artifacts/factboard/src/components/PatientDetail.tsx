@@ -10,7 +10,6 @@ import {
   useListPatientHistory, getListPatientHistoryQueryKey,
   useUpdatePatientHistoryEntry,
   getListPatientsQueryKey,
-  useGetSettings, getGetSettingsQueryKey,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { BoardBadge } from "./BoardBadge";
 import { AggBadge } from "./AggBadge";
-import { CIM10_DATA } from "@/data/cim10";
+import { useIcd10Codes } from "@/hooks/use-icd10";
 import { MoveBoardModal } from "./MoveBoardModal";
 import { PatientModal } from "./PatientModal";
 import { useToast } from "@/hooks/use-toast";
@@ -71,7 +70,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const { data: patient, isLoading } = useGetPatient(patientId, {
     query: { queryKey: getGetPatientQueryKey(patientId) },
   });
-  const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
+  const { data: icd10Codes = [] } = useIcd10Codes();
   const { data: notes = [] } = useListPatientNotes(patientId, {
     query: { queryKey: getListPatientNotesQueryKey(patientId) },
   });
@@ -116,17 +115,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
 
   if (!patient) return null;
 
-  const rawFav: unknown = (settings as any)?.icd10favorites;
-  const favEntries: Array<{ c: string; t: string; d?: string; r?: string }> = Array.isArray(rawFav)
-    ? rawFav.map((item) =>
-        typeof item === "string"
-          ? (CIM10_DATA.find((d) => d.c === item) ?? { c: item, t: item })
-          : (item as { c: string; t: string; d?: string; r?: string })
-      )
-    : [];
-  const pathoInfo = (patient.patho
-    ? favEntries.find((e) => e.c === patient.patho) ?? CIM10_DATA.find((d) => d.c === patient.patho)
-    : undefined) as { c: string; t: string; d?: string; r?: string } | undefined;
+  const pathoInfo = patient.patho ? icd10Codes.find((d) => d.code === patient.patho) : undefined;
   const passages = (patient.passages ?? {}) as Record<string, string>;
   const board = patient.board;
   const isCloture = board === "Clôturé";
@@ -270,12 +259,12 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs text-muted-foreground">Pathologie</span>
               <span className="font-mono text-xs font-medium">{patient.patho}</span>
-              {pathoInfo && <span className="text-sm text-foreground">{pathoInfo.t}</span>}
+              {pathoInfo && <span className="text-sm text-foreground">{pathoInfo.title}</span>}
             </div>
             {pathoInfo && (
               <div className="grid grid-cols-2 gap-2 mt-2">
-                <div className="p-2 bg-muted/40 rounded text-xs text-muted-foreground">{pathoInfo.d}</div>
-                <div className="p-2 bg-[#fdeaea] rounded text-xs text-[#7a0000]">Risques : {pathoInfo.r}</div>
+                {pathoInfo.description && <div className="p-2 bg-muted/40 rounded text-xs text-muted-foreground">{pathoInfo.description}</div>}
+                {pathoInfo.risks && <div className="p-2 bg-[#fdeaea] rounded text-xs text-[#7a0000]">Risques : {pathoInfo.risks}</div>}
               </div>
             )}
           </div>
