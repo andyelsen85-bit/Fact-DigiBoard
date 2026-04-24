@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-musl": "4.59.0"
+    "@rollup/rollup-linux-x64-musl": "4.59.0",
+    "lightningcss-linux-x64-musl": "1.31.1"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",

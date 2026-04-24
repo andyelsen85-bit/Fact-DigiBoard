@@ -1,0 +1,68 @@
+[+] Building 25.7s (20/23)                                                                                                                                                                              
+ => [internal] load local bake definitions                                                                                                                                                         0.0s
+ => => reading from stdin 526B                                                                                                                                                                     0.0s
+ => [internal] load build definition from Dockerfile                                                                                                                                               0.0s
+ => => transferring dockerfile: 2.27kB                                                                                                                                                             0.0s
+ => [internal] load metadata for docker.io/library/node:22-alpine                                                                                                                                  0.6s
+ => [internal] load .dockerignore                                                                                                                                                                  0.0s
+ => => transferring context: 150B                                                                                                                                                                  0.0s
+ => CACHED [base 1/2] FROM docker.io/library/node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f                                                                0.0s
+ => => resolve docker.io/library/node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f                                                                            0.0s
+ => [internal] load build context                                                                                                                                                                  0.1s
+ => => transferring context: 881.14kB                                                                                                                                                              0.1s
+ => [base 2/2] RUN corepack enable && corepack prepare pnpm@latest --activate                                                                                                                      2.5s
+ => [builder  1/13] WORKDIR /app                                                                                                                                                                   0.1s 
+ => [builder  2/13] COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./                                                                                                                        0.1s
+ => [builder  3/13] COPY lib/db/package.json                    lib/db/                                                                                                                            0.1s
+ => [builder  4/13] COPY lib/api-client-react/package.json      lib/api-client-react/                                                                                                              0.1s
+ => [builder  5/13] COPY lib/api-zod/package.json               lib/api-zod/                                                                                                                       0.1s
+ => [builder  6/13] COPY artifacts/api-server/package.json      artifacts/api-server/                                                                                                              0.1s
+ => [builder  7/13] COPY artifacts/factboard/package.json       artifacts/factboard/                                                                                                               0.1s
+ => [builder  8/13] RUN pnpm install                                                                                                                                                              17.6s
+ => [runner 10/12] RUN pnpm install --frozen-lockfile --prod --ignore-scripts                                                                                                                      7.9s
+ => [builder  9/13] COPY . .                                                                                                                                                                       0.7s 
+ => [builder 10/13] RUN pnpm --filter @workspace/api-zod       run build || true                                                                                                                   1.1s 
+ => [builder 11/13] RUN pnpm --filter @workspace/api-client-react run build || true                                                                                                                1.0s 
+ => ERROR [builder 12/13] RUN PORT=80 BASE_PATH=/ NODE_ENV=production     pnpm --filter @workspace/factboard run build                                                                             1.4s 
+------                                                                                                                                                                                                  
+ > [builder 12/13] RUN PORT=80 BASE_PATH=/ NODE_ENV=production     pnpm --filter @workspace/factboard run build:                                                                                        
+0.887                                                                                                                                                                                                   
+0.887 > @workspace/factboard@0.0.0 build /app/artifacts/factboard                                                                                                                                       
+0.887 > vite build --config vite.config.ts                                                                                                                                                              
+0.887                                                                                                                                                                                                   
+1.315 failed to load config from /app/artifacts/factboard/vite.config.ts                                                                                                                                
+1.315 error during build:                                                                                                                                                                               
+1.315 Error: Cannot find module '../lightningcss.linux-x64-musl.node'
+1.315 Require stack:
+1.315 - /app/node_modules/.pnpm/lightningcss@1.31.1/node_modules/lightningcss/node/index.js
+1.315     at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+1.315     at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+1.315     at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+1.315     at Function._load (node:internal/modules/cjs/loader:1192:37)
+1.315     at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+1.315     at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+1.315     at Module.require (node:internal/modules/cjs/loader:1463:12)
+1.315     at require (node:internal/modules/helpers:147:16)
+1.315     at Object.<anonymous> (/app/node_modules/.pnpm/lightningcss@1.31.1/node_modules/lightningcss/node/index.js:22:22)
+1.315     at Module._compile (node:internal/modules/cjs/loader:1705:14)
+1.349 /app/artifacts/factboard:
+1.349  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/factboard@0.0.0 build: `vite build --config vite.config.ts`
+1.349 Exit status 1
+------
+[+] build 0/1
+ ⠙ Image fact-digiboard-app Building                                                                                                                                                               25.7s
+Dockerfile:24
+
+--------------------
+
+  23 |     
+
+  24 | >>> RUN PORT=80 BASE_PATH=/ NODE_ENV=production \
+
+  25 | >>>     pnpm --filter @workspace/factboard run build
+
+  26 |     
+
+--------------------
+
+failed to solve: process "/bin/sh -c PORT=80 BASE_PATH=/ NODE_ENV=production     pnpm --filter @workspace/factboard run build" did not complete successfully: exit code: 1
