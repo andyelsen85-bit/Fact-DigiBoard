@@ -26,7 +26,7 @@ router.post("/patients/:id/notes", requireAuth, async (req, res) => {
   res.status(201).json(note);
 });
 
-router.put("/patients/:patientId/notes/:noteId", requireAuth, async (req, res) => {
+async function updateNoteHandler(req: any, res: any) {
   const noteId = Number(req.params["noteId"]);
   const { date, texte } = req.body as { date?: string; texte?: string };
 
@@ -40,7 +40,10 @@ router.put("/patients/:patientId/notes/:noteId", requireAuth, async (req, res) =
     return;
   }
   res.json(updated);
-});
+}
+
+router.put("/patients/:patientId/notes/:noteId", requireAuth, updateNoteHandler);
+router.patch("/patients/:patientId/notes/:noteId", requireAuth, updateNoteHandler);
 
 router.delete("/patients/:patientId/notes/:noteId", requireAuth, async (req, res) => {
   const noteId = Number(req.params["noteId"]);

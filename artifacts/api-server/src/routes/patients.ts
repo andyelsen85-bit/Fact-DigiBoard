@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, patientsTable, historyEntriesTable } from "@workspace/db";
-import { eq, and, ilike, or } from "drizzle-orm";
+import { eq, and, ilike, or, isNull, isNotNull, ne } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
@@ -8,8 +8,12 @@ const router = Router();
 router.get("/patients", requireAuth, async (req, res) => {
   const { board, search } = req.query as { board?: string; search?: string };
 
-  const conditions = [];
-  if (board) conditions.push(eq(patientsTable.board, board));
+  const conditions: any[] = [isNull(patientsTable.deletedAt)];
+  if (board) {
+    conditions.push(eq(patientsTable.board, board));
+  } else {
+    conditions.push(ne(patientsTable.board, "Clôturé"));
+  }
   if (search) {
     conditions.push(
       or(
@@ -22,9 +26,16 @@ router.get("/patients", requireAuth, async (req, res) => {
   }
 
   const patients = await db.select().from(patientsTable)
-    .where(conditions.length ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(patientsTable.nom);
 
+  res.json(patients);
+});
+
+router.get("/patients/deleted", requireAuth, async (req, res) => {
+  const patients = await db.select().from(patientsTable)
+    .where(isNotNull(patientsTable.deletedAt))
+    .orderBy(patientsTable.deletedAt);
   res.json(patients);
 });
 
@@ -57,12 +68,27 @@ router.post("/patients", requireAuth, async (req, res) => {
 
 router.get("/patients/:id", requireAuth, async (req, res) => {
   const id = Number(req.params["id"]);
-  const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, id)).limit(1);
+  const [patient] = await db.select().from(patientsTable)
+    .where(and(eq(patientsTable.id, id), isNull(patientsTable.deletedAt)))
+    .limit(1);
   if (!patient) {
     res.status(404).json({ error: "Patient not found" });
     return;
   }
   res.json(patient);
+});
+
+router.post("/patients/:id/restore", requireAuth, async (req, res) => {
+  const id = Number(req.params["id"]);
+  const [restored] = await db.update(patientsTable)
+    .set({ deletedAt: null, updatedAt: new Date() })
+    .where(and(eq(patientsTable.id, id), isNotNull(patientsTable.deletedAt)))
+    .returning();
+  if (!restored) {
+    res.status(404).json({ error: "Deleted patient not found" });
+    return;
+  }
+  res.json(restored);
 });
 
 async function updatePatientById(id: number, body: Record<string, unknown>, res: any) {
@@ -86,8 +112,15 @@ router.patch("/patients/:id", requireAuth, async (req, res) => {
 
 router.delete("/patients/:id", requireAuth, async (req, res) => {
   const id = Number(req.params["id"]);
-  await db.delete(patientsTable).where(eq(patientsTable.id, id));
-  res.json({ message: "Deleted" });
+  const [flagged] = await db.update(patientsTable)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(patientsTable.id, id), isNull(patientsTable.deletedAt)))
+    .returning();
+  if (!flagged) {
+    res.status(404).json({ error: "Patient not found" });
+    return;
+  }
+  res.json({ message: "Deleted", id });
 });
 
 async function moveBoardHandler(req: any, res: any) {

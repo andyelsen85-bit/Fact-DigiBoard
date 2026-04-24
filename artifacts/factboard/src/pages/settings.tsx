@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -12,6 +12,102 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem("auth-token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+interface DeletedPatient {
+  id: number;
+  clientNum: string;
+  nom: string;
+  prenom: string;
+  board: string;
+  deletedAt: string;
+}
+
+function DeletedPatientsSection() {
+  const { toast } = useToast();
+  const [patients, setPatients] = useState<DeletedPatient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [restoring, setRestoring] = useState<number | null>(null);
+
+  const fetchDeleted = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/patients/deleted", { headers: getAuthHeaders() });
+      if (res.ok) setPatients(await res.json());
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchDeleted(); }, [fetchDeleted]);
+
+  async function handleRestore(patient: DeletedPatient) {
+    setRestoring(patient.id);
+    try {
+      const res = await fetch(`/api/patients/${patient.id}/restore`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        toast({ title: "Patient restauré", description: `${patient.prenom} ${patient.nom} a été remis sur le board ${patient.board}.` });
+        fetchDeleted();
+      } else {
+        toast({ title: "Erreur", description: "Impossible de restaurer le patient", variant: "destructive" });
+      }
+    } finally {
+      setRestoring(null);
+    }
+  }
+
+  return (
+    <div className="bg-card border rounded-lg p-4">
+      <h3 className="text-sm font-medium mb-3">Patients supprimés (Corbeille)</h3>
+      {loading ? (
+        <p className="text-xs text-muted-foreground py-2">Chargement...</p>
+      ) : patients.length === 0 ? (
+        <p className="text-xs text-muted-foreground py-2">Aucun patient supprimé</p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b text-muted-foreground text-xs">
+              <th className="text-left pb-2 font-medium">N° Client</th>
+              <th className="text-left pb-2 font-medium">Nom</th>
+              <th className="text-left pb-2 font-medium">Dernier board</th>
+              <th className="text-left pb-2 font-medium">Supprimé le</th>
+              <th className="text-left pb-2 font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {patients.map((p) => (
+              <tr key={p.id} className="border-b last:border-0" data-testid={`deleted-patient-${p.id}`}>
+                <td className="py-2 font-mono text-xs">{p.clientNum}</td>
+                <td className="py-2 font-medium">{p.nom} {p.prenom}</td>
+                <td className="py-2 text-muted-foreground">{p.board}</td>
+                <td className="py-2 text-muted-foreground text-xs">
+                  {new Date(p.deletedAt).toLocaleDateString("fr-LU")}
+                </td>
+                <td className="py-2">
+                  <button
+                    className="text-xs text-primary hover:underline disabled:opacity-50"
+                    disabled={restoring === p.id}
+                    data-testid={`button-restore-${p.id}`}
+                    onClick={() => handleRestore(p)}
+                  >
+                    {restoring === p.id ? "..." : "Restaurer"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
 
 function SettingsList({ settingKey, label }: { settingKey: string; label: string }) {
   const queryClient = useQueryClient();
@@ -267,6 +363,11 @@ export default function SettingsPage() {
               <SettingsList settingKey="articles" label="Articles légaux" />
               <SettingsList settingKey="curatelles" label="Curatelle / Tutelle" />
             </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Corbeille</h3>
+            <DeletedPatientsSection />
           </div>
 
           {user?.role === "admin" && (

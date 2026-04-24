@@ -118,7 +118,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const passages = (patient.passages ?? {}) as Record<string, string>;
   const board = patient.board;
   const isCloture = board === "Clôturé";
-  const showPassages = board !== "Clôturé" && board !== "Irrecevable";
+  const showPassages = board !== "Irrecevable";
   const sortedNotes = [...notes].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
   const sortedHistory = [...history].sort((a, b) => a.date.localeCompare(b.date));
 

@@ -1,0 +1,56 @@
+[+] Building 23.1s (19/26)                                                                                                                                                                              
+ => [internal] load local bake definitions                                                                                                                                                         0.0s
+ => => reading from stdin 526B                                                                                                                                                                     0.0s
+ => [internal] load build definition from Dockerfile                                                                                                                                               0.0s
+ => => transferring dockerfile: 2.79kB                                                                                                                                                             0.0s
+ => [internal] load metadata for docker.io/library/node:22-alpine                                                                                                                                  1.6s
+ => [internal] load .dockerignore                                                                                                                                                                  0.0s
+ => => transferring context: 150B                                                                                                                                                                  0.0s
+ => [base 1/2] FROM docker.io/library/node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f                                                                       4.5s
+ => => resolve docker.io/library/node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f                                                                            0.0s
+ => => sha256:8bfa0019f928dcee6004de6c4b85d75774f993212504ac816ede0f3c6ae097de 445B / 445B                                                                                                         1.4s
+ => => sha256:4cc15311d45b63612aec3e37d607941ddc636bd3ab45235d8391dc5b2b90faf4 1.26MB / 1.26MB                                                                                                     0.8s
+ => => sha256:9e177ba73d9ff6d235c7d32bf216469630dcce0a52a6cbde08bd868b7a07e7d5 51.96MB / 51.96MB                                                                                                   1.7s
+ => => sha256:6a0ac1617861a677b045b7ff88545213ec31c0ff08763195a70a4a5adda577bb 3.86MB / 3.86MB                                                                                                     1.0s
+ => => extracting sha256:6a0ac1617861a677b045b7ff88545213ec31c0ff08763195a70a4a5adda577bb                                                                                                          0.2s
+ => => extracting sha256:9e177ba73d9ff6d235c7d32bf216469630dcce0a52a6cbde08bd868b7a07e7d5                                                                                                          2.4s
+ => => extracting sha256:4cc15311d45b63612aec3e37d607941ddc636bd3ab45235d8391dc5b2b90faf4                                                                                                          0.1s
+ => => extracting sha256:8bfa0019f928dcee6004de6c4b85d75774f993212504ac816ede0f3c6ae097de                                                                                                          0.0s
+ => [internal] load build context                                                                                                                                                                  0.1s
+ => => transferring context: 789.65kB                                                                                                                                                              0.1s
+ => [base 2/2] RUN corepack enable && corepack prepare pnpm@latest --activate                                                                                                                      1.9s
+ => [deps 1/8] WORKDIR /app                                                                                                                                                                        0.1s 
+ => [deps 2/8] COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./                                                                                                                             0.1s
+ => [deps 3/8] COPY lib/db/package.json                    lib/db/                                                                                                                                 0.1s
+ => [deps 4/8] COPY lib/api-client-react/package.json      lib/api-client-react/                                                                                                                   0.1s
+ => [deps 5/8] COPY lib/api-zod/package.json               lib/api-zod/                                                                                                                            0.1s
+ => [deps 6/8] COPY artifacts/api-server/package.json      artifacts/api-server/                                                                                                                   0.0s
+ => [deps 7/8] COPY artifacts/factboard/package.json       artifacts/factboard/                                                                                                                    0.1s
+ => [deps 8/8] RUN pnpm install --frozen-lockfile --ignore-scripts                                                                                                                                12.7s
+ => [runner 10/13] RUN pnpm install --frozen-lockfile --prod --ignore-scripts                                                                                                                      4.5s
+ => [builder 1/7] WORKDIR /app                                                                                                                                                                     0.6s 
+ => [builder 2/7] COPY . .                                                                                                                                                                         0.2s 
+ => ERROR [builder 3/7] RUN pnpm --filter @workspace/db            run build                                                                                                                       0.9s 
+------                                                                                                                                                                                                  
+ > [builder 3/7] RUN pnpm --filter @workspace/db            run build:                                                                                                                                  
+0.876  ERR_PNPM_RECURSIVE_RUN_NO_SCRIPT  None of the selected packages has a "build" script                                                                                                             
+------                                                                                                                                                                                                  
+[+] build 0/1                                                                                                                                                                                           
+ ⠙ Image fact-digiboard-app Building                                                                                                                                                               23.1s
+Dockerfile:26                                                                                                                                                                                           
+                                                                                                                                                                                                        
+--------------------                                                                                                                                                                                    
+
+  24 |     COPY . .
+
+  25 |     
+
+  26 | >>> RUN pnpm --filter @workspace/db            run build
+
+  27 |     RUN pnpm --filter @workspace/api-zod       run build || true
+
+  28 |     RUN pnpm --filter @workspace/api-client-react run build || true
+
+--------------------
+
+failed to solve: process "/bin/sh -c pnpm --filter @workspace/db            run build" did not complete successfully: exit code: 1
