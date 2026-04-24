@@ -3,20 +3,36 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: DigiBoard API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: users
+    description: User management
+  - name: patients
+    description: Patient management
+  - name: notes
+    description: Meeting notes
+  - name: history
+    description: Board history
+  - name: act
+    description: ACT regions
+  - name: stats
+    description: Statistics
+  - name: settings
+    description: Application settings
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +40,819 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── AUTH ──────────────────────────────────────────────────────────────────
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/change-password:
+    post:
+      operationId: changePassword
+      tags: [auth]
+      summary: Change password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordBody"
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── USERS ─────────────────────────────────────────────────────────────────
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserBody"
+      responses:
+        "201":
+          description: Created user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{id}:
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserBody"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── PATIENTS ──────────────────────────────────────────────────────────────
+
+  /patients:
+    get:
+      operationId: listPatients
+      tags: [patients]
+      summary: List patients
+      parameters:
+        - name: board
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of patients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Patient"
+    post:
+      operationId: createPatient
+      tags: [patients]
+      summary: Create a patient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePatientBody"
+      responses:
+        "201":
+          description: Created patient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+
+  /patients/{id}:
+    get:
+      operationId: getPatient
+      tags: [patients]
+      summary: Get a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Patient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updatePatient
+      tags: [patients]
+      summary: Update a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePatientBody"
+      responses:
+        "200":
+          description: Updated patient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deletePatient
+      tags: [patients]
+      summary: Delete a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /patients/{id}/board:
+    patch:
+      operationId: movePatientBoard
+      tags: [patients]
+      summary: Move patient to a different board
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovePatientBoardBody"
+      responses:
+        "200":
+          description: Patient moved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /patients/{id}/passages:
+    patch:
+      operationId: updatePatientPassages
+      tags: [patients]
+      summary: Update weekly passages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePassagesBody"
+      responses:
+        "200":
+          description: Passages updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+
+  /patients/{id}/phase:
+    patch:
+      operationId: updatePatientPhase
+      tags: [patients]
+      summary: Update patient phase (FactBoard only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePhaseBody"
+      responses:
+        "200":
+          description: Phase updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+
+  /patients/{id}/recovery:
+    patch:
+      operationId: updatePatientRecovery
+      tags: [patients]
+      summary: Update recovery fields (RecoveryBoard only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRecoveryBody"
+      responses:
+        "200":
+          description: Recovery updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+
+  /patients/{id}/infos-recoltees:
+    patch:
+      operationId: updatePatientInfosRecoltees
+      tags: [patients]
+      summary: Update pre-admission info (PréAdmission only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInfosRecolteesBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+
+  /patients/{id}/motif-irrecevable:
+    patch:
+      operationId: updatePatientMotifIrrecevable
+      tags: [patients]
+      summary: Update rejection reason (Irrecevable only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMotifIrrecevableBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+
+  # ─── MEETING NOTES ─────────────────────────────────────────────────────────
+
+  /patients/{id}/notes:
+    get:
+      operationId: listPatientNotes
+      tags: [notes]
+      summary: List meeting notes for a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MeetingNote"
+    post:
+      operationId: createPatientNote
+      tags: [notes]
+      summary: Create a meeting note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNoteBody"
+      responses:
+        "201":
+          description: Created note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeetingNote"
+
+  /patients/{id}/notes/{noteId}:
+    patch:
+      operationId: updatePatientNote
+      tags: [notes]
+      summary: Update a meeting note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNoteBody"
+      responses:
+        "200":
+          description: Updated note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeetingNote"
+    delete:
+      operationId: deletePatientNote
+      tags: [notes]
+      summary: Delete a meeting note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── BOARD HISTORY ─────────────────────────────────────────────────────────
+
+  /patients/{id}/history:
+    get:
+      operationId: listPatientHistory
+      tags: [history]
+      summary: List board history for a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: History entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistoryEntry"
+
+  /patients/{id}/history/{historyId}:
+    patch:
+      operationId: updatePatientHistoryEntry
+      tags: [history]
+      summary: Update a history entry date
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: historyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateHistoryEntryBody"
+      responses:
+        "200":
+          description: Updated entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryEntry"
+
+  # ─── STATS ─────────────────────────────────────────────────────────────────
+
+  /stats:
+    get:
+      operationId: getStats
+      tags: [stats]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stats"
+
+  # ─── ACT REGIONS ───────────────────────────────────────────────────────────
+
+  /act/regions:
+    get:
+      operationId: listActRegions
+      tags: [act]
+      summary: List ACT regions
+      responses:
+        "200":
+          description: Regions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActRegion"
+    post:
+      operationId: createActRegion
+      tags: [act]
+      summary: Create an ACT region
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateActRegionBody"
+      responses:
+        "201":
+          description: Created region
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActRegion"
+
+  /act/regions/{id}:
+    patch:
+      operationId: updateActRegion
+      tags: [act]
+      summary: Update a region
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateActRegionBody"
+      responses:
+        "200":
+          description: Updated region
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActRegion"
+    delete:
+      operationId: deleteActRegion
+      tags: [act]
+      summary: Delete a region
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /act/regions/{id}/notes:
+    get:
+      operationId: listActRegionNotes
+      tags: [act]
+      summary: List notes for a region
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActNote"
+    post:
+      operationId: createActRegionNote
+      tags: [act]
+      summary: Create a note for a region
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNoteBody"
+      responses:
+        "201":
+          description: Created note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActNote"
+
+  /act/regions/{id}/notes/{noteId}:
+    patch:
+      operationId: updateActRegionNote
+      tags: [act]
+      summary: Update a region note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNoteBody"
+      responses:
+        "200":
+          description: Updated note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActNote"
+    delete:
+      operationId: deleteActRegionNote
+      tags: [act]
+      summary: Delete a region note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── SETTINGS ──────────────────────────────────────────────────────────────
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get all settings
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+
+  /settings/{key}:
+    put:
+      operationId: updateSetting
+      tags: [settings]
+      summary: Update a setting
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSettingBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +860,492 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    OkResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required: [ok]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    # ── Auth ──
+
+    LoginBody:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required: [username, password]
+
+    ChangePasswordBody:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+      required: [newPassword]
+
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: ["string", "null"]
+        role:
+          type: string
+        mustChangePassword:
+          type: boolean
+      required: [id, username, role, mustChangePassword]
+
+    # ── Users ──
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: ["string", "null"]
+        role:
+          type: string
+        mustChangePassword:
+          type: boolean
+        createdAt:
+          type: string
+      required: [id, username, role, mustChangePassword, createdAt]
+
+    CreateUserBody:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: ["string", "null"]
+        role:
+          type: string
+      required: [username, role]
+
+    UpdateUserBody:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: ["string", "null"]
+        role:
+          type: string
+        mustChangePassword:
+          type: boolean
+
+    # ── Patients ──
+
+    Patient:
+      type: object
+      properties:
+        id:
+          type: integer
+        clientNum:
+          type: string
+        nom:
+          type: string
+        prenom:
+          type: string
+        dob:
+          type: ["string", "null"]
+        adresse:
+          type: ["string", "null"]
+        tel:
+          type: ["string", "null"]
+        sexe:
+          type: ["string", "null"]
+        medecinFamille:
+          type: ["string", "null"]
+        patho:
+          type: ["string", "null"]
+        psy:
+          type: ["string", "null"]
+        responsable:
+          type: ["string", "null"]
+        casemanager2:
+          type: ["string", "null"]
+        demande:
+          type: ["string", "null"]
+        datePremierContact:
+          type: ["string", "null"]
+        dateEntree:
+          type: ["string", "null"]
+        dateSortie:
+          type: ["string", "null"]
+        agressivite:
+          type: integer
+        article:
+          type: ["string", "null"]
+        curatelle:
+          type: ["string", "null"]
+        remarques:
+          type: ["string", "null"]
+        board:
+          type: string
+        phase:
+          type: ["string", "null"]
+        boardEntryDate:
+          type: ["string", "null"]
+        passages:
+          type: object
+          additionalProperties:
+            type: string
+        recoveryObjectifs:
+          type: ["string", "null"]
+        recoveryEtape:
+          type: ["string", "null"]
+        recoveryAction:
+          type: ["string", "null"]
+        infosRecoltees:
+          type: ["string", "null"]
+        motifIrrecevable:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, clientNum, nom, prenom, agressivite, board, createdAt, updatedAt]
+
+    CreatePatientBody:
+      type: object
+      properties:
+        nom:
+          type: string
+        prenom:
+          type: string
+        dob:
+          type: ["string", "null"]
+        adresse:
+          type: ["string", "null"]
+        tel:
+          type: ["string", "null"]
+        sexe:
+          type: ["string", "null"]
+        medecinFamille:
+          type: ["string", "null"]
+        patho:
+          type: ["string", "null"]
+        psy:
+          type: ["string", "null"]
+        responsable:
+          type: ["string", "null"]
+        casemanager2:
+          type: ["string", "null"]
+        demande:
+          type: ["string", "null"]
+        datePremierContact:
+          type: ["string", "null"]
+        dateEntree:
+          type: ["string", "null"]
+        dateSortie:
+          type: ["string", "null"]
+        agressivite:
+          type: integer
+        article:
+          type: ["string", "null"]
+        curatelle:
+          type: ["string", "null"]
+        remarques:
+          type: ["string", "null"]
+        board:
+          type: string
+      required: [nom, prenom, board]
+
+    UpdatePatientBody:
+      type: object
+      properties:
+        nom:
+          type: string
+        prenom:
+          type: string
+        dob:
+          type: ["string", "null"]
+        adresse:
+          type: ["string", "null"]
+        tel:
+          type: ["string", "null"]
+        sexe:
+          type: ["string", "null"]
+        medecinFamille:
+          type: ["string", "null"]
+        patho:
+          type: ["string", "null"]
+        psy:
+          type: ["string", "null"]
+        responsable:
+          type: ["string", "null"]
+        casemanager2:
+          type: ["string", "null"]
+        demande:
+          type: ["string", "null"]
+        datePremierContact:
+          type: ["string", "null"]
+        dateEntree:
+          type: ["string", "null"]
+        dateSortie:
+          type: ["string", "null"]
+        agressivite:
+          type: integer
+        article:
+          type: ["string", "null"]
+        curatelle:
+          type: ["string", "null"]
+        remarques:
+          type: ["string", "null"]
+        board:
+          type: string
+
+    MovePatientBoardBody:
+      type: object
+      properties:
+        board:
+          type: string
+        date:
+          type: string
+      required: [board, date]
+
+    UpdatePassagesBody:
+      type: object
+      properties:
+        passages:
+          type: object
+          additionalProperties:
+            type: string
+      required: [passages]
+
+    UpdatePhaseBody:
+      type: object
+      properties:
+        phase:
+          type: ["string", "null"]
+      required: [phase]
+
+    UpdateRecoveryBody:
+      type: object
+      properties:
+        objectifs:
+          type: ["string", "null"]
+        etape:
+          type: ["string", "null"]
+        action:
+          type: ["string", "null"]
+
+    UpdateInfosRecolteesBody:
+      type: object
+      properties:
+        infosRecoltees:
+          type: ["string", "null"]
+      required: [infosRecoltees]
+
+    UpdateMotifIrrecevableBody:
+      type: object
+      properties:
+        motifIrrecevable:
+          type: ["string", "null"]
+      required: [motifIrrecevable]
+
+    # ── Notes ──
+
+    MeetingNote:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        date:
+          type: ["string", "null"]
+        texte:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, patientId, createdAt]
+
+    CreateNoteBody:
+      type: object
+      properties:
+        date:
+          type: ["string", "null"]
+        texte:
+          type: ["string", "null"]
+
+    UpdateNoteBody:
+      type: object
+      properties:
+        date:
+          type: ["string", "null"]
+        texte:
+          type: ["string", "null"]
+
+    # ── History ──
+
+    HistoryEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        date:
+          type: string
+        action:
+          type: string
+        boardTo:
+          type: ["string", "null"]
+      required: [id, patientId, date, action]
+
+    UpdateHistoryEntryBody:
+      type: object
+      properties:
+        date:
+          type: string
+      required: [date]
+
+    # ── Stats ──
+
+    Stats:
+      type: object
+      properties:
+        total:
+          type: integer
+        active:
+          type: integer
+        byClosed:
+          type: integer
+        byIrrecevable:
+          type: integer
+        boardCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        sexeCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        pathoCounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PathoCount"
+        aggCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        avgDurations:
+          type: object
+          additionalProperties:
+            type: ["integer", "null"]
+      required: [total, active, byClosed, byIrrecevable, boardCounts, sexeCounts, pathoCounts, aggCounts, avgDurations]
+
+    PathoCount:
+      type: object
+      properties:
+        patho:
+          type: string
+        count:
+          type: integer
+      required: [patho, count]
+
+    # ── ACT ──
+
+    ActRegion:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+        createdAt:
+          type: string
+      required: [id, nom, createdAt]
+
+    CreateActRegionBody:
+      type: object
+      properties:
+        nom:
+          type: string
+      required: [nom]
+
+    UpdateActRegionBody:
+      type: object
+      properties:
+        nom:
+          type: string
+      required: [nom]
+
+    ActNote:
+      type: object
+      properties:
+        id:
+          type: integer
+        regionId:
+          type: integer
+        date:
+          type: ["string", "null"]
+        texte:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, regionId, createdAt]
+
+    # ── Settings ──
+
+    Settings:
+      type: object
+      properties:
+        psychiatrists:
+          type: array
+          items:
+            type: string
+        casemanagers:
+          type: array
+          items:
+            type: string
+        articles:
+          type: array
+          items:
+            type: string
+        curatelles:
+          type: array
+          items:
+            type: string
+        phases:
+          type: array
+          items:
+            $ref: "#/components/schemas/PhaseOption"
+      required: [psychiatrists, casemanagers, articles, curatelles, phases]
+
+    PhaseOption:
+      type: object
+      properties:
+        val:
+          type: string
+        label:
+          type: string
+      required: [val, label]
+
+    UpdateSettingBody:
+      type: object
+      properties:
+        value:
+          type: string
+      required: [value]

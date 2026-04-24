@@ -1,0 +1,9 @@
+export const CIM10_DATA = [
+  { c: "F00", t: "Démence dans la maladie d'Alzheimer", d: "Démence survenant dans la maladie d'Alzheimer.", r: "Risque de perte d'autonomie, errance, troubles du comportement." },
+  { c: "F10", t: "Troubles mentaux et du comportement liés à l'utilisation d'alcool", d: "Intoxication aiguë, usage nocif, syndrome de dépendance, état de sevrage.", r: "Risque de rechute, complications somatiques, isolement social." },
+  { c: "F20", t: "Schizophrénie", d: "Troubles schizophréniques caractérisés par des distorsions fondamentales et caractéristiques de la pensée et de la perception.", r: "Risque de passage à l'acte hétéro/auto-agressif, désinsertion sociale." },
+  { c: "F31", t: "Trouble affectif bipolaire", d: "Trouble caractérisé par au moins deux épisodes où l'humeur et le niveau d'activité du patient sont profondément perturbés.", r: "Risque suicidaire élevé, conduites à risque (achats, sexualité)." },
+  { c: "F32", t: "Épisodes dépressifs", d: "Le patient souffre d'un abaissement de l'humeur, d'une réduction de l'énergie et d'une diminution de l'activité.", r: "Risque suicidaire, isolement, dénutrition." },
+  { c: "F41", t: "Autres troubles anxieux", d: "Troubles dans lesquels la manifestation d'anxiété est le symptôme principal.", r: "Attaques de panique, évitement social, risque de dépendance aux anxiolytiques." },
+  { c: "F60", t: "Troubles spécifiques de la personnalité", d: "Troubles sévères de la constitution caractérielle et des tendances comportementales de l'individu.", r: "Instabilité relationnelle, auto-mutilation, passages à l'acte." }
+];
