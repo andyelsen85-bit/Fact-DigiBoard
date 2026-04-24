@@ -182,7 +182,9 @@ function ICD10ManagementTable() {
       ) : filtered.length === 0 ? (
         <p className="text-xs text-muted-foreground py-2">Aucun code trouvé</p>
       ) : (
-        <div className="space-y-1.5">
+        <>
+          <p className="text-xs text-muted-foreground mb-2">{filtered.length} code{filtered.length > 1 ? "s" : ""} trouvé{filtered.length > 1 ? "s" : ""}</p>
+          <div className="space-y-1.5 overflow-y-auto max-h-[720px] pr-1">
           {filtered.map((entry) => (
             <div key={entry.code} className="px-3 py-2 rounded bg-muted/40 text-sm">
               <div className="flex items-center justify-between gap-2">
@@ -218,7 +220,8 @@ function ICD10ManagementTable() {
               {entry.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{entry.description}</p>}
             </div>
           ))}
-        </div>
+          </div>
+        </>
       )}
 
       <ICD10EntryModal
@@ -592,11 +595,6 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Pathologies</h3>
-            <ICD10ManagementTable />
-          </div>
-
-          <div>
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Corbeille</h3>
             <DeletedPatientsSection />
           </div>
@@ -660,6 +658,11 @@ export default function SettingsPage() {
               </table>
             </div>
           )}
+
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Pathologies (ICD-10)</h3>
+            <ICD10ManagementTable />
+          </div>
         </div>
       </main>
 
