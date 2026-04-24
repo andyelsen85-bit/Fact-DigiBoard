@@ -148,16 +148,6 @@ L'API et le frontend React sont servis par le même container Express sur le por
 
 ---
 
-## Identifiants par défaut
-
-| Utilisateur | Mot de passe | Rôle |
-|-------------|--------------|------|
-| `admin` | `admin123` | Administrateur |
-
-> Changer le mot de passe immédiatement après la première connexion en production.
-
----
-
 ## Architecture
 
 ```
