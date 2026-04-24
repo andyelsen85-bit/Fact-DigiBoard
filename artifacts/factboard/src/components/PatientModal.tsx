@@ -87,7 +87,14 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
   const medecinsfamille: string[] = (settings as any)?.medecinsfamille ?? [];
   const articles: string[] = (settings as any)?.articles ?? [];
   const curatelles: string[] = (settings as any)?.curatelles ?? [];
-  const icd10favorites: string[] = (settings as any)?.icd10favorites ?? [];
+  const rawFavorites: unknown = (settings as any)?.icd10favorites;
+  const icd10favorites: Array<{ c: string; t: string; d?: string; r?: string }> = Array.isArray(rawFavorites)
+    ? rawFavorites.map((item) =>
+        typeof item === "string"
+          ? (CIM10_DATA.find((d) => d.c === item) ?? { c: item, t: item })
+          : (item as { c: string; t: string; d?: string; r?: string })
+      )
+    : [];
 
   const form = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
@@ -103,11 +110,9 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
   }, [open]);
 
   const pathoValue = form.watch("patho");
-  const pathoInfo = CIM10_DATA.find((d) => d.c === pathoValue);
+  const pathoInfo = icd10favorites.find((e) => e.c === pathoValue) ?? CIM10_DATA.find((d) => d.c === pathoValue);
 
-  const favoriteCim10 = icd10favorites
-    .map((code) => CIM10_DATA.find((d) => d.c === code))
-    .filter(Boolean) as typeof CIM10_DATA;
+  const favoriteCim10 = icd10favorites;
 
   const filteredCim10 = pathoSearch.length >= 1
     ? CIM10_DATA.filter(

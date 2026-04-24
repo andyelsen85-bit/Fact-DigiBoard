@@ -10,6 +10,7 @@ import {
   useListPatientHistory, getListPatientHistoryQueryKey,
   useUpdatePatientHistoryEntry,
   getListPatientsQueryKey,
+  useGetSettings, getGetSettingsQueryKey,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,6 +71,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const { data: patient, isLoading } = useGetPatient(patientId, {
     query: { queryKey: getGetPatientQueryKey(patientId) },
   });
+  const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
   const { data: notes = [] } = useListPatientNotes(patientId, {
     query: { queryKey: getListPatientNotesQueryKey(patientId) },
   });
@@ -114,7 +116,17 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
 
   if (!patient) return null;
 
-  const pathoInfo = CIM10_DATA.find((d) => d.c === patient.patho);
+  const rawFav: unknown = (settings as any)?.icd10favorites;
+  const favEntries: Array<{ c: string; t: string; d?: string; r?: string }> = Array.isArray(rawFav)
+    ? rawFav.map((item) =>
+        typeof item === "string"
+          ? (CIM10_DATA.find((d) => d.c === item) ?? { c: item, t: item })
+          : (item as { c: string; t: string; d?: string; r?: string })
+      )
+    : [];
+  const pathoInfo = (patient.patho
+    ? favEntries.find((e) => e.c === patient.patho) ?? CIM10_DATA.find((d) => d.c === patient.patho)
+    : undefined) as { c: string; t: string; d?: string; r?: string } | undefined;
   const passages = (patient.passages ?? {}) as Record<string, string>;
   const board = patient.board;
   const isCloture = board === "Clôturé";

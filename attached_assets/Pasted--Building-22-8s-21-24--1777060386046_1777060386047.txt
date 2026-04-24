@@ -1,0 +1,90 @@
+[+] Building 22.8s (21/24)                                                                                                                                                                              
+ => [internal] load local bake definitions                                                                                                                                                         0.0s
+ => => reading from stdin 526B                                                                                                                                                                     0.0s
+ => [internal] load build definition from Dockerfile                                                                                                                                               0.0s
+ => => transferring dockerfile: 2.66kB                                                                                                                                                             0.0s
+ => [internal] load metadata for docker.io/library/node:22-alpine                                                                                                                                  0.6s
+ => [internal] load .dockerignore                                                                                                                                                                  0.0s
+ => => transferring context: 150B                                                                                                                                                                  0.0s
+ => CACHED [base 1/2] FROM docker.io/library/node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f                                                                0.0s
+ => => resolve docker.io/library/node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f                                                                            0.0s
+ => [internal] load build context                                                                                                                                                                  0.1s
+ => => transferring context: 827.45kB                                                                                                                                                              0.1s
+ => [base 2/2] RUN corepack enable && corepack prepare pnpm@latest --activate                                                                                                                      2.8s
+ => [deps 1/8] WORKDIR /app                                                                                                                                                                        0.1s 
+ => [deps 2/8] COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./                                                                                                                             0.1s
+ => [deps 3/8] COPY lib/db/package.json                    lib/db/                                                                                                                                 0.0s
+ => [deps 4/8] COPY lib/api-client-react/package.json      lib/api-client-react/                                                                                                                   0.1s
+ => [deps 5/8] COPY lib/api-zod/package.json               lib/api-zod/                                                                                                                            0.0s
+ => [deps 6/8] COPY artifacts/api-server/package.json      artifacts/api-server/                                                                                                                   0.0s
+ => [deps 7/8] COPY artifacts/factboard/package.json       artifacts/factboard/                                                                                                                    0.1s
+ => [deps 8/8] RUN pnpm install --frozen-lockfile --ignore-scripts                                                                                                                                14.6s
+ => [runner 10/12] RUN pnpm install --frozen-lockfile --prod --ignore-scripts                                                                                                                      5.0s
+ => [builder 1/6] WORKDIR /app                                                                                                                                                                     0.6s 
+ => [builder 2/6] COPY . .                                                                                                                                                                         0.2s 
+ => [builder 3/6] RUN pnpm --filter @workspace/api-zod       run build || true                                                                                                                     1.0s 
+ => [builder 4/6] RUN pnpm --filter @workspace/api-client-react run build || true                                                                                                                  1.0s 
+ => ERROR [builder 5/6] RUN PORT=80 BASE_PATH=/ NODE_ENV=production     pnpm --filter @workspace/factboard run build                                                                               1.3s 
+------                                                                                                                                                                                                  
+ > [builder 5/6] RUN PORT=80 BASE_PATH=/ NODE_ENV=production     pnpm --filter @workspace/factboard run build:                                                                                          
+0.919                                                                                                                                                                                                   
+0.919 > @workspace/factboard@0.0.0 build /app/artifacts/factboard                                                                                                                                       
+0.919 > vite build --config vite.config.ts                                                                                                                                                              
+0.919                                                                                                                                                                                                   
+1.155 /app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js:115                                                                                                                      
+1.155           throw new Error(
+1.155                 ^
+1.155 
+1.155 Error: Cannot find module @rollup/rollup-linux-x64-musl. npm has a bug related to optional dependencies (https://github.com/npm/cli/issues/4828). Please try `npm i` again after removing both package-lock.json and node_modules directory.
+1.155     at requireWithFriendlyError (/app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js:115:9)
+1.155     at Object.<anonymous> (/app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js:124:76)
+1.155     at Module._compile (node:internal/modules/cjs/loader:1705:14)
+1.155     at Object..js (node:internal/modules/cjs/loader:1838:10)
+1.155     at Module.load (node:internal/modules/cjs/loader:1441:32)
+1.155     at Function._load (node:internal/modules/cjs/loader:1263:12)
+1.155     at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+1.155     at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+1.155     at cjsLoader (node:internal/modules/esm/translators:309:5)
+1.155     at ModuleWrap.<anonymous> (node:internal/modules/esm/translators:202:7) {
+1.155   [cause]: Error: Cannot find module '@rollup/rollup-linux-x64-musl'
+1.155   Require stack:
+1.155   - /app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js
+1.155       at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+1.155       at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+1.155       at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+1.155       at Function._load (node:internal/modules/cjs/loader:1192:37)
+1.155       at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+1.155       at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+1.155       at Module.require (node:internal/modules/cjs/loader:1463:12)
+1.155       at require (node:internal/modules/helpers:147:16)
+1.155       at requireWithFriendlyError (/app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js:97:10)
+1.155       at Object.<anonymous> (/app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js:124:76) {
+1.155     code: 'MODULE_NOT_FOUND',
+1.155     requireStack: [
+1.155       '/app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js'
+1.155     ]
+1.155   }
+1.155 }
+1.155 
+1.155 Node.js v22.22.2
+1.200 /app/artifacts/factboard:
+1.200  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/factboard@0.0.0 build: `vite build --config vite.config.ts`
+1.200 Exit status 1
+------
+[+] build 0/1
+ ⠙ Image fact-digiboard-app Building                                                                                                                                                               22.9s
+Dockerfile:29
+
+--------------------
+
+  28 |     
+
+  29 | >>> RUN PORT=80 BASE_PATH=/ NODE_ENV=production \
+
+  30 | >>>     pnpm --filter @workspace/factboard run build
+
+  31 |     
+
+--------------------
+
+failed to solve: process "/bin/sh -c PORT=80 BASE_PATH=/ NODE_ENV=production     pnpm --filter @workspace/factboard run build" did not complete successfully: exit code: 1

@@ -9,89 +9,221 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { CIM10_DATA } from "@/data/cim10";
+
+interface ICD10Entry {
+  c: string;
+  t: string;
+  d?: string;
+  r?: string;
+}
+
+function parseFavorites(raw: unknown): ICD10Entry[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item): ICD10Entry => {
+    if (typeof item === "string") {
+      const info = CIM10_DATA.find((d) => d.c === item);
+      return info ? { c: info.c, t: info.t, d: info.d, r: info.r } : { c: item, t: item };
+    }
+    return item as ICD10Entry;
+  });
+}
+
+interface ICD10EntryModalProps {
+  open: boolean;
+  initial?: ICD10Entry;
+  isNew?: boolean;
+  onClose: () => void;
+  onSave: (entry: ICD10Entry) => void;
+  isPending?: boolean;
+}
+
+function ICD10EntryModal({ open, initial, isNew, onClose, onSave, isPending }: ICD10EntryModalProps) {
+  const [c, setC] = useState(initial?.c ?? "");
+  const [t, setT] = useState(initial?.t ?? "");
+  const [d, setD] = useState(initial?.d ?? "");
+  const [r, setR] = useState(initial?.r ?? "");
+
+  useEffect(() => {
+    if (open) {
+      setC(initial?.c ?? "");
+      setT(initial?.t ?? "");
+      setD(initial?.d ?? "");
+      setR(initial?.r ?? "");
+    }
+  }, [open, initial]);
+
+  const canSave = c.trim().length > 0 && t.trim().length > 0;
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{isNew ? "Ajouter un code ICD-10" : "Modifier le code ICD-10"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <div className="space-y-1">
+            <Label>Code <span className="text-destructive">*</span></Label>
+            <Input
+              value={c}
+              onChange={(e) => setC(e.target.value.toUpperCase())}
+              placeholder="ex: F20, Z99, CUSTOM-01"
+              readOnly={!isNew}
+              className={!isNew ? "bg-muted text-muted-foreground" : ""}
+              data-testid="input-icd10-code"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Libellé <span className="text-destructive">*</span></Label>
+            <Input
+              value={t}
+              onChange={(e) => setT(e.target.value)}
+              placeholder="Intitulé du diagnostic"
+              data-testid="input-icd10-label"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="flex items-center gap-1">Description <span className="text-xs text-muted-foreground font-normal">(optionnel)</span></Label>
+            <Textarea
+              value={d}
+              onChange={(e) => setD(e.target.value)}
+              placeholder="Description clinique..."
+              rows={2}
+              data-testid="input-icd10-description"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="flex items-center gap-1">Risques <span className="text-xs text-muted-foreground font-normal">(optionnel)</span></Label>
+            <Textarea
+              value={r}
+              onChange={(e) => setR(e.target.value)}
+              placeholder="Risques associés..."
+              rows={2}
+              data-testid="input-icd10-risks"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Annuler</Button>
+          <Button
+            disabled={!canSave || isPending}
+            onClick={() => onSave({ c: c.trim(), t: t.trim(), d: d.trim() || undefined, r: r.trim() || undefined })}
+            data-testid="button-save-icd10"
+          >
+            {isPending ? "Enregistrement..." : "Enregistrer"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function ICD10FavoritesList() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<ICD10Entry | null>(null);
+  const [creatingNew, setCreatingNew] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
   const updateSetting = useUpdateSetting();
 
-  const codes: string[] = (settings as any)?.icd10favorites ?? [];
+  const entries: ICD10Entry[] = parseFavorites((settings as any)?.icd10favorites);
 
   const filtered = search.length >= 1
     ? CIM10_DATA.filter(
         (d) =>
           d.c.toLowerCase().includes(search.toLowerCase()) ||
           d.t.toLowerCase().includes(search.toLowerCase())
-      ).filter((d) => !codes.includes(d.c)).slice(0, 8)
+      ).filter((d) => !entries.some((e) => e.c === d.c)).slice(0, 8)
     : [];
 
-  function handleAdd(code: string) {
-    if (codes.includes(code)) return;
-    const updated = [...codes, code];
+  function save(updated: ICD10Entry[], onDone?: () => void) {
     updateSetting.mutate(
       { key: "icd10favorites", data: { value: JSON.stringify(updated) } },
       {
         onSuccess: () => {
-          setSearch("");
-          setDropdownOpen(false);
           queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey() });
+          onDone?.();
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible d'ajouter", variant: "destructive" }),
+        onError: () => toast({ title: "Erreur", description: "Impossible de sauvegarder", variant: "destructive" }),
       }
     );
   }
 
+  function handleAddFromSearch(item: typeof CIM10_DATA[0]) {
+    const entry: ICD10Entry = { c: item.c, t: item.t, d: item.d, r: item.r };
+    save([...entries, entry], () => { setSearch(""); setDropdownOpen(false); });
+  }
+
+  function handleSaveEdit(updated: ICD10Entry) {
+    const newEntries = entries.map((e) => e.c === updated.c ? updated : e);
+    save(newEntries, () => setEditingEntry(null));
+  }
+
+  function handleSaveNew(entry: ICD10Entry) {
+    if (entries.some((e) => e.c === entry.c)) {
+      toast({ title: "Code déjà existant", description: `Le code ${entry.c} est déjà dans la liste.`, variant: "destructive" });
+      return;
+    }
+    save([...entries, entry], () => setCreatingNew(false));
+  }
+
   function handleRemove(code: string) {
-    const updated = codes.filter((c) => c !== code);
-    updateSetting.mutate(
-      { key: "icd10favorites", data: { value: JSON.stringify(updated) } },
-      {
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey() }),
-        onError: () => toast({ title: "Erreur", description: "Impossible de supprimer", variant: "destructive" }),
-      }
-    );
+    save(entries.filter((e) => e.c !== code));
   }
 
   return (
     <div className="bg-card border rounded-lg p-4">
-      <h3 className="text-sm font-medium mb-1">Pathologies ICD-10 (favoris)</h3>
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-sm font-medium">Pathologies ICD-10 (favoris)</h3>
+        <Button size="sm" variant="outline" onClick={() => setCreatingNew(true)} data-testid="button-add-custom-icd10">
+          + Code personnalisé
+        </Button>
+      </div>
       <p className="text-xs text-muted-foreground mb-3">
-        Les codes ajoutés ici apparaissent en premier dans le champ Pathologie du formulaire patient.
+        Ces codes apparaissent en premier dans le formulaire patient. Modifiez les libellés et descriptions selon vos besoins.
       </p>
       <div className="space-y-1.5 mb-3">
-        {codes.length === 0 && (
+        {entries.length === 0 && (
           <p className="text-xs text-muted-foreground py-2">Aucun code favori</p>
         )}
-        {codes.map((code) => {
-          const info = CIM10_DATA.find((d) => d.c === code);
-          return (
-            <div key={code} className="flex items-center justify-between px-3 py-1.5 rounded bg-muted/40 text-sm">
+        {entries.map((entry) => (
+          <div key={entry.c} className="px-3 py-2 rounded bg-muted/40 text-sm">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex gap-2 items-baseline min-w-0">
-                <span className="font-mono text-xs font-medium shrink-0 text-muted-foreground">{code}</span>
-                <span className="truncate">{info?.t ?? code}</span>
+                <span className="font-mono text-xs font-medium shrink-0 text-muted-foreground">{entry.c}</span>
+                <span className="truncate font-medium">{entry.t}</span>
               </div>
-              <button
-                className="text-xs text-destructive hover:text-destructive/80 shrink-0 ml-2"
-                data-testid={`button-remove-icd10-${code}`}
-                onClick={() => handleRemove(code)}
-              >
-                Supprimer
-              </button>
+              <div className="flex gap-3 shrink-0">
+                <button
+                  className="text-xs text-primary hover:underline"
+                  data-testid={`button-edit-icd10-${entry.c}`}
+                  onClick={() => setEditingEntry(entry)}
+                >
+                  Modifier
+                </button>
+                <button
+                  className="text-xs text-destructive hover:text-destructive/80"
+                  data-testid={`button-remove-icd10-${entry.c}`}
+                  onClick={() => handleRemove(entry.c)}
+                >
+                  Supprimer
+                </button>
+              </div>
             </div>
-          );
-        })}
+            {entry.d && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{entry.d}</p>}
+          </div>
+        ))}
       </div>
       <div className="relative" ref={dropdownRef}>
         <Input
-          placeholder="Rechercher un code ICD-10..."
+          placeholder="Rechercher dans les codes ICD-10 standard..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setDropdownOpen(true); }}
           onFocus={() => setDropdownOpen(true)}
@@ -99,27 +231,41 @@ function ICD10FavoritesList() {
           className="text-sm"
           data-testid="input-new-icd10"
         />
-        {dropdownOpen && filtered.length > 0 && (
+        {dropdownOpen && search.length >= 1 && (
           <div className="absolute z-50 top-full left-0 right-0 bg-popover border rounded-md shadow-md mt-1 overflow-hidden max-h-56 overflow-y-auto">
-            {filtered.map((item) => (
+            {filtered.length > 0 ? filtered.map((item) => (
               <button
                 key={item.c}
                 type="button"
                 className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex gap-2"
-                onMouseDown={() => handleAdd(item.c)}
+                onMouseDown={() => handleAddFromSearch(item)}
               >
                 <span className="font-mono text-xs font-medium text-muted-foreground w-10 shrink-0">{item.c}</span>
                 <span className="truncate">{item.t}</span>
               </button>
-            ))}
-          </div>
-        )}
-        {dropdownOpen && search.length >= 1 && filtered.length === 0 && (
-          <div className="absolute z-50 top-full left-0 right-0 bg-popover border rounded-md shadow-md mt-1 px-3 py-2 text-sm text-muted-foreground">
-            Aucun résultat
+            )) : (
+              <div className="px-3 py-2 text-sm text-muted-foreground">
+                Aucun résultat — utilisez <strong>+ Code personnalisé</strong> pour créer un code libre.
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      <ICD10EntryModal
+        open={!!editingEntry}
+        initial={editingEntry ?? undefined}
+        onClose={() => setEditingEntry(null)}
+        onSave={handleSaveEdit}
+        isPending={updateSetting.isPending}
+      />
+      <ICD10EntryModal
+        open={creatingNew}
+        isNew
+        onClose={() => setCreatingNew(false)}
+        onSave={handleSaveNew}
+        isPending={updateSetting.isPending}
+      />
     </div>
   );
 }
