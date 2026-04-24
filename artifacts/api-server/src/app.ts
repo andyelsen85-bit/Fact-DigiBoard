@@ -44,7 +44,11 @@ if (process.env["NODE_ENV"] === "production") {
   });
 }
 
-const migrationsFolder = path.resolve(__dirname, "../../../lib/db/drizzle");
+// In dev: __dirname = .../artifacts/api-server/src  → ../../.. goes to workspace root
+// In Docker bundle: __dirname = .../artifacts/api-server/dist → ./drizzle is copied there by Dockerfile
+const migrationsFolder = process.env["NODE_ENV"] === "production"
+  ? path.resolve(__dirname, "./drizzle")
+  : path.resolve(__dirname, "../../../lib/db/drizzle");
 runMigrations(migrationsFolder)
   .then(() => logger.info("Database migrations applied"))
   .then(() => seedDatabase())

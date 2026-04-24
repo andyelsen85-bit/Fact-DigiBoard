@@ -26,6 +26,9 @@ RUN PORT=80 BASE_PATH=/ NODE_ENV=production \
 
 RUN pnpm --filter @workspace/api-server run build
 
+# Copy DB migration files into the server dist so the runner image can find them
+RUN cp -r lib/db/drizzle artifacts/api-server/dist/drizzle
+
 # ────────────────────────────────────────────
 # Stage 3: Production runtime image
 # ────────────────────────────────────────────
