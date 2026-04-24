@@ -417,6 +417,9 @@ importers:
       '@rollup/rollup-linux-x64-musl':
         specifier: 4.59.0
         version: 4.59.0
+      '@tailwindcss/oxide-linux-x64-musl':
+        specifier: 4.2.1
+        version: 4.2.1
       lightningcss-linux-x64-musl:
         specifier: 1.31.1
         version: 1.31.1
@@ -1593,6 +1596,13 @@ packages:
     cpu: [x64]
     os: [linux]
     libc: [glibc]
+
+  '@tailwindcss/oxide-linux-x64-musl@4.2.1':
+    resolution: {integrity: sha512-5r1X2FKnCMUPlXTWRYpHdPYUY6a1Ar/t7P24OuiEdEOmms5lyqjDRvVY1yy9Rmioh+AunQ0rWiOTPE8F9A3v5g==}
+    engines: {node: '>= 20'}
+    cpu: [x64]
+    os: [linux]
+    libc: [musl]
 
   '@tailwindcss/oxide-wasm32-wasi@4.2.1':
     resolution: {integrity: sha512-MGFB5cVPvshR85MTJkEvqDUnuNoysrsRxd6vnk1Lf2tbiqNlXpHYZqkqOQalydienEWOHHFyyuTSYRsLfxFJ2Q==}
@@ -4294,6 +4304,9 @@ snapshots:
       tailwindcss: 4.2.1
 
   '@tailwindcss/oxide-linux-x64-gnu@4.2.1':
+    optional: true
+
+  '@tailwindcss/oxide-linux-x64-musl@4.2.1':
     optional: true
 
   '@tailwindcss/oxide-wasm32-wasi@4.2.1':
