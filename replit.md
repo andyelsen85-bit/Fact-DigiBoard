@@ -15,8 +15,9 @@ Full-stack patient management web app for Luxembourg psychiatric case managers. 
 
 ## Key Details
 
-- **API server**: port 8080, path `/api`
-- **Frontend**: port 18576, path `/`
+- **API server (dev)**: port 8080, path `/api`
+- **Frontend (dev)**: port 18576, path `/`
+- **Production container**: single process on port 80 (API + static frontend served together)
 - **Patient ID**: Auto-generated as `FACT-XXXX` (zero-padded to 4 digits, based on DB id)
 - **Boards**: PréAdmission → FactBoard → RecoveryBoard → Irrecevable → Clôturé
 - **Clôturé view**: Shows ALL board-specific sections (phase, recovery, infos, motif)
@@ -59,9 +60,15 @@ Codes stored in `icd10_codes` table (not a static file):
 - Seeded automatically on first run via `seedIcd10Codes()` in `api-server/src/lib/seed.ts`
 - **cim10.ts** static file kept for reference only (not imported anywhere)
 
-## Docker Fix
+## Docker / Alpine Native Binaries
 
-`pnpm rebuild rollup` added in builder stage (after `pnpm install --ignore-scripts`) to download the rollup native binary for linux-x64-musl. Required for Vite to build inside Alpine containers.
+The lock file is generated on glibc Linux (Replit), so musl-specific native binaries are excluded by default. All three are pinned explicitly in `artifacts/factboard/package.json` → `optionalDependencies` so pnpm locks their SHA512 integrity and installs them on Alpine:
+
+- `@rollup/rollup-linux-x64-musl` — Vite bundler
+- `@tailwindcss/oxide-linux-x64-musl` — Tailwind 4 Rust engine
+- `lightningcss-linux-x64-musl` — CSS compiler
+
+If a future upgrade adds a new native dependency, add its musl variant here and re-run `pnpm install`.
 
 ## Orval Codegen Workaround
 

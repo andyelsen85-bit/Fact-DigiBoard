@@ -47,7 +47,7 @@ RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 COPY --from=builder /app/artifacts/api-server/dist            artifacts/api-server/dist
 COPY --from=builder /app/artifacts/factboard/dist/public      artifacts/api-server/dist/public
 
-EXPOSE 8080
-ENV PORT=8080
+EXPOSE 80
+ENV PORT=80
 
 CMD ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]

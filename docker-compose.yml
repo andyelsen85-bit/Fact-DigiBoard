@@ -20,10 +20,10 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-80}:8080"
+      - "${APP_PORT:-80}:80"
     environment:
       NODE_ENV: production
-      PORT: 8080
+      PORT: 80
       DATABASE_URL: postgres://digiboard:${POSTGRES_PASSWORD:-digiboard_secret}@postgres:5432/digiboard
       SESSION_SECRET: ${SESSION_SECRET:-change_this_in_production_please}
     depends_on:
