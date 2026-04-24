@@ -47,7 +47,9 @@ docker compose up -d
 # APP_PORT          — host port to expose (default: 80)
 ```
 
-The Docker image builds and serves both the API and the React frontend from a single container.
+The Docker image builds and serves both the API and the React frontend from a single container on **port 80**.
+
+**Schema migrations run automatically on startup** — no manual `drizzle-kit push` required. The server applies `lib/db/drizzle/0000_slow_silk_fever.sql` (idempotent: uses `CREATE TABLE IF NOT EXISTS`) before seeding data. On a completely fresh database it creates all 9 tables; on an existing database it skips silently.
 
 ## ICD-10 Code Management
 

@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { seedDatabase } from "./lib/seed";
+import { runMigrations } from "@workspace/db";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app: Express = express();
@@ -43,6 +44,10 @@ if (process.env["NODE_ENV"] === "production") {
   });
 }
 
-seedDatabase().catch((err) => logger.error({ err }, "Seed failed"));
+const migrationsFolder = path.resolve(__dirname, "../../../lib/db/drizzle");
+runMigrations(migrationsFolder)
+  .then(() => logger.info("Database migrations applied"))
+  .then(() => seedDatabase())
+  .catch((err) => logger.error({ err }, "Startup DB error"));
 
 export default app;
