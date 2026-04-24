@@ -43,19 +43,32 @@ export function PatientList({ board, search, selectedId, onSelect }: PatientList
           }`}
           onClick={() => onSelect(patient.id)}
         >
-          <div className="flex items-start justify-between gap-1 mb-0.5">
-            <span className="font-medium text-xs text-foreground truncate">
-              {patient.nom} {patient.prenom}
-            </span>
-            {patient.agressivite > 0 && <AggBadge level={patient.agressivite} />}
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full overflow-hidden border border-border bg-muted shrink-0 flex items-center justify-center">
+              {(patient as any).photo ? (
+                <img src={(patient as any).photo} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <svg className="w-4 h-4 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                </svg>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-1 mb-0.5">
+                <span className="font-medium text-xs text-foreground truncate">
+                  {patient.nom} {patient.prenom}
+                </span>
+                {patient.agressivite > 0 && <AggBadge level={patient.agressivite} />}
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-mono text-xs text-muted-foreground">{patient.clientNum}</span>
+                <BoardBadge board={patient.board} />
+              </div>
+              {patient.psy && (
+                <p className="text-xs text-muted-foreground truncate mt-0.5">{patient.psy}</p>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-mono text-xs text-muted-foreground">{patient.clientNum}</span>
-            <BoardBadge board={patient.board} />
-          </div>
-          {patient.psy && (
-            <p className="text-xs text-muted-foreground truncate mt-0.5">{patient.psy}</p>
-          )}
         </button>
       ))}
     </div>

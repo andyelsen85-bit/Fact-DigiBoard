@@ -220,4 +220,18 @@ async function updateMotifIrrecevableHandler(req: any, res: any) {
 router.put("/patients/:id/motif-irrecevable", requireAuth, updateMotifIrrecevableHandler);
 router.patch("/patients/:id/motif-irrecevable", requireAuth, updateMotifIrrecevableHandler);
 
+async function updatePhotoHandler(req: Request, res: Response): Promise<void> {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  const { photo } = req.body as { photo: string | null };
+  const [updated] = await db
+    .update(patientsTable)
+    .set({ photo: photo ?? null, updatedAt: new Date() })
+    .where(eq(patientsTable.id, id))
+    .returning();
+  if (!updated) { res.status(404).json({ error: "Patient not found" }); return; }
+  res.json(updated);
+}
+router.patch("/patients/:id/photo", requireAuth, updatePhotoHandler);
+
 export default router;

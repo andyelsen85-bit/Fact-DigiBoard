@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetPatient, getGetPatientQueryKey,
@@ -19,6 +19,7 @@ import {
 import { BoardBadge } from "./BoardBadge";
 import { AggBadge } from "./AggBadge";
 import { useIcd10Codes } from "@/hooks/use-icd10";
+import { usePatientPhotoUpload } from "@/hooks/use-patient-photo";
 import { MoveBoardModal } from "./MoveBoardModal";
 import { PatientModal } from "./PatientModal";
 import { useToast } from "@/hooks/use-toast";
@@ -66,6 +67,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const { toast } = useToast();
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const { uploadPhoto } = usePatientPhotoUpload(patientId);
 
   const { data: patient, isLoading } = useGetPatient(patientId, {
     query: { queryKey: getGetPatientQueryKey(patientId) },
@@ -195,6 +199,21 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
     );
   }
 
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoUploading(true);
+    try {
+      await uploadPhoto(file);
+      toast({ title: "Photo mise à jour" });
+    } catch {
+      toast({ title: "Erreur", description: "Impossible d'enregistrer la photo", variant: "destructive" });
+    } finally {
+      setPhotoUploading(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  }
+
   function handleDeleteNote(noteId: number) {
     deleteNote.mutate(
       { patientId, noteId },
@@ -206,19 +225,56 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
     <div className="flex-1 overflow-y-auto p-5 space-y-4" data-testid="patient-detail">
       <div className="bg-card border rounded-lg p-4">
         <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-light tracking-tight">
-              {patient.prenom} <span className="font-medium">{patient.nom}</span>
-            </h2>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="font-mono text-sm text-muted-foreground">{patient.clientNum}</span>
-              <BoardBadge board={patient.board} />
-              {patient.agressivite > 0 && <AggBadge level={patient.agressivite} />}
-              {patient.boardEntryDate && (
-                <span className="text-xs text-muted-foreground">
-                  depuis le {patient.boardEntryDate}
-                </span>
-              )}
+          <div className="flex items-start gap-4">
+            <div className="relative group shrink-0">
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoChange}
+                disabled={photoUploading}
+              />
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                className="w-16 h-16 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary relative"
+                title="Changer la photo"
+                disabled={photoUploading}
+              >
+                {patient.photo ? (
+                  <img src={patient.photo} alt="Photo" className="w-full h-full object-cover" />
+                ) : (
+                  <svg className="w-8 h-8 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                  </svg>
+                )}
+                <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  {photoUploading ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  )}
+                </div>
+              </button>
+            </div>
+            <div>
+              <h2 className="text-2xl font-light tracking-tight">
+                {patient.prenom} <span className="font-medium">{patient.nom}</span>
+              </h2>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="font-mono text-sm text-muted-foreground">{patient.clientNum}</span>
+                <BoardBadge board={patient.board} />
+                {patient.agressivite > 0 && <AggBadge level={patient.agressivite} />}
+                {patient.boardEntryDate && (
+                  <span className="text-xs text-muted-foreground">
+                    depuis le {patient.boardEntryDate}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex gap-2">

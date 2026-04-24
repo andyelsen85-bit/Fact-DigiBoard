@@ -19,14 +19,22 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 # ────────────────────────────────────────────
 # Stage 2: Build all packages
 # ────────────────────────────────────────────
-FROM deps AS builder
+FROM base AS builder
 WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY lib/db/package.json                    lib/db/
+COPY lib/api-client-react/package.json      lib/api-client-react/
+COPY lib/api-zod/package.json               lib/api-zod/
+COPY artifacts/api-server/package.json      artifacts/api-server/
+COPY artifacts/factboard/package.json       artifacts/factboard/
+
+RUN pnpm install --frozen-lockfile
+
 COPY . .
 
 RUN pnpm --filter @workspace/api-zod       run build || true
 RUN pnpm --filter @workspace/api-client-react run build || true
-
-RUN pnpm rebuild rollup
 
 RUN PORT=80 BASE_PATH=/ NODE_ENV=production \
     pnpm --filter @workspace/factboard run build
