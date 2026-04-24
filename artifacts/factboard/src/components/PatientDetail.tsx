@@ -13,6 +13,9 @@ import {
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { BoardBadge } from "./BoardBadge";
 import { AggBadge } from "./AggBadge";
 import { CIM10_DATA } from "@/data/cim10";
@@ -113,8 +116,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
 
   const pathoInfo = CIM10_DATA.find((d) => d.c === patient.patho);
   const passages = (patient.passages ?? {}) as Record<string, string>;
-  const showBoard = patient.board;
-  const showPassages = showBoard !== "Clôturé" && showBoard !== "Irrecevable";
+  const board = patient.board;
+  const isCloture = board === "Clôturé";
+  const showPassages = board !== "Clôturé" && board !== "Irrecevable";
   const sortedNotes = [...notes].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
   const sortedHistory = [...history].sort((a, b) => a.date.localeCompare(b.date));
 
@@ -173,7 +177,13 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   function handlePhaseChange(phase: string) {
     updatePhase.mutate(
       { id: patientId, data: { phase } },
-      { onSuccess: () => invalidatePatient() }
+      {
+        onSuccess: () => {
+          invalidatePatient();
+          toast({ title: "Phase mise à jour" });
+        },
+        onError: () => toast({ title: "Erreur", description: "Impossible de mettre à jour la phase", variant: "destructive" }),
+      }
     );
   }
 
@@ -260,32 +270,30 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
         )}
       </div>
 
-      {patient.board === "FactBoard" && (
+      {(board === "FactBoard" || isCloture) && (
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Phase</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {PHASES.map((phase) => (
-              <button
-                key={phase}
-                type="button"
-                data-testid={`phase-option-${phase.slice(0, 2)}`}
-                className={`text-left text-sm px-3 py-2 rounded border transition-colors ${
-                  patient.phase === phase
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border hover:bg-muted"
-                }`}
-                onClick={() => handlePhaseChange(phase)}
-              >
-                {phase}
-              </button>
-            ))}
-          </div>
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Phase (FactBoard)</h3>
+          <Select
+            value={patient.phase ?? ""}
+            onValueChange={handlePhaseChange}
+          >
+            <SelectTrigger data-testid="select-phase" className="w-full">
+              <SelectValue placeholder="Sélectionner une phase..." />
+            </SelectTrigger>
+            <SelectContent>
+              {PHASES.map((phase) => (
+                <SelectItem key={phase} value={phase} data-testid={`phase-option-${phase.slice(0, 2)}`}>
+                  {phase}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 
-      {patient.board === "RecoveryBoard" && (
+      {(board === "RecoveryBoard" || isCloture) && (
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Rétablissement</h3>
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Rétablissement (RecoveryBoard)</h3>
           <div className="space-y-3">
             <div>
               <label className="text-xs text-muted-foreground">Objectifs</label>
@@ -330,9 +338,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
         </div>
       )}
 
-      {patient.board === "PréAdmission" && (
+      {(board === "PréAdmission" || isCloture) && (
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Informations recoltées</h3>
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Informations recoltées (Pré-Admission)</h3>
           <Textarea
             data-testid="textarea-infos-recoltees"
             defaultValue={patient.infosRecoltees ?? ""}
@@ -346,9 +354,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
         </div>
       )}
 
-      {patient.board === "Irrecevable" && (
+      {(board === "Irrecevable" || isCloture) && (
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Motif d'irrecevabilité</h3>
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Motif d'irrecevabilité (Irrecevable)</h3>
           <Textarea
             data-testid="textarea-motif-irrecevable"
             defaultValue={patient.motifIrrecevable ?? ""}
@@ -506,6 +514,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
         isPending={updatePatient.isPending}
         title="Modifier le patient"
         initialValues={patient}
+        isEdit
       />
     </div>
   );

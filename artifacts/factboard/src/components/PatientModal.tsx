@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -20,7 +20,6 @@ import { useGetSettings, getGetSettingsQueryKey } from "@workspace/api-client-re
 import { BOARDS } from "./BoardBadge";
 
 const patientSchema = z.object({
-  clientNum: z.string().min(1, "Numéro client requis"),
   nom: z.string().min(1, "Nom requis"),
   prenom: z.string().min(1, "Prénom requis"),
   dob: z.string().optional(),
@@ -47,47 +46,60 @@ type PatientFormValues = z.infer<typeof patientSchema>;
 interface PatientModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (values: PatientFormValues) => void;
+  onSave: (values: PatientFormValues & { clientNum?: string }) => void;
   isPending?: boolean;
-  initialValues?: Partial<PatientFormValues>;
+  initialValues?: Partial<PatientFormValues & { clientNum?: string }>;
   title?: string;
+  isEdit?: boolean;
 }
 
-export function PatientModal({ open, onClose, onSave, isPending, initialValues, title = "Nouveau patient" }: PatientModalProps) {
-  const [pathoSearch, setPathoSearch] = useState("");
+function buildDefaults(initialValues?: Partial<PatientFormValues & { clientNum?: string }>): PatientFormValues {
+  return {
+    nom: initialValues?.nom ?? "",
+    prenom: initialValues?.prenom ?? "",
+    dob: initialValues?.dob ?? "",
+    adresse: initialValues?.adresse ?? "",
+    tel: initialValues?.tel ?? "",
+    sexe: initialValues?.sexe ?? "",
+    medecinFamille: initialValues?.medecinFamille ?? "",
+    patho: initialValues?.patho ?? "",
+    psy: initialValues?.psy ?? "",
+    responsable: initialValues?.responsable ?? "",
+    casemanager2: initialValues?.casemanager2 ?? "",
+    demande: initialValues?.demande ?? "",
+    datePremierContact: initialValues?.datePremierContact ?? "",
+    dateEntree: initialValues?.dateEntree ?? new Date().toISOString().slice(0, 10),
+    agressivite: initialValues?.agressivite ?? 0,
+    article: initialValues?.article ?? "",
+    curatelle: initialValues?.curatelle ?? "",
+    remarques: initialValues?.remarques ?? "",
+    board: initialValues?.board ?? "PréAdmission",
+  };
+}
+
+export function PatientModal({ open, onClose, onSave, isPending, initialValues, title = "Nouveau patient", isEdit = false }: PatientModalProps) {
+  const [pathoSearch, setPathoSearch] = useState(initialValues?.patho ?? "");
   const [pathoDropdownOpen, setPathoDropdownOpen] = useState(false);
 
   const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
   const psychiatrists: string[] = (settings as any)?.psychiatrists ?? [];
   const casemanagers: string[] = (settings as any)?.casemanagers ?? [];
+  const medecinsfamille: string[] = (settings as any)?.medecinsfamille ?? [];
   const articles: string[] = (settings as any)?.articles ?? [];
   const curatelles: string[] = (settings as any)?.curatelles ?? [];
 
   const form = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
-    defaultValues: {
-      clientNum: initialValues?.clientNum ?? "",
-      nom: initialValues?.nom ?? "",
-      prenom: initialValues?.prenom ?? "",
-      dob: initialValues?.dob ?? "",
-      adresse: initialValues?.adresse ?? "",
-      tel: initialValues?.tel ?? "",
-      sexe: initialValues?.sexe ?? "",
-      medecinFamille: initialValues?.medecinFamille ?? "",
-      patho: initialValues?.patho ?? "",
-      psy: initialValues?.psy ?? "",
-      responsable: initialValues?.responsable ?? "",
-      casemanager2: initialValues?.casemanager2 ?? "",
-      demande: initialValues?.demande ?? "",
-      datePremierContact: initialValues?.datePremierContact ?? "",
-      dateEntree: initialValues?.dateEntree ?? new Date().toISOString().slice(0, 10),
-      agressivite: initialValues?.agressivite ?? 0,
-      article: initialValues?.article ?? "",
-      curatelle: initialValues?.curatelle ?? "",
-      remarques: initialValues?.remarques ?? "",
-      board: initialValues?.board ?? "PréAdmission",
-    },
+    defaultValues: buildDefaults(initialValues),
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset(buildDefaults(initialValues));
+      setPathoSearch(initialValues?.patho ?? "");
+      setPathoDropdownOpen(false);
+    }
+  }, [open]);
 
   const pathoValue = form.watch("patho");
   const pathoInfo = CIM10_DATA.find((d) => d.c === pathoValue);
@@ -107,7 +119,10 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
   }, [form]);
 
   function onSubmit(values: PatientFormValues) {
-    onSave(values);
+    const payload = isEdit
+      ? { ...values, clientNum: initialValues?.clientNum }
+      : values;
+    onSave(payload);
   }
 
   return (
@@ -118,14 +133,15 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
-              <FormField control={form.control} name="clientNum" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>N° Client</FormLabel>
-                  <FormControl><Input data-testid="input-client-num" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
+
+            {isEdit && initialValues?.clientNum && (
+              <div className="space-y-1">
+                <Label>N° Client (auto-généré)</Label>
+                <Input value={initialValues.clientNum} readOnly className="bg-muted text-muted-foreground" />
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
               <FormField control={form.control} name="nom" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nom</FormLabel>
@@ -253,13 +269,43 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
               <FormField control={form.control} name="medecinFamille" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Médecin de famille</FormLabel>
-                  <FormControl><Input data-testid="input-medecin" {...field} /></FormControl>
+                  {medecinsfamille.length > 0 ? (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-medecin">
+                          <SelectValue placeholder="Choisir..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {medecinsfamille.map((m) => (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <FormControl><Input data-testid="input-medecin" {...field} /></FormControl>
+                  )}
                 </FormItem>
               )} />
               <FormField control={form.control} name="casemanager2" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Case Manager 2</FormLabel>
-                  <FormControl><Input data-testid="input-cm2" {...field} /></FormControl>
+                  {casemanagers.length > 0 ? (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-cm2">
+                          <SelectValue placeholder="Choisir..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {casemanagers.map((c) => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <FormControl><Input data-testid="input-cm2" {...field} /></FormControl>
+                  )}
                 </FormItem>
               )} />
             </div>
@@ -362,7 +408,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
               )} />
               <FormField control={form.control} name="board" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Board initial</FormLabel>
+                  <FormLabel>Board</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-board">

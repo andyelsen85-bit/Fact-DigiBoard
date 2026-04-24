@@ -12,7 +12,7 @@ interface PatientListProps {
 export function PatientList({ board, search, selectedId, onSelect }: PatientListProps) {
   const params = board !== "Tous" ? { board, search: search || undefined } : { search: search || undefined };
   const { data: patients = [], isLoading } = useListPatients(
-    { params },
+    params,
     { query: { queryKey: getListPatientsQueryKey(params) } }
   );
 
