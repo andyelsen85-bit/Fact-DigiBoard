@@ -5,7 +5,7 @@ import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
 
-const SETTING_KEYS = ["psychiatrists", "casemanagers", "articles", "curatelles"];
+const SETTING_KEYS = ["psychiatrists", "casemanagers", "medecinsfamille", "articles", "curatelles", "icd10favorites"];
 
 async function ensureDefaults() {
   for (const key of SETTING_KEYS) {

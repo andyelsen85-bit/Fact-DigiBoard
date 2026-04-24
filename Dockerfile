@@ -23,7 +23,6 @@ FROM deps AS builder
 WORKDIR /app
 COPY . .
 
-RUN pnpm --filter @workspace/db            run build
 RUN pnpm --filter @workspace/api-zod       run build || true
 RUN pnpm --filter @workspace/api-client-react run build || true
 
@@ -50,7 +49,6 @@ COPY artifacts/factboard/package.json       artifacts/factboard/
 
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
-COPY --from=builder /app/lib/db/dist                          lib/db/dist
 COPY --from=builder /app/artifacts/api-server/dist            artifacts/api-server/dist
 COPY --from=builder /app/artifacts/factboard/dist/public      artifacts/api-server/dist/public
 

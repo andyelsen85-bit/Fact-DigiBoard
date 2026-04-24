@@ -87,6 +87,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
   const medecinsfamille: string[] = (settings as any)?.medecinsfamille ?? [];
   const articles: string[] = (settings as any)?.articles ?? [];
   const curatelles: string[] = (settings as any)?.curatelles ?? [];
+  const icd10favorites: string[] = (settings as any)?.icd10favorites ?? [];
 
   const form = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
@@ -103,6 +104,10 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
 
   const pathoValue = form.watch("patho");
   const pathoInfo = CIM10_DATA.find((d) => d.c === pathoValue);
+
+  const favoriteCim10 = icd10favorites
+    .map((code) => CIM10_DATA.find((d) => d.c === code))
+    .filter(Boolean) as typeof CIM10_DATA;
 
   const filteredCim10 = pathoSearch.length >= 1
     ? CIM10_DATA.filter(
@@ -369,9 +374,30 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                   }}
                   onFocus={() => setPathoDropdownOpen(true)}
                 />
-                {pathoDropdownOpen && filteredCim10.length > 0 && (
-                  <div className="absolute z-50 top-full left-0 right-0 bg-popover border rounded-md shadow-md mt-1 overflow-hidden">
-                    {filteredCim10.map((item) => (
+                {pathoDropdownOpen && (filteredCim10.length > 0 || (pathoSearch.length === 0 && favoriteCim10.length > 0)) && (
+                  <div className="absolute z-50 top-full left-0 right-0 bg-popover border rounded-md shadow-md mt-1 overflow-hidden max-h-64 overflow-y-auto">
+                    {pathoSearch.length === 0 && favoriteCim10.length > 0 && (
+                      <>
+                        <div className="px-3 py-1 text-xs font-medium text-muted-foreground bg-muted/40 border-b">
+                          Pathologies favorites
+                        </div>
+                        {favoriteCim10.map((item) => (
+                          <button
+                            key={item.c}
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex gap-2"
+                            onMouseDown={() => handlePathoSelect(item.c)}
+                          >
+                            <span className="font-mono text-xs font-medium text-muted-foreground w-10 shrink-0">{item.c}</span>
+                            <span className="truncate">{item.t}</span>
+                          </button>
+                        ))}
+                        <div className="px-3 py-1 text-xs text-muted-foreground bg-muted/20 border-t border-b italic">
+                          Tapez pour rechercher dans tous les codes ICD-10…
+                        </div>
+                      </>
+                    )}
+                    {pathoSearch.length > 0 && filteredCim10.map((item) => (
                       <button
                         key={item.c}
                         type="button"

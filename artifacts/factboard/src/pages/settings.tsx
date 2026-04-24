@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -12,6 +12,117 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { CIM10_DATA } from "@/data/cim10";
+
+function ICD10FavoritesList() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [search, setSearch] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
+  const updateSetting = useUpdateSetting();
+
+  const codes: string[] = (settings as any)?.icd10favorites ?? [];
+
+  const filtered = search.length >= 1
+    ? CIM10_DATA.filter(
+        (d) =>
+          d.c.toLowerCase().includes(search.toLowerCase()) ||
+          d.t.toLowerCase().includes(search.toLowerCase())
+      ).filter((d) => !codes.includes(d.c)).slice(0, 8)
+    : [];
+
+  function handleAdd(code: string) {
+    if (codes.includes(code)) return;
+    const updated = [...codes, code];
+    updateSetting.mutate(
+      { key: "icd10favorites", data: { value: JSON.stringify(updated) } },
+      {
+        onSuccess: () => {
+          setSearch("");
+          setDropdownOpen(false);
+          queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey() });
+        },
+        onError: () => toast({ title: "Erreur", description: "Impossible d'ajouter", variant: "destructive" }),
+      }
+    );
+  }
+
+  function handleRemove(code: string) {
+    const updated = codes.filter((c) => c !== code);
+    updateSetting.mutate(
+      { key: "icd10favorites", data: { value: JSON.stringify(updated) } },
+      {
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey() }),
+        onError: () => toast({ title: "Erreur", description: "Impossible de supprimer", variant: "destructive" }),
+      }
+    );
+  }
+
+  return (
+    <div className="bg-card border rounded-lg p-4">
+      <h3 className="text-sm font-medium mb-1">Pathologies ICD-10 (favoris)</h3>
+      <p className="text-xs text-muted-foreground mb-3">
+        Les codes ajoutés ici apparaissent en premier dans le champ Pathologie du formulaire patient.
+      </p>
+      <div className="space-y-1.5 mb-3">
+        {codes.length === 0 && (
+          <p className="text-xs text-muted-foreground py-2">Aucun code favori</p>
+        )}
+        {codes.map((code) => {
+          const info = CIM10_DATA.find((d) => d.c === code);
+          return (
+            <div key={code} className="flex items-center justify-between px-3 py-1.5 rounded bg-muted/40 text-sm">
+              <div className="flex gap-2 items-baseline min-w-0">
+                <span className="font-mono text-xs font-medium shrink-0 text-muted-foreground">{code}</span>
+                <span className="truncate">{info?.t ?? code}</span>
+              </div>
+              <button
+                className="text-xs text-destructive hover:text-destructive/80 shrink-0 ml-2"
+                data-testid={`button-remove-icd10-${code}`}
+                onClick={() => handleRemove(code)}
+              >
+                Supprimer
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      <div className="relative" ref={dropdownRef}>
+        <Input
+          placeholder="Rechercher un code ICD-10..."
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setDropdownOpen(true); }}
+          onFocus={() => setDropdownOpen(true)}
+          onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
+          className="text-sm"
+          data-testid="input-new-icd10"
+        />
+        {dropdownOpen && filtered.length > 0 && (
+          <div className="absolute z-50 top-full left-0 right-0 bg-popover border rounded-md shadow-md mt-1 overflow-hidden max-h-56 overflow-y-auto">
+            {filtered.map((item) => (
+              <button
+                key={item.c}
+                type="button"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex gap-2"
+                onMouseDown={() => handleAdd(item.c)}
+              >
+                <span className="font-mono text-xs font-medium text-muted-foreground w-10 shrink-0">{item.c}</span>
+                <span className="truncate">{item.t}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {dropdownOpen && search.length >= 1 && filtered.length === 0 && (
+          <div className="absolute z-50 top-full left-0 right-0 bg-popover border rounded-md shadow-md mt-1 px-3 py-2 text-sm text-muted-foreground">
+            Aucun résultat
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem("auth-token");
@@ -363,6 +474,11 @@ export default function SettingsPage() {
               <SettingsList settingKey="articles" label="Articles légaux" />
               <SettingsList settingKey="curatelles" label="Curatelle / Tutelle" />
             </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Pathologies</h3>
+            <ICD10FavoritesList />
           </div>
 
           <div>
