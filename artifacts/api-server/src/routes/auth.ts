@@ -2,11 +2,45 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { db, usersTable, sessionsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
 const SESSION_DAYS = 30;
+
+router.get("/auth/setup-needed", async (_req, res) => {
+  const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(usersTable);
+  res.json({ needed: Number(count) === 0 });
+});
+
+router.post("/auth/setup", async (req, res) => {
+  const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(usersTable);
+  if (Number(count) > 0) {
+    res.status(403).json({ error: "Setup already completed" });
+    return;
+  }
+
+  const { username, password } = req.body as { username: string; password: string };
+  if (!username || username.length < 2) {
+    res.status(400).json({ error: "Le nom d'utilisateur doit comporter au moins 2 caractères" });
+    return;
+  }
+  if (!password || password.length < 6) {
+    res.status(400).json({ error: "Le mot de passe doit comporter au moins 6 caractères" });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  await db.insert(usersTable).values({
+    username,
+    email: `${username}@digiboard.local`,
+    passwordHash,
+    role: "admin",
+    mustChangePassword: false,
+  });
+
+  res.json({ message: "Admin account created" });
+});
 
 router.post("/auth/login", async (req, res) => {
   const { username, password } = req.body as { username: string; password: string };

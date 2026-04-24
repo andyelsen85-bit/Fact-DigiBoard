@@ -4,7 +4,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
+const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +33,7 @@ export default function LoginPage() {
   const { user, isLoading, checkAuth } = useAuth();
   const { toast } = useToast();
   const loginMutation = useLogin();
+  const [checkingSetup, setCheckingSetup] = useState(true);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -39,6 +42,14 @@ export default function LoginPage() {
       password: "",
     },
   });
+
+  useEffect(() => {
+    fetch(`${API_BASE}/auth/setup-needed`)
+      .then((r) => r.json())
+      .then((d) => { if (d.needed) setLocation("/setup"); })
+      .catch(() => {})
+      .finally(() => setCheckingSetup(false));
+  }, [setLocation]);
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -75,7 +86,7 @@ export default function LoginPage() {
     );
   }
 
-  if (isLoading) {
+  if (checkingSetup || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

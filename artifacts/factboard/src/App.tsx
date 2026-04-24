@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
+import SetupPage from "@/pages/setup";
 import ChangePasswordPage from "@/pages/change-password";
 import BoardPage from "@/pages/board";
 import SettingsPage from "@/pages/settings";
@@ -39,6 +40,7 @@ function Router() {
     <Switch>
       <Route path="/" component={() => <Redirect to="/board" />} />
       <Route path="/login" component={LoginPage} />
+      <Route path="/setup" component={SetupPage} />
       <Route path="/change-password" component={ChangePasswordPage} />
       <Route path="/board">
         {() => <ProtectedRoute component={BoardPage} />}
