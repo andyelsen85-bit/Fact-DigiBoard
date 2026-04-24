@@ -3,8 +3,9 @@ import { eq } from "drizzle-orm";
 
 export async function seedDatabase() {
   const defaults: Record<string, string[]> = {
-    psychiatrists: [],
     casemanagers: [],
+    psychiatrists: [],
+    medecinsfamille: [],
     articles: ["Article 71", "Article 72", "Article 73", "CAPL"],
     curatelles: ["Curatelle totale", "Curatelle partielle", "Tutelle", "Sauvegarde de justice"],
   };

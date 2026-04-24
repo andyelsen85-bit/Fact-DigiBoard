@@ -20,5 +20,5 @@ export function BoardBadge({ board, className = "" }: BoardBadgeProps) {
   );
 }
 
-export const BOARDS = ["FactBoard", "RecoveryBoard", "PréAdmission", "Irrecevable", "Clôturé"] as const;
+export const BOARDS = ["PréAdmission", "FactBoard", "RecoveryBoard", "Irrecevable", "Clôturé"] as const;
 export type Board = typeof BOARDS[number];

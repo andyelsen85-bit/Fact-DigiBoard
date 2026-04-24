@@ -92,17 +92,22 @@ function UserModal({
   isPending,
   initial,
   title,
+  showPassword,
 }: {
   open: boolean;
   onClose: () => void;
-  onSave: (values: { username: string; email: string; role: string }) => void;
+  onSave: (values: { username: string; email: string; role: string; password?: string }) => void;
   isPending?: boolean;
   initial?: { username?: string; email?: string | null; role?: string };
   title: string;
+  showPassword?: boolean;
 }) {
   const [username, setUsername] = useState(initial?.username ?? "");
   const [email, setEmail] = useState(initial?.email ?? "");
   const [role, setRole] = useState(initial?.role ?? "user");
+  const [password, setPassword] = useState("");
+
+  const canSave = !!username.trim() && (!showPassword || password.length >= 6);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -131,12 +136,24 @@ function UserModal({
               </SelectContent>
             </Select>
           </div>
+          {showPassword && (
+            <div className="space-y-1">
+              <Label>Mot de passe initial <span className="text-muted-foreground font-normal">(min. 6 caractères)</span></Label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="L'utilisateur devra le changer à la connexion"
+                data-testid="input-user-password"
+              />
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Annuler</Button>
           <Button
-            onClick={() => onSave({ username, email, role })}
-            disabled={isPending || !username.trim()}
+            onClick={() => onSave({ username, email, role, ...(showPassword ? { password } : {}) })}
+            disabled={isPending || !canSave}
             data-testid="button-save-user"
           >
             {isPending ? "Enregistrement..." : "Enregistrer"}
@@ -161,18 +178,14 @@ export default function SettingsPage() {
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
 
-  function handleCreateUser(values: { username: string; email: string; role: string }) {
+  function handleCreateUser(values: { username: string; email: string; role: string; password?: string }) {
     createUser.mutate(
-      { data: { username: values.username, email: values.email, role: values.role } },
+      { data: { username: values.username, email: values.email, role: values.role, password: values.password } },
       {
-        onSuccess: (data) => {
+        onSuccess: () => {
           setShowCreateUser(false);
           queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
-          const tempPwd = (data as any).tempPassword;
-          toast({
-            title: "Utilisateur créé",
-            description: tempPwd ? `Mot de passe temporaire : ${tempPwd}` : undefined,
-          });
+          toast({ title: "Utilisateur créé", description: "L'utilisateur devra changer son mot de passe à la première connexion." });
         },
         onError: () => toast({ title: "Erreur", description: "Impossible de créer l'utilisateur", variant: "destructive" }),
       }
@@ -236,11 +249,24 @@ export default function SettingsPage() {
         <div className="max-w-4xl mx-auto space-y-6">
           <h2 className="text-xl font-semibold">Paramètres</h2>
 
-          <div className="grid grid-cols-2 gap-4">
-            <SettingsList settingKey="psychiatrists" label="Psychiatres" />
-            <SettingsList settingKey="casemanagers" label="Case Managers" />
-            <SettingsList settingKey="articles" label="Articles légaux" />
-            <SettingsList settingKey="curatelles" label="Curatelle / Tutelle" />
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Listes des intervenants</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <SettingsList settingKey="casemanagers" label="Case Manager" />
+              <SettingsList settingKey="psychiatrists" label="Psychiatre" />
+              <SettingsList settingKey="medecinsfamille" label="Médecin de famille" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              La liste <strong>Case Manager 2</strong> utilise les mêmes entrées que <strong>Case Manager</strong>.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Autres listes</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <SettingsList settingKey="articles" label="Articles légaux" />
+              <SettingsList settingKey="curatelles" label="Curatelle / Tutelle" />
+            </div>
           </div>
 
           {user?.role === "admin" && (
@@ -311,6 +337,7 @@ export default function SettingsPage() {
         onSave={handleCreateUser}
         isPending={createUser.isPending}
         title="Créer un utilisateur"
+        showPassword
       />
 
       <UserModal

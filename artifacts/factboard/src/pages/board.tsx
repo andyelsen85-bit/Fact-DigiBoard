@@ -10,13 +10,16 @@ import { StatsView } from "@/components/StatsView";
 import { ActView } from "@/components/ActView";
 import { useToast } from "@/hooks/use-toast";
 
-const NAV_ITEMS = [
+const BOARD_NAV = [
   { label: "Tous", value: "Tous" },
+  { label: "Pré-Admission", value: "PréAdmission" },
   { label: "FactBoard", value: "FactBoard" },
   { label: "RecoveryBoard", value: "RecoveryBoard" },
-  { label: "Pré-Admission", value: "PréAdmission" },
   { label: "Irrecevable", value: "Irrecevable" },
   { label: "Clôturé", value: "Clôturé" },
+];
+
+const TOOL_NAV = [
   { label: "ACT", value: "ACT" },
   { label: "Statistiques", value: "Statistiques" },
 ];
@@ -60,7 +63,7 @@ export default function BoardPage() {
             Digi<span className="font-light">Board</span>
           </h1>
           <nav className="flex items-center gap-0.5">
-            {NAV_ITEMS.map((item) => (
+            {BOARD_NAV.map((item) => (
               <button
                 key={item.value}
                 data-testid={`nav-${item.value}`}
@@ -69,12 +72,22 @@ export default function BoardPage() {
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
-                onClick={() => {
-                  setActiveBoard(item.value);
-                  if (item.value !== "ACT" && item.value !== "Statistiques") {
-                    setSelectedPatientId(null);
-                  }
-                }}
+                onClick={() => { setActiveBoard(item.value); setSelectedPatientId(null); }}
+              >
+                {item.label}
+              </button>
+            ))}
+            <div className="w-px h-4 bg-border mx-1 shrink-0" />
+            {TOOL_NAV.map((item) => (
+              <button
+                key={item.value}
+                data-testid={`nav-${item.value}`}
+                className={`px-2.5 py-1.5 rounded text-xs font-medium transition-colors ${
+                  activeBoard === item.value
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+                onClick={() => setActiveBoard(item.value)}
               >
                 {item.label}
               </button>

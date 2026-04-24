@@ -51,6 +51,7 @@ export interface CreateUserBody {
   /** @nullable */
   email?: string | null;
   role: string;
+  password?: string;
 }
 
 export interface UpdateUserBody {

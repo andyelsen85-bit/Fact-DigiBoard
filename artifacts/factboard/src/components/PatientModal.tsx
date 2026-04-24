@@ -310,7 +310,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
             </div>
 
             <div className="space-y-1">
-              <Label>Pathologie (CIM-10)</Label>
+              <Label>Pathologie (ICD-10)</Label>
               <div className="relative">
                 <Input
                   data-testid="input-patho-search"

@@ -79,7 +79,32 @@ router.delete("/patients/:id", requireAuth, async (req, res) => {
   res.json({ message: "Deleted" });
 });
 
-router.post("/patients/:id/move-board", requireAuth, async (req, res) => {
+router.patch("/patients/:id/move-board", requireAuth, async (req, res) => {
+  const id = Number(req.params["id"]);
+  const { board, date } = req.body as { board: string; date?: string };
+  const today = date ?? new Date().toISOString().slice(0, 10);
+
+  const [updated] = await db.update(patientsTable)
+    .set({ board, boardEntryDate: today, updatedAt: new Date() })
+    .where(eq(patientsTable.id, id))
+    .returning();
+
+  if (!updated) {
+    res.status(404).json({ error: "Patient not found" });
+    return;
+  }
+
+  await db.insert(historyEntriesTable).values({
+    patientId: id,
+    date: today,
+    action: `Déplacé vers ${board}`,
+    boardTo: board,
+  });
+
+  res.json(updated);
+});
+
+router.patch("/patients/:id/board", requireAuth, async (req, res) => {
   const id = Number(req.params["id"]);
   const { board, date } = req.body as { board: string; date?: string };
   const today = date ?? new Date().toISOString().slice(0, 10);

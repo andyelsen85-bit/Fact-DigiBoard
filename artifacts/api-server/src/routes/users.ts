@@ -20,14 +20,17 @@ router.get("/users", requireAuth, requireAdmin, async (_req, res) => {
 });
 
 router.post("/users", requireAuth, requireAdmin, async (req, res) => {
-  const { username, email, role } = req.body as { username: string; email?: string; role?: string };
+  const { username, email, role, password } = req.body as { username: string; email?: string; role?: string; password?: string };
   if (!username) {
     res.status(400).json({ error: "Username is required" });
     return;
   }
+  if (!password || password.length < 6) {
+    res.status(400).json({ error: "Le mot de passe doit comporter au moins 6 caractères" });
+    return;
+  }
 
-  const tempPassword = crypto.randomBytes(8).toString("hex");
-  const passwordHash = await bcrypt.hash(tempPassword, 12);
+  const passwordHash = await bcrypt.hash(password, 12);
 
   const [user] = await db.insert(usersTable).values({
     username,
@@ -44,7 +47,7 @@ router.post("/users", requireAuth, requireAdmin, async (req, res) => {
     createdAt: usersTable.createdAt,
   });
 
-  res.status(201).json({ ...user, tempPassword });
+  res.status(201).json(user);
 });
 
 router.put("/users/:id", requireAuth, requireAdmin, async (req, res) => {
