@@ -149,7 +149,17 @@ function SpiderPanel({ title, subtitle, data, questions, domains, color, yMax, q
           <PolarGrid gridType="polygon" stroke="#e5e7eb" />
           <PolarAngleAxis
             dataKey="label"
-            tick={{ fontSize: 10, fill: "#6b7280" }}
+            tick={(props: any) => {
+              const { x, y, textAnchor, payload } = props;
+              const idx = radarData.findIndex((d) => d.label === payload.value);
+              const domainIdx = Math.floor(Math.max(idx, 0) / 3);
+              const fill = domains[domainIdx]?.color ?? "#6b7280";
+              return (
+                <text x={x} y={y} textAnchor={textAnchor} fill={fill} fontSize={10} fontWeight={600}>
+                  {payload.value}
+                </text>
+              );
+            }}
           />
           <PolarRadiusAxis
             domain={[0, yMax]}
