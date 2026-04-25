@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, patientsTable, historyEntriesTable, irockEvaluationsTable, honosEvaluationsTable, actNotesTable, actRegionsTable } from "@workspace/db";
-import { isNull, sql } from "drizzle-orm";
+import { db, patientsTable, irockEvaluationsTable, honosEvaluationsTable, actNotesTable, actRegionsTable } from "@workspace/db";
+import { isNull, sql, eq, and, gte } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
@@ -98,15 +98,24 @@ router.get("/stats", requireAuth, async (req, res) => {
     ageCounts[key] = (ageCounts[key] ?? 0) + 1;
   }
 
-  const allIrock = await db.select().from(irockEvaluationsTable);
-  const irockCount = since
-    ? allIrock.filter((e) => e.date >= since).length
-    : allIrock.length;
+  // Join evaluations with patients so deleted patients are excluded.
+  const irockRows = await db
+    .select({ date: irockEvaluationsTable.date })
+    .from(irockEvaluationsTable)
+    .innerJoin(patientsTable, eq(irockEvaluationsTable.patientId, patientsTable.id))
+    .where(since
+      ? and(isNull(patientsTable.deletedAt), gte(irockEvaluationsTable.date, since))
+      : isNull(patientsTable.deletedAt));
+  const irockCount = irockRows.length;
 
-  const allHonos = await db.select().from(honosEvaluationsTable);
-  const honosCount = since
-    ? allHonos.filter((e) => e.date >= since).length
-    : allHonos.length;
+  const honosRows = await db
+    .select({ date: honosEvaluationsTable.date })
+    .from(honosEvaluationsTable)
+    .innerJoin(patientsTable, eq(honosEvaluationsTable.patientId, patientsTable.id))
+    .where(since
+      ? and(isNull(patientsTable.deletedAt), gte(honosEvaluationsTable.date, since))
+      : isNull(patientsTable.deletedAt));
+  const honosCount = honosRows.length;
 
   const regions = await db.select().from(actRegionsTable);
   const regionMap: Record<number, string> = {};
