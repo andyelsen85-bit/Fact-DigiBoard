@@ -56,18 +56,6 @@ interface ChartPanelProps {
   qCount: number;
 }
 
-function SummaryDot({ cx, cy, value, color }: { cx?: number; cy?: number; value?: number; color?: string }) {
-  if (cx === undefined || cy === undefined) return null;
-  return (
-    <g>
-      <circle cx={cx} cy={cy} r={6} fill={color} stroke="#fff" strokeWidth={2} />
-      <text x={cx} y={cy - 10} textAnchor="middle" fontSize={10} fontWeight={700} fill={color}>
-        {value}
-      </text>
-    </g>
-  );
-}
-
 function ChartPanel({ title, data, questions, color, yLabel, yMax, qCount }: ChartPanelProps) {
   if (data.length < 1) {
     return (
@@ -79,49 +67,29 @@ function ChartPanel({ title, data, questions, color, yLabel, yMax, qCount }: Cha
   }
 
   const totalMax = yMax * qCount;
+  const lastEntry = data[data.length - 1];
+  const lastTotal = lastEntry?.total ?? 0;
+  const lastDate = lastEntry?.date ?? "";
 
   return (
     <div className="bg-card border rounded-lg p-4 space-y-4">
-      <h4 className="text-sm font-medium">{title}</h4>
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-medium">{title}</h4>
 
-      {/* ─── Summary total score row ─── */}
-      <div className="border rounded-lg p-3 bg-muted/20">
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color }}>
-            Score total / {totalMax}
-          </p>
-          <div className="flex gap-2">
-            {data.map((d, i) => (
-              <span
-                key={i}
-                className="text-xs font-mono font-bold px-2 py-0.5 rounded border"
-                style={{ color, borderColor: color, background: `${color}12` }}
-              >
-                {d.total}/{totalMax}
-              </span>
-            ))}
-          </div>
+        {/* ─── Last score highlight ─── */}
+        <div
+          className="flex items-baseline gap-1.5 px-3 py-1.5 rounded-lg border"
+          style={{ borderColor: color, background: `${color}10` }}
+        >
+          <span
+            className="text-2xl font-bold font-mono leading-none"
+            style={{ color }}
+          >
+            {lastTotal}
+          </span>
+          <span className="text-sm text-muted-foreground font-mono">/ {totalMax}</span>
+          <span className="text-xs text-muted-foreground ml-1">{lastDate}</span>
         </div>
-        <ResponsiveContainer width="100%" height={90}>
-          <LineChart data={data} margin={{ top: 16, right: 20, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-            <YAxis domain={[0, totalMax]} tick={{ fontSize: 10 }} width={36} />
-            <Tooltip
-              formatter={(v: any) => [`${v} / ${totalMax}`, "Score total"]}
-              labelFormatter={(l) => `Date: ${l}`}
-              contentStyle={{ fontSize: 11 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="total"
-              stroke={color}
-              strokeWidth={3}
-              dot={(props: any) => <SummaryDot {...props} color={color} />}
-              activeDot={{ r: 7 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
       </div>
 
       {/* ─── Per-question rows ─── */}
