@@ -218,6 +218,9 @@ function ICD10ManagementTable() {
                 </div>
               </div>
               {entry.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{entry.description}</p>}
+              <p className={`text-xs mt-1 line-clamp-2 ${entry.risks ? "text-[#7a0000]" : "text-muted-foreground italic"}`}>
+                {entry.risks ? `Risques : ${entry.risks}` : "Aucun risque clinique identifié"}
+              </p>
             </div>
           ))}
           </div>
