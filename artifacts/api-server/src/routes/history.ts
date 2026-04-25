@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, historyEntriesTable } from "@workspace/db";
+import { db, historyEntriesTable, patientsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 
@@ -30,6 +30,21 @@ async function updateHistoryEntryHandler(req: any, res: any) {
     res.status(404).json({ error: "Entry not found" });
     return;
   }
+
+  // If the date changed, check whether this is the most recent history entry.
+  // If so, sync boardEntryDate on the patient so the header stays accurate.
+  if (date !== undefined) {
+    const allEntries = await db.select().from(historyEntriesTable)
+      .where(eq(historyEntriesTable.patientId, updated.patientId))
+      .orderBy(historyEntriesTable.date);
+    const mostRecent = allEntries[allEntries.length - 1];
+    if (mostRecent && mostRecent.id === entryId) {
+      await db.update(patientsTable)
+        .set({ boardEntryDate: date, updatedAt: new Date() })
+        .where(eq(patientsTable.id, updated.patientId));
+    }
+  }
+
   res.json(updated);
 }
 

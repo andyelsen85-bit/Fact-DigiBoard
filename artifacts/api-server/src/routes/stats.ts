@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, patientsTable, irockEvaluationsTable, honosEvaluationsTable, actNotesTable, actRegionsTable } from "@workspace/db";
-import { isNull, eq } from "drizzle-orm";
+import { db, patientsTable, historyEntriesTable, irockEvaluationsTable, honosEvaluationsTable, actNotesTable, actRegionsTable } from "@workspace/db";
+import { isNull, inArray } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
@@ -49,16 +49,43 @@ router.get("/stats", requireAuth, async (req, res) => {
 
   const today = new Date();
 
+  // Load all history entries for active patients in one query, then derive
+  // the board entry date from the most recent history entry (not boardEntryDate,
+  // which may be stale if history dates were manually edited).
+  const activePatientIds = all
+    .filter((p) => activeBoards.includes(p.board))
+    .map((p) => p.id);
+
+  const allHistory = activePatientIds.length > 0
+    ? await db.select().from(historyEntriesTable)
+        .where(inArray(historyEntriesTable.patientId, activePatientIds))
+    : [];
+
+  // Group history by patientId and find the most recent entry date per patient
+  const latestEntryDateByPatient: Record<number, string> = {};
+  for (const entry of allHistory) {
+    const current = latestEntryDateByPatient[entry.patientId];
+    if (!current || entry.date > current) {
+      latestEntryDateByPatient[entry.patientId] = entry.date;
+    }
+  }
+
   const avgDurations: Record<string, number> = {};
   for (const board of activeBoards) {
-    const pts = all.filter((p) => p.board === board && p.boardEntryDate);
+    const pts = all.filter((p) => p.board === board);
     if (pts.length === 0) { avgDurations[board] = 0; continue; }
+    let counted = 0;
     const totalDays = pts.reduce((sum, p) => {
-      const entry = new Date(p.boardEntryDate!);
-      const days = Math.floor((today.getTime() - entry.getTime()) / (1000 * 3600 * 24));
-      return sum + (isNaN(days) ? 0 : days);
+      const entryDate = latestEntryDateByPatient[p.id] ?? p.boardEntryDate;
+      if (!entryDate) return sum;
+      const days = Math.floor(
+        (today.getTime() - new Date(entryDate).getTime()) / (1000 * 3600 * 24)
+      );
+      if (isNaN(days) || days < 0) return sum;
+      counted++;
+      return sum + days;
     }, 0);
-    avgDurations[board] = Math.round(totalDays / pts.length);
+    avgDurations[board] = counted > 0 ? Math.round(totalDays / counted) : 0;
   }
 
   const ageCounts: Record<string, number> = {};
