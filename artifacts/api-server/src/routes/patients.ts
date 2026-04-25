@@ -130,8 +130,22 @@ async function moveBoardHandler(req: any, res: any) {
   const { board, date } = req.body as { board: string; date?: string };
   const today = date ?? new Date().toISOString().slice(0, 10);
 
+  const [current] = await db.select().from(patientsTable).where(eq(patientsTable.id, id)).limit(1);
+  if (!current) {
+    res.status(404).json({ error: "Patient not found" });
+    return;
+  }
+
+  const extraFields: Record<string, unknown> = {};
+  if (board === "FactBoard" && !current.dateAdmission) {
+    extraFields.dateAdmission = today;
+  }
+  if (board === "Clôturé" && !current.dateFinSuivi) {
+    extraFields.dateFinSuivi = today;
+  }
+
   const [updated] = await db.update(patientsTable)
-    .set({ board, boardEntryDate: today, updatedAt: new Date() })
+    .set({ board, boardEntryDate: today, updatedAt: new Date(), ...extraFields })
     .where(eq(patientsTable.id, id))
     .returning();
 

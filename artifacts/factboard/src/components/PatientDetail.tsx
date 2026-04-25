@@ -383,6 +383,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
           {patient.datePremierContact && <InfoRow label="1er contact" value={patient.datePremierContact} />}
           {patient.dateEntree && <InfoRow label="Date d'entrée" value={patient.dateEntree} />}
           {patient.dateSortie && <InfoRow label="Date de sortie" value={patient.dateSortie} />}
+          {(patient as any).dateFinSuivi && <InfoRow label="Date fin de suivi" value={(patient as any).dateFinSuivi} />}
           {patient.demande && <InfoRow label="Motif de demande" value={patient.demande} col3 />}
           {patient.remarques && <InfoRow label="Remarques" value={patient.remarques} col3 />}
         </div>
@@ -415,6 +416,23 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
       {(board === "FactBoard" || isCloture) && (
         <div className="bg-card border rounded-lg p-4">
           <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Phase (FactBoard)</h3>
+          <div className="mb-3">
+            <label className="text-xs text-muted-foreground block mb-1">Date d'admission</label>
+            <input
+              type="date"
+              defaultValue={(patient as any).dateAdmission ?? ""}
+              className="w-full px-3 py-1.5 border rounded-md bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              onBlur={(e) => {
+                const val = e.target.value;
+                if (val !== ((patient as any).dateAdmission ?? "")) {
+                  updatePatient.mutate(
+                    { id: patientId, data: { dateAdmission: val || null } },
+                    { onSuccess: invalidatePatient }
+                  );
+                }
+              }}
+            />
+          </div>
           <Select
             value={patient.phase ?? ""}
             onValueChange={handlePhaseChange}

@@ -32,7 +32,6 @@ const patientSchema = z.object({
   casemanager2: z.string().optional(),
   demande: z.string().optional(),
   datePremierContact: z.string().optional(),
-  dateEntree: z.string().optional(),
   agressivite: z.number().min(0).max(3),
   article: z.string().optional(),
   curatelle: z.string().optional(),
@@ -69,7 +68,6 @@ function buildDefaults(initialValues?: Partial<PatientFormValues & { clientNum?:
     casemanager2: initialValues?.casemanager2 ?? "",
     demande: initialValues?.demande ?? "",
     datePremierContact: initialValues?.datePremierContact ?? "",
-    dateEntree: initialValues?.dateEntree ?? new Date().toISOString().slice(0, 10),
     agressivite: initialValues?.agressivite ?? 0,
     article: initialValues?.article ?? "",
     curatelle: initialValues?.curatelle ?? "",
@@ -446,17 +444,11 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <FormField control={form.control} name="datePremierContact" render={({ field }) => (
                 <FormItem>
                   <FormLabel>1er contact</FormLabel>
                   <FormControl><Input type="date" data-testid="input-premier-contact" {...field} /></FormControl>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="dateEntree" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Date d'entrée</FormLabel>
-                  <FormControl><Input type="date" data-testid="input-date-entree" {...field} /></FormControl>
                 </FormItem>
               )} />
               <FormField control={form.control} name="board" render={({ field }) => (

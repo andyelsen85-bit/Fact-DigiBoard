@@ -50,6 +50,13 @@
       "when": 1777140000000,
       "tag": "0006_add_pathos",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777150000000,
+      "tag": "0007_add_dates_admission_fin",
+      "breakpoints": true
     }
   ]
 }
