@@ -13,8 +13,8 @@ router.get("/patients/:id/history", requireAuth, async (req, res) => {
   res.json(entries);
 });
 
-router.put("/patients/:patientId/history/:entryId", requireAuth, async (req, res) => {
-  const entryId = Number(req.params["entryId"]);
+async function updateHistoryEntryHandler(req: any, res: any) {
+  const entryId = Number(req.params["entryId"] ?? req.params["historyId"]);
   const { date, action, boardTo } = req.body as { date?: string; action?: string; boardTo?: string };
 
   const [updated] = await db.update(historyEntriesTable)
@@ -31,6 +31,9 @@ router.put("/patients/:patientId/history/:entryId", requireAuth, async (req, res
     return;
   }
   res.json(updated);
-});
+}
+
+router.put("/patients/:patientId/history/:entryId", requireAuth, updateHistoryEntryHandler);
+router.patch("/patients/:id/history/:historyId", requireAuth, updateHistoryEntryHandler);
 
 export default router;

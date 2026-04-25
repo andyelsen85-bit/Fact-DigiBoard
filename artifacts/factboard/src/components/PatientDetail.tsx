@@ -695,11 +695,12 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                     type="date"
                     className="text-xs border rounded px-1 h-7 w-32 bg-background font-mono"
                     defaultValue={entry.date}
+                    key={`history-date-${entry.id}-${entry.date}`}
                     data-testid={`history-date-${entry.id}`}
                     onBlur={(e) => {
                       if (e.target.value !== entry.date) {
                         updateHistoryEntry.mutate(
-                          { patientId, entryId: entry.id, data: { date: e.target.value } },
+                          { id: patientId, historyId: entry.id, data: { date: e.target.value } },
                           { onSuccess: invalidateHistory }
                         );
                       }
