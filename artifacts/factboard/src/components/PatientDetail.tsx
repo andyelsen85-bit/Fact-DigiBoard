@@ -409,10 +409,14 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                       <span className="font-mono text-xs font-semibold text-muted-foreground">{code}</span>
                       {info && <span className="text-sm text-foreground">{info.title}</span>}
                     </div>
-                    {info && (info.description || info.risks) && (
-                      <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-                        {info.description && <div className="p-2 bg-muted/40 rounded text-xs text-muted-foreground">{info.description}</div>}
-                        {info.risks && <div className="p-2 bg-[#fdeaea] rounded text-xs text-[#7a0000]">Risques : {info.risks}</div>}
+                    {info && (
+                      <div className="mt-1.5 space-y-1.5">
+                        {info.description && (
+                          <div className="p-2 bg-muted/40 rounded text-xs text-muted-foreground">{info.description}</div>
+                        )}
+                        <div className={`p-2 rounded text-xs ${info.risks ? "bg-[#fdeaea] text-[#7a0000]" : "bg-muted/40 text-muted-foreground italic"}`}>
+                          {info.risks ? `Risques : ${info.risks}` : "Aucun risque clinique identifié"}
+                        </div>
                       </div>
                     )}
                   </div>
