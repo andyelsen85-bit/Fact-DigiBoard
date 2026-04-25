@@ -61,13 +61,14 @@ router.get("/stats", requireAuth, async (req, res) => {
         .where(inArray(historyEntriesTable.patientId, activePatientIds))
     : [];
 
-  // Group history by patientId and find the most recent entry date per patient
-  const latestEntryDateByPatient: Record<number, string> = {};
+  // Group history by patientId+boardTo, keep the most recent date for each combination.
+  // This lets us look up "when did patient X most recently arrive on board Y?"
+  const latestBoardEntryDate: Record<number, Record<string, string>> = {};
   for (const entry of allHistory) {
-    const current = latestEntryDateByPatient[entry.patientId];
-    if (!current || entry.date > current) {
-      latestEntryDateByPatient[entry.patientId] = entry.date;
-    }
+    if (!entry.boardTo) continue;
+    const byBoard = (latestBoardEntryDate[entry.patientId] ??= {});
+    const cur = byBoard[entry.boardTo];
+    if (!cur || entry.date > cur) byBoard[entry.boardTo] = entry.date;
   }
 
   const avgDurations: Record<string, number> = {};
@@ -76,7 +77,9 @@ router.get("/stats", requireAuth, async (req, res) => {
     if (pts.length === 0) { avgDurations[board] = 0; continue; }
     let counted = 0;
     const totalDays = pts.reduce((sum, p) => {
-      const entryDate = latestEntryDateByPatient[p.id] ?? p.boardEntryDate;
+      // Use the most recent arrival date for the patient's current board.
+      // Fall back to boardEntryDate (legacy) if no matching history entry.
+      const entryDate = latestBoardEntryDate[p.id]?.[p.board] ?? p.boardEntryDate;
       if (!entryDate) return sum;
       const days = Math.floor(
         (today.getTime() - new Date(entryDate).getTime()) / (1000 * 3600 * 24)
