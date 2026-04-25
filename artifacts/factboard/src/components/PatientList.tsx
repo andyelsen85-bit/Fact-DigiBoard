@@ -87,11 +87,13 @@ export function PatientList({ board, search, selectedId, onSelect }: PatientList
                 <span className="font-mono text-xs text-muted-foreground">{patient.clientNum}</span>
                 <BoardBadge board={patient.board} />
               </div>
-              <div className="flex items-center justify-between gap-1 mt-0.5">
+              <div className="flex items-center gap-1 mt-0.5">
                 {patient.psy && (
-                  <p className="text-xs text-muted-foreground truncate">{patient.psy}</p>
+                  <p className="text-xs text-muted-foreground truncate flex-1">{patient.psy}</p>
                 )}
-                <AggBadge level={patient.agressivite ?? 0} />
+                <span className="ml-auto shrink-0">
+                  <AggBadge level={patient.agressivite ?? 0} />
+                </span>
               </div>
             </div>
           </div>
