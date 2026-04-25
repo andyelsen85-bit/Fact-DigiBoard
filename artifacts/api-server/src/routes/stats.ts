@@ -49,32 +49,35 @@ router.get("/stats", requireAuth, async (req, res) => {
 
   const today = new Date();
 
-  // Calculate average days on current board per board using pure SQL.
-  // For each active patient, the effective entry date is:
-  //   1. The most recent history entry date where board_to = patient's current board
-  //   2. Falling back to board_entry_date if no matching history entry exists.
-  // This is computed entirely in the database to avoid JS type/comparison issues.
+  // Calculate average stay duration per board across all history entries.
+  //
+  // For every history entry where a non-deleted patient arrived on an active board:
+  //   - entry date  = h.date (when they arrived)
+  //   - exit date   = LEAD(h.date) over all entries for that patient ordered by
+  //                   date,id  (i.e. when they next moved anywhere)
+  //   - if no next entry the patient is still there → use CURRENT_DATE
+  //
+  // LEAD must be computed over ALL history entries for the patient (not pre-filtered
+  // to active boards), so a move to Clôturé correctly closes a FactBoard stay.
   const durationRows = await db.execute<{ board: string; avg_days: string }>(sql`
-    SELECT
-      p.board,
-      ROUND(AVG(CURRENT_DATE - effective_date::date))::text AS avg_days
-    FROM (
+    WITH all_entries AS (
       SELECT
-        p.id,
-        p.board,
-        COALESCE(
-          (SELECT MAX(h.date)
-           FROM history_entries h
-           WHERE h.patient_id = p.id
-             AND h.board_to = p.board),
-          p.board_entry_date
-        ) AS effective_date
-      FROM patients p
+        h.board_to,
+        h.date::date AS entry_date,
+        LEAD(h.date::date) OVER (
+          PARTITION BY h.patient_id
+          ORDER BY h.date::date, h.id
+        ) AS next_entry_date
+      FROM history_entries h
+      INNER JOIN patients p ON p.id = h.patient_id
       WHERE p.deleted_at IS NULL
-        AND p.board IN ('FactBoard', 'RecoveryBoard', 'PréAdmission')
-    ) p
-    WHERE p.effective_date IS NOT NULL
-    GROUP BY p.board
+    )
+    SELECT
+      board_to AS board,
+      ROUND(AVG(COALESCE(next_entry_date, CURRENT_DATE) - entry_date))::text AS avg_days
+    FROM all_entries
+    WHERE board_to IN ('FactBoard', 'RecoveryBoard', 'PréAdmission')
+    GROUP BY board_to
   `);
 
   const avgDurations: Record<string, number> = {
