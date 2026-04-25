@@ -42,13 +42,15 @@ Les patients sont répartis en **5 boards cliniques** représentant chaque étap
 ### Transitions entre boards
 Chaque déplacement est enregistré automatiquement avec la date et les boards source/destination. L'historique complet des transitions est consultable directement depuis la fiche du patient.
 
+Le passage vers **FactBoard** positionne automatiquement la `date d'admission`, et le passage vers **Clôturé** positionne automatiquement la `date de fin de suivi`. Ces dates restent éditables manuellement depuis la fiche.
+
 ---
 
 ## Gestion des patients
 
 ### Liste des patients
 La liste latérale affiche pour chaque patient :
-- **Ligne 1** : Nom & prénom + code ICD-10 (si renseigné)
+- **Ligne 1** : Nom & prénom + codes CIM-10 (si renseignés)
 - **Ligne 2** : Numéro client (`FACT-XXXX`) + badge de board
 - **Ligne 3** : Psychiatre référent + badge d'agressivité (si > 0)
 
@@ -58,7 +60,7 @@ Recherche en temps réel par nom, prénom, psychiatre ou numéro client. Le filt
 ### Création d'un patient
 - Numérotation automatique `FACT-XXXX` générée côté serveur
 - Formulaire complet avec toutes les informations générales, médicales et administratives
-- Recherche intégrée des codes ICD-10 par code ou libellé
+- Recherche et sélection de plusieurs codes CIM-10 par code ou libellé
 
 ### Déplacement entre boards
 Un patient peut être déplacé vers n'importe quel autre board depuis sa fiche. La transition est horodatée et versée dans l'historique.
@@ -84,7 +86,7 @@ Un patient peut être déplacé vers n'importe quel autre board depuis sa fiche.
 ### Informations médicales
 | Champ | Description |
 |-------|-------------|
-| Pathologie (ICD-10) | Diagnostic principal — recherche par code ou libellé CIM-10 |
+| Pathologies (CIM-10) | Diagnostics multiples — sélecteur multi-codes CIM-10 par code ou libellé |
 | Psychiatre | Sélection parmi la liste configurée dans les Paramètres |
 | Médecin de famille | Sélection parmi la liste configurée dans les Paramètres |
 | Agressivité | Niveau de 0 à 3 avec badge visuel coloré (vert → rouge) |
@@ -97,8 +99,9 @@ Un patient peut être déplacé vers n'importe quel autre board depuis sa fiche.
 | Article légal | Base juridique applicable |
 | Curatelle / Tutelle | Type de mesure de protection |
 | Date premier contact | Première prise en charge |
-| Date d'entrée | Entrée officielle dans le dispositif |
-| Date de sortie | Clôture du dossier |
+| Date d'admission | Auto-renseignée à l'entrée en FactBoard, éditable manuellement |
+| Date de fin de suivi | Auto-renseignée à la clôture du dossier, éditable manuellement |
+| Date de sortie | Clôture administrative du dossier |
 
 ### FactBoard — champs spécifiques
 | Champ | Description |
@@ -147,10 +150,10 @@ Indicateur de risque à 4 niveaux (0–3) affiché sous forme de badge coloré d
 ## Évaluations psychométriques
 
 ### iRock
-Évaluation du bien-être et de la progression vers le rétablissement. Composée de **10 questions** notées de 0 à 4. Les résultats sont enregistrés avec date et horodatage, et consultables sous forme de graphique longitudinal (global et par question).
+Évaluation du bien-être et de la progression vers le rétablissement. Composée de **12 questions** notées de 0 à 4. Les résultats sont enregistrés avec date, horodatage et auteur, et consultables sous forme de graphique longitudinal (global et par question). Un champ de notes libres est disponible par évaluation et par question.
 
 ### HoNOS (Health of the Nation Outcome Scales)
-Échelle clinique standardisée d'évaluation des outcomes de santé mentale. Composée de **12 questions** notées de 0 à 4. Les résultats sont enregistrés avec date et horodatage, et consultables sous forme de graphique longitudinal (global et par question).
+Échelle clinique standardisée d'évaluation des outcomes de santé mentale. Composée de **12 questions** notées de 0 à 4. Les résultats sont enregistrés avec date, horodatage et auteur, et consultables sous forme de graphique longitudinal (global et par question). Un champ de notes libres est disponible par évaluation et par question.
 
 ### Indicateurs KPI par patient
 Depuis la fiche patient, un tableau de bord analytique affiche :
@@ -182,16 +185,21 @@ Module dédié à la gestion des régions ACT (Assertive Community Treatment) :
 
 ## Statistiques
 
-Tableau de bord analytique global accessible depuis le menu principal :
+Tableau de bord analytique global accessible depuis le menu principal. Un filtre de période (1 mois / 6 mois / 12 mois / tout) est disponible sur toutes les métriques.
 
 | Indicateur | Description |
 |------------|-------------|
-| Total patients | Nombre total de patients actifs dans le système |
+| Total patients | Nombre total de patients dans la période sélectionnée |
+| Patients actifs | Patients sur FactBoard, RecoveryBoard ou PréAdmission |
 | Répartition par board | Distribution des patients sur les 5 boards |
 | Répartition par sexe | Proportion Homme / Femme |
+| Répartition par âge | Groupes décennaux (< 70 ans) et 70+ |
 | Répartition par agressivité | Nombre de patients par niveau (0–3) |
-| Pathologies fréquentes | Codes ICD-10 les plus représentés |
-| Durée moyenne par board | Temps moyen de séjour dans chaque board |
+| Pathologies fréquentes | Codes CIM-10 les plus représentés (multi-diagnostics pris en compte) |
+| Durée moyenne par board | Temps moyen de séjour dans chaque board actif |
+| Évaluations I•ROC | Nombre d'évaluations iRock dans la période |
+| Évaluations HoNOS | Nombre d'évaluations HoNOS dans la période |
+| Visites par lieu (ACT) | Nombre de notes ACT par région, triées par fréquence |
 
 ---
 
@@ -207,7 +215,7 @@ Les listes utilisées dans les formulaires patients sont gérables depuis les Pa
 | Articles légaux | Bases juridiques applicables |
 | Curatelles / Tutelles | Types de mesures de protection |
 
-### Codes ICD-10 personnalisés
+### Codes CIM-10 personnalisés
 - **Ajout** de codes CIM-10 personnalisés (code + libellé + description + risques)
 - **Modification** de tout code existant
 - **Suppression** d'un code
@@ -217,13 +225,13 @@ Les listes utilisées dans les formulaires patients sont gérables depuis les Pa
 - **Création** de comptes utilisateur avec rôle (Admin / Utilisateur)
 - **Modification** : nom, mot de passe, rôle
 - **Suppression** de comptes
-- **Forçage de changement de mot de passe** au premier login
+- **Forçage de changement de mot de passe** : un utilisateur nouvellement créé ou réinitialisé doit définir son mot de passe dès le premier login (sans avoir à fournir l'ancien)
 
 ### Corbeille
 Restauration des patients supprimés (suppression douce) vers leur dernier board connu.
 
 ### Sauvegarde & Restauration
-- **Export JSON** : téléchargement de l'intégralité des données (patients, historiques, évaluations iRock/HoNOS, notes, codes ICD-10, paramètres)
+- **Export JSON** : téléchargement de l'intégralité des données (patients, historiques, évaluations iRock/HoNOS, notes, codes CIM-10, paramètres)
 - **Import JSON** : restauration complète du système depuis un fichier de sauvegarde
 
 ---
@@ -257,15 +265,14 @@ pnpm install
 cp .env.example .env
 # Modifier DATABASE_URL et SESSION_SECRET dans .env
 
-# Appliquer le schéma de base de données
-pnpm --filter @workspace/db run push
-
 # Lancer l'API et le frontend en parallèle
 pnpm --filter @workspace/api-server run dev &
 pnpm --filter @workspace/factboard run dev
 ```
 
 L'application est accessible sur `http://localhost:18576`.
+
+> Au premier démarrage, les migrations sont appliquées automatiquement et la base de données est initialisée avec les codes CIM-10 et le compte administrateur par défaut.
 
 ### Production (Docker)
 
@@ -309,7 +316,7 @@ docker compose logs -f app
 
 L'application est accessible sur `http://localhost` (ou le port défini par `APP_PORT`).
 
-> Au premier démarrage, les migrations sont appliquées automatiquement et la base est initialisée avec le compte administrateur par défaut.
+> Au premier démarrage, les migrations sont appliquées automatiquement et la base est initialisée avec le compte administrateur par défaut et les codes CIM-10.
 
 **Mise à jour :**
 ```bash
@@ -335,18 +342,64 @@ L'API et le frontend React sont servis par le même container Express sur le por
 workspace/
 ├── artifacts/
 │   ├── api-server/          # API Express 5 (port 8080)
-│   │   └── src/routes/      # patients, notes, auth, settings, users, stats, icd10, evaluations
+│   │   └── src/routes/      # patients, notes, auth, settings, users, stats, icd10, evaluations, act, backup
 │   └── factboard/           # Frontend React + Vite (port 18576)
 │       └── src/
-│           ├── components/  # PatientList, PatientDetail, PatientModal, AggBadge, BoardBadge…
+│           ├── components/  # PatientList, PatientDetail, PatientModal, StatsView, AggBadge, BoardBadge…
 │           └── pages/       # board.tsx, settings.tsx, statistics.tsx
 ├── lib/
-│   ├── db/                  # Schéma Drizzle ORM + migrations
+│   ├── db/                  # Schéma Drizzle ORM + migrations (0000–0007)
 │   ├── api-client-react/    # Hooks React Query générés (Orval)
 │   └── api-spec/            # Spécification OpenAPI
-├── Dockerfile               # Build multi-stage
+├── Dockerfile               # Build multi-stage (builder → runner)
 └── docker-compose.yml       # Stack complète avec PostgreSQL
 ```
+
+### Schéma de base de données
+
+| Table | Description |
+|-------|-------------|
+| `users` | Comptes utilisateurs (id, username, password_hash, role, must_change_password) |
+| `sessions` | Tokens Bearer actifs (user_id FK, token, expires_at) |
+| `patients` | Dossiers patients complets — voir colonnes ci-dessous |
+| `meeting_notes` | Notes de réunion par patient (patient_id FK, date, texte) |
+| `history_entries` | Historique des transitions de board (patient_id FK, date, action, board_to, created_by_username) |
+| `irock_evaluations` | Évaluations iRock q1–q12, notes, question_notes, created_by_username |
+| `honos_evaluations` | Évaluations HoNOS q1–q12, notes, question_notes, created_by_username |
+| `act_regions` | Régions ACT (id, nom) |
+| `act_notes` | Notes par région ACT (region_id FK, date, texte) |
+| `settings` | Listes configurables clé/valeur |
+| `icd10_codes` | Codes CIM-10 (code PK, title, description, risks, is_favorite) |
+
+#### Colonnes notables de `patients`
+
+| Colonne | Type | Description |
+|---------|------|-------------|
+| `client_num` | text | Identifiant `FACT-XXXX` auto-généré |
+| `patho` | text | Diagnostic principal (compatibilité historique) |
+| `pathos` | jsonb | Liste de codes CIM-10 multiples (source de vérité) |
+| `board` | text | Board actuel (PréAdmission / FactBoard / RecoveryBoard / Irrecevable / Clôturé) |
+| `board_entry_date` | text | Date d'entrée dans le board actuel |
+| `board_days_offset` | jsonb | Ajustement manuel des durées par board (en jours) |
+| `date_admission` | text | Date d'admission en FactBoard (auto ou manuelle) |
+| `date_fin_suivi` | text | Date de fin de suivi à la clôture (auto ou manuelle) |
+| `passages` | jsonb | Grille des passages hebdomadaires |
+| `deleted_at` | timestamp | Suppression douce — null = actif |
+
+### Migrations
+
+Les migrations sont appliquées automatiquement au démarrage du serveur via Drizzle ORM.
+
+| Migration | Description |
+|-----------|-------------|
+| `0000` | Schéma initial : users, patients, meeting_notes, history_entries, act_regions, act_notes, settings, icd10_codes, sessions |
+| `0001` | Tables irock_evaluations et honos_evaluations (q1–q10) |
+| `0002` | Colonne `created_by_username` sur irock/honos/history |
+| `0003` | Questions q11–q12 sur irock_evaluations |
+| `0004` | Colonne `board_days_offset` (jsonb) sur patients |
+| `0005` | Colonnes `notes` et `question_notes` sur irock/honos |
+| `0006` | Colonne `pathos` (jsonb) sur patients + migration des données depuis `patho` |
+| `0007` | Colonnes `date_admission` et `date_fin_suivi` sur patients |
 
 ### Endpoints API
 
@@ -356,7 +409,7 @@ workspace/
 | `POST` | `/api/auth/login` | Connexion (retourne un token Bearer) |
 | `GET` | `/api/auth/me` | Profil de l'utilisateur connecté |
 | `GET` | `/api/auth/setup-needed` | Vérifie si la configuration initiale est requise |
-| `POST` | `/api/auth/change-password` | Changement de mot de passe |
+| `POST` | `/api/auth/change-password` | Changement de mot de passe (ne requiert pas l'ancien mot de passe si `mustChangePassword=true`) |
 
 #### Patients
 | Méthode | Route | Description |
@@ -370,7 +423,7 @@ workspace/
 | `DELETE` | `/api/patients/:id` | Suppression douce |
 | `GET` | `/api/patients/deleted` | Liste des patients supprimés |
 | `POST` | `/api/patients/:id/restore` | Restauration d'un patient supprimé |
-| `PATCH` | `/api/patients/:id/board` | Changement de board |
+| `PATCH` | `/api/patients/:id/board` | Changement de board (positionne automatiquement date_admission / date_fin_suivi) |
 | `PATCH` | `/api/patients/:id/phase` | Mise à jour de la phase (FactBoard) |
 | `PATCH` | `/api/patients/:id/passages` | Mise à jour des passages hebdomadaires |
 | `GET` | `/api/patients/:id/history` | Historique des transitions de board |
@@ -392,13 +445,25 @@ workspace/
 | `GET` | `/api/patients/:id/honos` | Historique des évaluations HoNOS |
 | `POST` | `/api/patients/:id/honos` | Enregistrement d'une évaluation HoNOS |
 
-#### Codes ICD-10
+#### Codes CIM-10
 | Méthode | Route | Description |
 |---------|-------|-------------|
 | `GET` | `/api/icd10` | Liste de tous les codes |
 | `POST` | `/api/icd10` | Création d'un code personnalisé |
 | `PATCH` | `/api/icd10/:code` | Modification d'un code |
 | `DELETE` | `/api/icd10/:code` | Suppression d'un code |
+
+#### Régions ACT
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| `GET` | `/api/act/regions` | Liste des régions ACT |
+| `POST` | `/api/act/regions` | Création d'une région |
+| `PATCH` | `/api/act/regions/:id` | Modification d'une région |
+| `DELETE` | `/api/act/regions/:id` | Suppression d'une région |
+| `GET` | `/api/act/regions/:id/notes` | Notes d'une région |
+| `POST` | `/api/act/regions/:id/notes` | Ajout d'une note à une région |
+| `PATCH` | `/api/act/regions/:regionId/notes/:noteId` | Modification d'une note ACT |
+| `DELETE` | `/api/act/regions/:regionId/notes/:noteId` | Suppression d'une note ACT |
 
 #### Paramètres
 | Méthode | Route | Description |
@@ -417,7 +482,9 @@ workspace/
 #### Statistiques
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| `GET` | `/api/stats` | Statistiques globales (boards, sexe, pathologies, durées) |
+| `GET` | `/api/stats` | Statistiques globales — accepte `?since=YYYY-MM-DD` pour filtrer par période |
+
+Réponse : `total`, `active`, `boardCounts`, `sexeCounts`, `pathoCounts`, `aggCounts`, `avgDurations`, `ageCounts`, `irockCount`, `honosCount`, `visitsByLieu`.
 
 #### Sauvegarde
 | Méthode | Route | Description |
