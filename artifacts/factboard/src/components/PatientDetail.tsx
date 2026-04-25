@@ -145,7 +145,11 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const board = patient.board;
   const isCloture = board === "Clôturé";
   const showPassages = board !== "Irrecevable";
-  const sortedNotes = [...notes].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+  const sortedNotes = [...notes].sort((a, b) => {
+    const dateDiff = (b.date ?? "").localeCompare(a.date ?? "");
+    if (dateDiff !== 0) return dateDiff;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
   const sortedHistory = [...history].sort((a, b) => a.date.localeCompare(b.date));
 
   function handleDelete() {
