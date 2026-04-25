@@ -64,6 +64,13 @@
       "when": 1777160000000,
       "tag": "0008_agressivite_default_pas_connu",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1777170000000,
+      "tag": "0009_icd10_risks",
+      "breakpoints": true
     }
   ]
 }
