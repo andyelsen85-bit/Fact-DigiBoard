@@ -195,10 +195,10 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="0">Aucune</SelectItem>
-                      <SelectItem value="1">Niveau 1</SelectItem>
-                      <SelectItem value="2">Niveau 2</SelectItem>
-                      <SelectItem value="3">Niveau 3</SelectItem>
+                      <SelectItem value="0">😄 Calme</SelectItem>
+                      <SelectItem value="1">😐 Niveau 1 — légère vigilance</SelectItem>
+                      <SelectItem value="2">😤 Niveau 2 — vigilance modérée</SelectItem>
+                      <SelectItem value="3">😡 Niveau 3 — risque élevé</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

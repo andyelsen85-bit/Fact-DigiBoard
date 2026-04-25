@@ -18,10 +18,10 @@ const AGG_COLORS: Record<string, string> = {
 };
 
 const AGG_LABELS: Record<string, string> = {
-  "0": "Aucune",
-  "1": "Niveau 1",
-  "2": "Niveau 2",
-  "3": "Niveau 3",
+  "0": "😄 Calme",
+  "1": "😐 Niveau 1",
+  "2": "😤 Niveau 2",
+  "3": "😡 Niveau 3",
 };
 
 const PERIOD_OPTIONS: { value: StatsPeriod; label: string }[] = [

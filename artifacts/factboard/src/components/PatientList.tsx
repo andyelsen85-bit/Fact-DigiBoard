@@ -91,7 +91,7 @@ export function PatientList({ board, search, selectedId, onSelect }: PatientList
                 {patient.psy && (
                   <p className="text-xs text-muted-foreground truncate">{patient.psy}</p>
                 )}
-                {patient.agressivite > 0 && <AggBadge level={patient.agressivite} />}
+                <AggBadge level={patient.agressivite ?? 0} />
               </div>
             </div>
           </div>

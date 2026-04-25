@@ -2,18 +2,28 @@ interface AggBadgeProps {
   level: number;
 }
 
-const AGG_STYLES: Record<number, { bg: string; text: string; label: string }> = {
-  0: { bg: "bg-gray-100 border-gray-300", text: "text-gray-600", label: "Aucune" },
-  1: { bg: "bg-[#fffbea] border-[#f0c040]", text: "text-[#7a5c00]", label: "Niveau 1" },
-  2: { bg: "bg-[#fff2e0] border-[#e08020]", text: "text-[#7a3800]", label: "Niveau 2" },
-  3: { bg: "bg-[#fdeaea] border-[#d03030]", text: "text-[#7a0000]", label: "Niveau 3" },
+const AGG_LEVELS: Record<number, { emoji: string; bg: string; border: string; title: string }> = {
+  0: { emoji: "😄", bg: "bg-green-100",  border: "border-green-400",  title: "Calme" },
+  1: { emoji: "😐", bg: "bg-yellow-100", border: "border-yellow-400", title: "Niveau 1 — légère vigilance" },
+  2: { emoji: "😤", bg: "bg-orange-100", border: "border-orange-400", title: "Niveau 2 — vigilance modérée" },
+  3: { emoji: "😡", bg: "bg-red-100",    border: "border-red-400",    title: "Niveau 3 — risque élevé" },
 };
 
 export function AggBadge({ level }: AggBadgeProps) {
-  const style = AGG_STYLES[level] ?? AGG_STYLES[0];
+  const cfg = AGG_LEVELS[level] ?? AGG_LEVELS[0];
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${style.bg} ${style.text}`}>
-      {style.label}
+    <span
+      title={cfg.title}
+      className={`inline-flex items-center justify-center w-7 h-7 rounded-full border text-base leading-none select-none ${cfg.bg} ${cfg.border}`}
+    >
+      {cfg.emoji}
     </span>
   );
 }
+
+export const AGG_EMOJI: Record<number, string> = {
+  0: "😄",
+  1: "😐",
+  2: "😤",
+  3: "😡",
+};
