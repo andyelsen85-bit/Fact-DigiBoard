@@ -75,7 +75,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [showPhotoOverlay, setShowPhotoOverlay] = useState(false);
-  const [evalModal, setEvalModal] = useState<{ type: "iRock" | "HoNOS"; edit?: IrockEval | HonosEval } | null>(null);
+  const [evalModal, setEvalModal] = useState<{ type: "I•ROC" | "HoNOS"; edit?: IrockEval | HonosEval } | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { uploadPhoto } = usePatientPhotoUpload(patientId);
 
@@ -234,15 +234,15 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
 
   function handleEvalSave(data: any) {
     if (!evalModal) return;
-    if (evalModal.type === "iRock") {
+    if (evalModal.type === "I•ROC") {
       if (evalModal.edit) {
         updateIrock.mutate(
           { evalId: evalModal.edit.id, data },
-          { onSuccess: () => { setEvalModal(null); toast({ title: "iRock mis à jour" }); } }
+          { onSuccess: () => { setEvalModal(null); toast({ title: "I•ROC mis à jour" }); } }
         );
       } else {
         createIrock.mutate(data, {
-          onSuccess: () => { setEvalModal(null); toast({ title: "iRock enregistré" }); },
+          onSuccess: () => { setEvalModal(null); toast({ title: "I•ROC enregistré" }); },
         });
       }
     } else {
@@ -347,10 +347,10 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
               size="sm"
               variant="outline"
               className="border-blue-300 text-blue-700 hover:bg-blue-50"
-              onClick={() => setEvalModal({ type: "iRock" })}
+              onClick={() => setEvalModal({ type: "I•ROC" })}
               data-testid="button-irock"
             >
-              iRock
+              I•ROC
             </Button>
             <Button
               size="sm"
@@ -601,20 +601,20 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
           <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Évaluations</h3>
           <div className="space-y-2">
             {[
-              ...irockEvals.map((e) => ({ ...e, type: "iRock" as const })),
+              ...irockEvals.map((e) => ({ ...e, type: "I•ROC" as const })),
               ...honosEvals.map((e) => ({ ...e, type: "HoNOS" as const })),
             ]
               .sort((a, b) => b.date.localeCompare(a.date))
               .map((e) => {
-                const isIrock = e.type === "iRock";
-                const qCount = isIrock ? 10 : 12;
+                const isIroc = e.type === "I•ROC";
+                const qCount = 12;
                 const total = Array.from({ length: qCount }, (_, i) => (e as any)[`q${i + 1}`] ?? 0)
                   .reduce((s, v) => s + v, 0);
                 return (
                   <div key={`${e.type}-${e.id}`} className="flex items-center gap-3 border rounded-md px-3 py-2">
                     <span
                       className={`text-xs font-semibold px-2 py-0.5 rounded border ${
-                        isIrock
+                        isIroc
                           ? "bg-blue-50 text-blue-700 border-blue-200"
                           : "bg-red-50 text-red-700 border-red-200"
                       }`}
@@ -622,7 +622,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                       {e.type}
                     </span>
                     <span className="text-xs font-mono text-muted-foreground">{e.date}</span>
-                    <span className="text-xs text-muted-foreground">Score : <span className="font-mono font-medium text-foreground">{total}</span>/{qCount * 4}</span>
+                    <span className="text-xs text-muted-foreground">Score : <span className="font-mono font-medium text-foreground">{total}</span>/{isIroc ? 60 : 48}</span>
                     {(e as any).createdByUsername && (
                       <span className="text-xs text-muted-foreground/70 italic">par {(e as any).createdByUsername}</span>
                     )}
@@ -637,7 +637,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                         className="text-xs text-destructive hover:underline px-1"
                         onClick={() => {
                           if (!confirm(`Supprimer cette évaluation ${e.type} ?`)) return;
-                          if (isIrock) deleteIrock.mutate(e.id);
+                          if (isIroc) deleteIrock.mutate(e.id);
                           else deleteHonos.mutate(e.id);
                         }}
                       >
@@ -696,7 +696,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
           onSave={handleEvalSave}
           onClose={() => setEvalModal(null)}
           isPending={
-            evalModal.type === "iRock"
+            evalModal.type === "I•ROC"
               ? (createIrock.isPending || updateIrock.isPending)
               : (createHonos.isPending || updateHonos.isPending)
           }

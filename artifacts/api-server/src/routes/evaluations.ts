@@ -17,7 +17,7 @@ router.get("/patients/:id/irock", requireAuth, async (req, res) => {
 
 router.post("/patients/:id/irock", requireAuth, async (req, res) => {
   const patientId = Number(req.params["id"]);
-  const { date, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12 } = req.body;
+  const { date, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, notes, questionNotes } = req.body;
   const createdByUsername: string | null = (req as any).user?.username ?? null;
   const [row] = await db.insert(irockEvaluationsTable).values({
     patientId,
@@ -25,6 +25,8 @@ router.post("/patients/:id/irock", requireAuth, async (req, res) => {
     q1: q1 ?? 0, q2: q2 ?? 0, q3: q3 ?? 0, q4: q4 ?? 0, q5: q5 ?? 0,
     q6: q6 ?? 0, q7: q7 ?? 0, q8: q8 ?? 0, q9: q9 ?? 0, q10: q10 ?? 0,
     q11: q11 ?? 0, q12: q12 ?? 0,
+    notes: notes ?? null,
+    questionNotes: questionNotes ?? null,
     createdByUsername,
   }).returning();
   res.status(201).json(row);
@@ -32,9 +34,9 @@ router.post("/patients/:id/irock", requireAuth, async (req, res) => {
 
 router.put("/patients/:patientId/irock/:evalId", requireAuth, async (req, res) => {
   const evalId = Number(req.params["evalId"]);
-  const { date, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12 } = req.body;
+  const { date, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, notes, questionNotes } = req.body;
   const [updated] = await db.update(irockEvaluationsTable)
-    .set({ date, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12 })
+    .set({ date, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, notes: notes ?? null, questionNotes: questionNotes ?? null })
     .where(eq(irockEvaluationsTable.id, evalId))
     .returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
@@ -59,7 +61,7 @@ router.get("/patients/:id/honos", requireAuth, async (req, res) => {
 
 router.post("/patients/:id/honos", requireAuth, async (req, res) => {
   const patientId = Number(req.params["id"]);
-  const { date, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12 } = req.body;
+  const { date, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, notes, questionNotes } = req.body;
   const createdByUsername: string | null = (req as any).user?.username ?? null;
   const [row] = await db.insert(honosEvaluationsTable).values({
     patientId,
@@ -67,6 +69,8 @@ router.post("/patients/:id/honos", requireAuth, async (req, res) => {
     q1: q1 ?? 0, q2: q2 ?? 0, q3: q3 ?? 0, q4: q4 ?? 0, q5: q5 ?? 0,
     q6: q6 ?? 0, q7: q7 ?? 0, q8: q8 ?? 0, q9: q9 ?? 0, q10: q10 ?? 0,
     q11: q11 ?? 0, q12: q12 ?? 0,
+    notes: notes ?? null,
+    questionNotes: questionNotes ?? null,
     createdByUsername,
   }).returning();
   res.status(201).json(row);
@@ -74,9 +78,9 @@ router.post("/patients/:id/honos", requireAuth, async (req, res) => {
 
 router.put("/patients/:patientId/honos/:evalId", requireAuth, async (req, res) => {
   const evalId = Number(req.params["evalId"]);
-  const { date, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12 } = req.body;
+  const { date, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, notes, questionNotes } = req.body;
   const [updated] = await db.update(honosEvaluationsTable)
-    .set({ date, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12 })
+    .set({ date, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, notes: notes ?? null, questionNotes: questionNotes ?? null })
     .where(eq(honosEvaluationsTable.id, evalId))
     .returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }

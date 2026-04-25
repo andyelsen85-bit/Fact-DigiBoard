@@ -308,7 +308,7 @@ function BackupSection() {
     <div className="bg-card border rounded-lg p-4">
       <h3 className="text-sm font-medium mb-1">Sauvegarde et restauration</h3>
       <p className="text-xs text-muted-foreground mb-4">
-        Exportez toutes les données (clients, historiques, évaluations iRock/HoNOS, notes, codes ICD-10, paramètres) en un fichier JSON.
+        Exportez toutes les données (clients, historiques, évaluations I•ROC/HoNOS, notes, codes ICD-10, paramètres) en un fichier JSON.
         La restauration remplace l'intégralité des données — les comptes utilisateurs ne sont pas touchés.
       </p>
       <div className="flex items-center gap-3">

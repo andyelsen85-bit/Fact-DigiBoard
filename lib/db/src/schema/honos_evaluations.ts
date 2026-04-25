@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { patientsTable } from "./patients";
 
 export const honosEvaluationsTable = pgTable("honos_evaluations", {
@@ -17,6 +17,8 @@ export const honosEvaluationsTable = pgTable("honos_evaluations", {
   q10: integer("q10").notNull().default(0),
   q11: integer("q11").notNull().default(0),
   q12: integer("q12").notNull().default(0),
+  notes: text("notes"),
+  questionNotes: jsonb("question_notes"),
   createdByUsername: text("created_by_username"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

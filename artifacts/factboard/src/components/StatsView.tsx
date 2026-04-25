@@ -119,9 +119,9 @@ export function StatsView() {
         <div className="bg-card border rounded-lg p-4 flex items-center gap-4">
           <div className="flex-1">
             <div className="text-3xl font-light font-mono text-blue-700">{stats.irockCount ?? 0}</div>
-            <div className="text-sm text-muted-foreground mt-1">Évaluations iRock</div>
+            <div className="text-sm text-muted-foreground mt-1">Évaluations I•ROC</div>
           </div>
-          <span className="text-2xl font-semibold text-blue-200">iRock</span>
+          <span className="text-2xl font-semibold text-blue-200">I•ROC</span>
         </div>
         <div className="bg-card border rounded-lg p-4 flex items-center gap-4">
           <div className="flex-1">

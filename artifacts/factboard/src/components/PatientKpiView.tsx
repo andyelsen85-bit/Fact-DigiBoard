@@ -13,7 +13,7 @@ import { type StatsPeriod, periodToSince } from "@/hooks/use-stats";
 
 const IROCK_QUESTIONS = [
   "Activités plaisantes",
-  "Sentiment d'appartenance",
+  "Appartenance à une communauté",
   "Sentiment de sécurité",
   "Espoir pour l'avenir",
   "Objectifs importants",
@@ -21,23 +21,23 @@ const IROCK_QUESTIONS = [
   "Santé physique",
   "Santé mentale",
   "Relations avec les autres",
-  "Occupation (travail/études/bénévolat)",
+  "Occupation",
   "Liberté de choix",
-  "Gestion budget/finances",
+  "Budget / finances",
 ];
 
 const HONOS_QUESTIONS = [
   "Comportement hyperactif/agressif",
-  "Automutilation",
+  "Auto-agressivité / passage à l'acte",
   "Alcool ou drogues",
-  "Problèmes cognitifs",
-  "Maladie physique",
-  "Hallucinations/délires",
+  "Troubles cognitifs",
+  "Maladie physique ou handicap",
+  "Hallucinations et délires",
   "Humeur dépressive",
   "Autres troubles mentaux",
-  "Relations",
-  "Vie quotidienne",
-  "Conditions de vie",
+  "Relations sociales",
+  "Activités vie quotidienne",
+  "Conditions de vie (logement)",
   "Occupation et activités",
 ];
 
@@ -291,13 +291,13 @@ function KpiContent({ patientId, period }: { patientId: number; period: StatsPer
         )}
       </div>
 
-      {/* iRock charts */}
+      {/* I•ROC charts */}
       <div>
         <h3 className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
-          iRock — Évaluations ({irockData.length})
+          I•ROC — Évaluations ({irockData.length})
         </h3>
         <ChartPanel
-          title="iRock · Score 0–5 par question (0 = Jamais, 5 = Toujours)"
+          title="I•ROC · Score 0–5 par question (0 = Jamais, 5 = Toujours)"
           data={irockChartData}
           questions={IROCK_QUESTIONS}
           color={IROCK_COLOR}
