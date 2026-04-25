@@ -418,7 +418,7 @@ export function PatientKpiView() {
                   } ${isArchived ? "opacity-60" : ""}`}
                   onClick={() => setSelectedId(p.id)}
                 >
-                  <div className="w-8 h-8 rounded-full bg-muted border shrink-0 overflow-hidden flex items-center justify-center text-xs font-medium text-muted-foreground">
+                  <div className="w-16 h-16 rounded-full bg-muted border shrink-0 overflow-hidden flex items-center justify-center text-sm font-medium text-muted-foreground">
                     {p.photo
                       ? <img src={p.photo} alt="" className="w-full h-full object-cover" />
                       : `${p.prenom[0] ?? ""}${p.nom[0] ?? ""}`.toUpperCase()
