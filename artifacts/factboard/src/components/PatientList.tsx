@@ -27,7 +27,7 @@ export function PatientList({ board, search, selectedId, onSelect }: PatientList
   if (patients.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
-        <p className="text-xs text-muted-foreground text-center">Aucun patient</p>
+        <p className="text-xs text-muted-foreground text-center">Aucun client</p>
       </div>
     );
   }

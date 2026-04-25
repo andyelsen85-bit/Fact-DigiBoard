@@ -256,10 +256,10 @@ export function PatientKpiView() {
       {/* Sidebar — patient picker */}
       <aside className="w-64 border-r bg-card flex flex-col shrink-0">
         <div className="p-3 border-b space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Patient KPI</p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Client KPI</p>
           <input
             type="search"
-            placeholder="Rechercher un patient…"
+            placeholder="Rechercher un client…"
             className="w-full px-2.5 py-1.5 border rounded bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
             value={search}
             onChange={(e) => setSearch(e.target.value)}

@@ -77,7 +77,7 @@ function buildDefaults(initialValues?: Partial<PatientFormValues & { clientNum?:
   };
 }
 
-export function PatientModal({ open, onClose, onSave, isPending, initialValues, title = "Nouveau patient", isEdit = false }: PatientModalProps) {
+export function PatientModal({ open, onClose, onSave, isPending, initialValues, title = "Nouveau client", isEdit = false }: PatientModalProps) {
   const [pathoSearch, setPathoSearch] = useState(initialValues?.patho ?? "");
   const [pathoDropdownOpen, setPathoDropdownOpen] = useState(false);
 

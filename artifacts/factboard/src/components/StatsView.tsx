@@ -51,11 +51,11 @@ export function StatsView() {
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-card border rounded-lg p-4">
           <div className="text-3xl font-light font-mono">{(stats as any).total ?? 0}</div>
-          <div className="text-sm text-muted-foreground mt-1">Total patients</div>
+          <div className="text-sm text-muted-foreground mt-1">Total clients</div>
         </div>
         <div className="bg-card border rounded-lg p-4">
           <div className="text-3xl font-light font-mono">{(stats as any).active ?? 0}</div>
-          <div className="text-sm text-muted-foreground mt-1">Patients actifs</div>
+          <div className="text-sm text-muted-foreground mt-1">Clients actifs</div>
         </div>
         <div className="bg-card border rounded-lg p-4">
           <div className="flex gap-2 flex-wrap">
@@ -88,7 +88,7 @@ export function StatsView() {
       </div>
 
       <div className="bg-card border rounded-lg p-4">
-        <h3 className="text-sm font-medium mb-3">Patients par board</h3>
+        <h3 className="text-sm font-medium mb-3">Clients par board</h3>
         <div className="space-y-2">
           {Object.entries(boardCounts).map(([board, count]) => (
             <div key={board} className="flex items-center gap-2">

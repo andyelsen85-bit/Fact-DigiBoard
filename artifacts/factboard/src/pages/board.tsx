@@ -23,7 +23,7 @@ const BOARD_NAV = [
 const TOOL_NAV = [
   { label: "ACT", value: "ACT" },
   { label: "Statistiques", value: "Statistiques" },
-  { label: "Patient KPI", value: "PatientKPI" },
+  { label: "Client KPI", value: "PatientKPI" },
 ];
 
 export default function BoardPage() {
@@ -46,9 +46,9 @@ export default function BoardPage() {
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
           setShowNewPatientModal(false);
           setSelectedPatientId(patient.id);
-          toast({ title: "Patient créé" });
+          toast({ title: "Client créé" });
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible de créer le patient", variant: "destructive" }),
+        onError: () => toast({ title: "Erreur", description: "Impossible de créer le client", variant: "destructive" }),
       }
     );
   }
@@ -102,7 +102,7 @@ export default function BoardPage() {
             onClick={() => setShowNewPatientModal(true)}
             data-testid="button-new-patient"
           >
-            + Nouveau patient
+            + Nouveau client
           </button>
           <span className="text-xs text-muted-foreground">{user?.username}</span>
           {user?.role === "admin" && (
@@ -165,7 +165,7 @@ export default function BoardPage() {
                 />
               ) : (
                 <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-                  Sélectionnez un patient dans la liste
+                  Sélectionnez un client dans la liste
                 </div>
               )}
             </main>
@@ -178,7 +178,7 @@ export default function BoardPage() {
         onClose={() => setShowNewPatientModal(false)}
         onSave={handleCreatePatient}
         isPending={createPatient.isPending}
-        title="Nouveau patient"
+        title="Nouveau client"
       />
     </div>
   );

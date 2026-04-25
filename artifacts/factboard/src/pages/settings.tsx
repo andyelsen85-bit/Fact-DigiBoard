@@ -168,7 +168,7 @@ function ICD10ManagementTable() {
         </Button>
       </div>
       <p className="text-xs text-muted-foreground mb-3">
-        Liste des pathologies disponibles dans le formulaire patient. Les codes marqués ⭐ apparaissent en premiers dans le sélecteur.
+        Liste des pathologies disponibles dans le formulaire client. Les codes marqués ⭐ apparaissent en premiers dans le sélecteur.
       </p>
       <Input
         placeholder="Rechercher par code ou libellé..."
@@ -282,7 +282,7 @@ function BackupSection() {
       const text = await file.text();
       const payload = JSON.parse(text);
       if (!confirm(
-        `⚠️ ATTENTION — Restaurer cette sauvegarde va effacer TOUTES les données actuelles (patients, historiques, évaluations) et les remplacer par celles de la sauvegarde datée du ${payload.exportedAt?.slice(0, 10) ?? "?"} .\n\nContinuer ?`
+        `⚠️ ATTENTION — Restaurer cette sauvegarde va effacer TOUTES les données actuelles (clients, historiques, évaluations) et les remplacer par celles de la sauvegarde datée du ${payload.exportedAt?.slice(0, 10) ?? "?"} .\n\nContinuer ?`
       )) return;
       setRestoring(true);
       const res = await fetch("/api/backup/restore", {
@@ -308,7 +308,7 @@ function BackupSection() {
     <div className="bg-card border rounded-lg p-4">
       <h3 className="text-sm font-medium mb-1">Sauvegarde et restauration</h3>
       <p className="text-xs text-muted-foreground mb-4">
-        Exportez toutes les données (patients, historiques, évaluations iRock/HoNOS, notes, codes ICD-10, paramètres) en un fichier JSON.
+        Exportez toutes les données (clients, historiques, évaluations iRock/HoNOS, notes, codes ICD-10, paramètres) en un fichier JSON.
         La restauration remplace l'intégralité des données — les comptes utilisateurs ne sont pas touchés.
       </p>
       <div className="flex items-center gap-3">
@@ -375,10 +375,10 @@ function DeletedPatientsSection() {
         headers: getAuthHeaders(),
       });
       if (res.ok) {
-        toast({ title: "Patient restauré", description: `${patient.prenom} ${patient.nom} a été remis sur le board ${patient.board}.` });
+        toast({ title: "Client restauré", description: `${patient.prenom} ${patient.nom} a été remis sur le board ${patient.board}.` });
         fetchDeleted();
       } else {
-        toast({ title: "Erreur", description: "Impossible de restaurer le patient", variant: "destructive" });
+        toast({ title: "Erreur", description: "Impossible de restaurer le client", variant: "destructive" });
       }
     } finally {
       setRestoring(null);
@@ -387,11 +387,11 @@ function DeletedPatientsSection() {
 
   return (
     <div className="bg-card border rounded-lg p-4">
-      <h3 className="text-sm font-medium mb-3">Patients supprimés (Corbeille)</h3>
+      <h3 className="text-sm font-medium mb-3">Clients supprimés (Corbeille)</h3>
       {loading ? (
         <p className="text-xs text-muted-foreground py-2">Chargement...</p>
       ) : patients.length === 0 ? (
-        <p className="text-xs text-muted-foreground py-2">Aucun patient supprimé</p>
+        <p className="text-xs text-muted-foreground py-2">Aucun client supprimé</p>
       ) : (
         <table className="w-full text-sm">
           <thead>

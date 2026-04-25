@@ -145,16 +145,16 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const sortedHistory = [...history].sort((a, b) => a.date.localeCompare(b.date));
 
   function handleDelete() {
-    if (!confirm(`Supprimer le patient ${patient!.prenom} ${patient!.nom} ?`)) return;
+    if (!confirm(`Supprimer le client ${patient!.prenom} ${patient!.nom} ?`)) return;
     deletePatient.mutate(
       { id: patientId },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
           onDeleted();
-          toast({ title: "Patient supprimé" });
+          toast({ title: "Client supprimé" });
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible de supprimer le patient", variant: "destructive" }),
+        onError: () => toast({ title: "Erreur", description: "Impossible de supprimer le client", variant: "destructive" }),
       }
     );
   }
@@ -169,7 +169,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
           invalidateHistory();
           toast({ title: `Déplacé vers ${board}` });
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible de déplacer le patient", variant: "destructive" }),
+        onError: () => toast({ title: "Erreur", description: "Impossible de déplacer le client", variant: "destructive" }),
       }
     );
   }
@@ -181,9 +181,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
         onSuccess: () => {
           setShowEditModal(false);
           invalidatePatient();
-          toast({ title: "Patient mis à jour" });
+          toast({ title: "Client mis à jour" });
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible de modifier le patient", variant: "destructive" }),
+        onError: () => toast({ title: "Erreur", description: "Impossible de modifier le client", variant: "destructive" }),
       }
     );
   }
@@ -715,7 +715,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
         onClose={() => setShowEditModal(false)}
         onSave={handleEdit}
         isPending={updatePatient.isPending}
-        title="Modifier le patient"
+        title="Modifier le client"
         initialValues={patient}
         isEdit
       />
