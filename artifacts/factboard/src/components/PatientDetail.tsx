@@ -331,7 +331,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
               <div className="flex items-center gap-2 mt-1">
                 <span className="font-mono text-sm text-muted-foreground">{patient.clientNum}</span>
                 <BoardBadge board={patient.board} />
-                <AggBadge level={patient.agressivite ?? 0} />
+                <AggBadge level={patient.agressivite ?? -1} />
                 {patient.boardEntryDate && (
                   <span className="text-xs text-muted-foreground">
                     depuis le {patient.boardEntryDate}

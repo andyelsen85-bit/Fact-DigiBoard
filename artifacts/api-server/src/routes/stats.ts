@@ -27,7 +27,7 @@ router.get("/stats", requireAuth, async (req, res) => {
   const boardCounts: Record<string, number> = {};
   const sexeCounts: Record<string, number> = {};
   const pathoCounts: Record<string, number> = {};
-  const aggCounts: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0 };
+  const aggCounts: Record<number, number> = { "-1": 0, 0: 0, 1: 0, 2: 0, 3: 0 };
 
   for (const p of all) {
     boardCounts[p.board] = (boardCounts[p.board] ?? 0) + 1;

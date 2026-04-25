@@ -32,7 +32,7 @@ const patientSchema = z.object({
   casemanager2: z.string().optional(),
   demande: z.string().optional(),
   datePremierContact: z.string().optional(),
-  agressivite: z.number().min(0).max(3),
+  agressivite: z.number().min(-1).max(3),
   article: z.string().optional(),
   curatelle: z.string().optional(),
   remarques: z.string().optional(),
@@ -68,7 +68,7 @@ function buildDefaults(initialValues?: Partial<PatientFormValues & { clientNum?:
     casemanager2: initialValues?.casemanager2 ?? "",
     demande: initialValues?.demande ?? "",
     datePremierContact: initialValues?.datePremierContact ?? "",
-    agressivite: initialValues?.agressivite ?? 0,
+    agressivite: initialValues?.agressivite ?? -1,
     article: initialValues?.article ?? "",
     curatelle: initialValues?.curatelle ?? "",
     remarques: initialValues?.remarques ?? "",
@@ -204,6 +204,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="-1">Pas Connu</SelectItem>
                       <SelectItem value="0">😄 Calme</SelectItem>
                       <SelectItem value="1">😐 Niveau 1 — légère vigilance</SelectItem>
                       <SelectItem value="2">😤 Niveau 2 — vigilance modérée</SelectItem>

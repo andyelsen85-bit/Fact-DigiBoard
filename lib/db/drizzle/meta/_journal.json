@@ -57,6 +57,13 @@
       "when": 1777150000000,
       "tag": "0007_add_dates_admission_fin",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777160000000,
+      "tag": "0008_agressivite_default_pas_connu",
+      "breakpoints": true
     }
   ]
 }

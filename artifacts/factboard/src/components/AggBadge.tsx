@@ -10,7 +10,8 @@ const AGG_LEVELS: Record<number, { emoji: string; bg: string; border: string; ti
 };
 
 export function AggBadge({ level }: AggBadgeProps) {
-  const cfg = AGG_LEVELS[level] ?? AGG_LEVELS[0];
+  if (level === -1 || !(level in AGG_LEVELS)) return null;
+  const cfg = AGG_LEVELS[level]!;
   return (
     <span
       title={cfg.title}
@@ -22,6 +23,7 @@ export function AggBadge({ level }: AggBadgeProps) {
 }
 
 export const AGG_EMOJI: Record<number, string> = {
+  "-1": "",
   0: "😄",
   1: "😐",
   2: "😤",

@@ -89,7 +89,7 @@ export function PatientList({ board, search, selectedId, onSelect }: PatientList
                   <p className="text-xs text-muted-foreground truncate flex-1">{patient.psy}</p>
                 )}
                 <span className="ml-auto shrink-0">
-                  <AggBadge level={patient.agressivite ?? 0} />
+                  <AggBadge level={patient.agressivite ?? -1} />
                 </span>
               </div>
             </div>

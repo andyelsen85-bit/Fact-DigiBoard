@@ -23,7 +23,7 @@ export const patientsTable = pgTable("patients", {
   dateAdmission: text("date_admission"),
   dateSortie: text("date_sortie"),
   dateFinSuivi: text("date_fin_suivi"),
-  agressivite: integer("agressivite").notNull().default(0),
+  agressivite: integer("agressivite").notNull().default(-1),
   article: text("article"),
   curatelle: text("curatelle"),
   remarques: text("remarques"),

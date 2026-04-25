@@ -11,6 +11,7 @@ const BOARD_COLORS: Record<string, string> = {
 };
 
 const AGG_COLORS: Record<string, string> = {
+  "-1": "#cccccc",
   "0": "#aaaaaa",
   "1": "#f0c040",
   "2": "#e08020",
@@ -18,6 +19,7 @@ const AGG_COLORS: Record<string, string> = {
 };
 
 const AGG_LABELS: Record<string, string> = {
+  "-1": "Pas Connu",
   "0": "😄 Calme",
   "1": "😐 Niveau 1",
   "2": "😤 Niveau 2",
