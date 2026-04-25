@@ -37,6 +37,7 @@ export default function BoardPage() {
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
 
   const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [sidebarVisible, setSidebarVisible] = useState(() => window.innerWidth >= 640);
   const isResizing = useRef(false);
 
   const startResize = useCallback((e: React.MouseEvent) => {
@@ -161,28 +162,56 @@ export default function BoardPage() {
           </div>
         ) : (
           <>
-            <aside className="border-r bg-card flex flex-col shrink-0" style={{ width: sidebarWidth }}>
-              <div className="p-3 border-b">
-                <input
-                  type="search"
-                  placeholder="Rechercher..."
-                  className="w-full px-2.5 py-1.5 border rounded bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  data-testid="input-search"
+            {sidebarVisible ? (
+              <aside className="border-r bg-card flex flex-col shrink-0" style={{ width: sidebarWidth }}>
+                <div className="p-3 border-b flex items-center gap-2">
+                  <input
+                    type="search"
+                    placeholder="Rechercher..."
+                    className="flex-1 min-w-0 px-2.5 py-1.5 border rounded bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    data-testid="input-search"
+                  />
+                  <button
+                    onClick={() => setSidebarVisible(false)}
+                    className="shrink-0 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    title="Masquer la liste"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                </div>
+                <PatientList
+                  board={activeBoard}
+                  search={search}
+                  selectedId={selectedPatientId}
+                  onSelect={(id) => {
+                    setSelectedPatientId(id);
+                    if (window.innerWidth < 640) setSidebarVisible(false);
+                  }}
                 />
+              </aside>
+            ) : (
+              <div className="flex flex-col shrink-0 border-r bg-card">
+                <button
+                  onClick={() => setSidebarVisible(true)}
+                  className="p-2 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  title="Afficher la liste"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M6 5l7 7-7 7" />
+                  </svg>
+                </button>
               </div>
-              <PatientList
-                board={activeBoard}
-                search={search}
-                selectedId={selectedPatientId}
-                onSelect={setSelectedPatientId}
+            )}
+            {sidebarVisible && (
+              <div
+                className="w-1 cursor-col-resize shrink-0 hover:bg-primary/40 active:bg-primary/60 transition-colors"
+                onMouseDown={startResize}
               />
-            </aside>
-            <div
-              className="w-1 cursor-col-resize shrink-0 hover:bg-primary/40 active:bg-primary/60 transition-colors"
-              onMouseDown={startResize}
-            />
+            )}
             <main className="flex-1 overflow-hidden flex flex-col">
               {selectedPatientId ? (
                 <PatientDetail
