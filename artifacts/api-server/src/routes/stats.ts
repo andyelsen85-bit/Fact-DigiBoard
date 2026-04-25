@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { db, patientsTable } from "@workspace/db";
-import { sql, eq, not } from "drizzle-orm";
+import { sql, eq, not, isNull } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
 
 router.get("/stats", requireAuth, async (_req, res) => {
-  const all = await db.select().from(patientsTable);
+  const all = await db.select().from(patientsTable).where(isNull(patientsTable.deletedAt));
 
   const total = all.length;
   const activeBoards = ["FactBoard", "RecoveryBoard", "PréAdmission"];

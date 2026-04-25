@@ -32,9 +32,30 @@ export function PatientList({ board, search, selectedId, onSelect }: PatientList
     );
   }
 
+  const PHASE_ORDER = [
+    "1. Prévention de Crise",
+    "2. Traitement intensif court terme",
+    "3. Traitement intensif long terme",
+    "4a. Évitement de traitement",
+    "4b. Évitement à haut risque",
+    "5a. Admission Prison",
+    "5b. Admission Psychiatrie",
+    "6. Nouveau Client",
+  ];
+
+  const sorted = [...patients].sort((a, b) => {
+    if (board === "FactBoard") {
+      const ai = a.phase ? PHASE_ORDER.indexOf(a.phase) : PHASE_ORDER.length;
+      const bi = b.phase ? PHASE_ORDER.indexOf(b.phase) : PHASE_ORDER.length;
+      if (ai !== bi) return ai - bi;
+      return (a.nom ?? "").localeCompare(b.nom ?? "", "fr");
+    }
+    return (a.nom ?? "").localeCompare(b.nom ?? "", "fr");
+  });
+
   return (
     <div className="flex-1 overflow-y-auto">
-      {patients.map((patient) => (
+      {sorted.map((patient) => (
         <button
           key={patient.id}
           data-testid={`patient-item-${patient.id}`}
