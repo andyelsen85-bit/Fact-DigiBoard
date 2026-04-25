@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, LabelList,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  ResponsiveContainer, Legend, Tooltip,
 } from "recharts";
 import {
   usePatientSelector, useListIrock, useListHonos, usePatientKpi,
@@ -37,8 +37,22 @@ const HONOS_QUESTIONS = [
   "Autres troubles mentaux",
   "Relations sociales",
   "Activités vie quotidienne",
-  "Conditions de vie (logement)",
+  "Conditions de vie",
   "Occupation et activités",
+];
+
+const IROCK_DOMAINS = [
+  { label: "Domicile",       color: "#3b82f6" },
+  { label: "Opportunité",    color: "#22c55e" },
+  { label: "Personnes",      color: "#f97316" },
+  { label: "Autonomisation", color: "#a855f7" },
+];
+
+const HONOS_DOMAINS = [
+  { label: "Comportement", color: "#ef4444" },
+  { label: "Déficiences",  color: "#f59e0b" },
+  { label: "Symptômes",    color: "#ec4899" },
+  { label: "Social",       color: "#06b6d4" },
 ];
 
 const CLINICAL_BOARDS = ["PréAdmission", "FactBoard", "RecoveryBoard"];
@@ -52,18 +66,23 @@ const BOARD_COLORS: Record<string, string> = {
 const IROCK_COLOR = "#2563eb";
 const HONOS_COLOR = "#dc2626";
 
-interface ChartPanelProps {
+interface Domain { label: string; color: string; }
+
+interface SpiderPanelProps {
   title: string;
-  data: Record<string, any>[];
+  subtitle: string;
+  data: Array<{ date: string; total: number; [key: string]: any }>;
   questions: string[];
+  domains: Domain[];
   color: string;
-  yLabel: string;
   yMax: number;
   qCount: number;
 }
 
-function ChartPanel({ title, data, questions, color, yLabel, yMax, qCount }: ChartPanelProps) {
-  if (data.length < 1) {
+function SpiderPanel({ title, subtitle, data, questions, domains, color, yMax, qCount }: SpiderPanelProps) {
+  const [compareIdx, setCompareIdx] = useState<number | null>(null);
+
+  if (data.length === 0) {
     return (
       <div className="bg-card border rounded-lg p-4">
         <h4 className="text-sm font-medium mb-2">{title}</h4>
@@ -72,67 +91,156 @@ function ChartPanel({ title, data, questions, color, yLabel, yMax, qCount }: Cha
     );
   }
 
+  const latest = data[data.length - 1];
+  const compareEntry = compareIdx !== null ? data[compareIdx] : null;
   const totalMax = yMax * qCount;
-  const lastEntry = data[data.length - 1];
-  const lastTotal = lastEntry?.total ?? 0;
-  const lastDate = lastEntry?.date ?? "";
+
+  const radarData = questions.map((label, i) => {
+    const key = `q${i + 1}`;
+    const row: Record<string, any> = {
+      label: label.length > 20 ? label.slice(0, 19) + "…" : label,
+      fullMark: yMax,
+      current: latest[key] ?? 0,
+    };
+    if (compareEntry) row.compare = compareEntry[key] ?? 0;
+    return row;
+  });
 
   return (
-    <div className="bg-card border rounded-lg p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium">{title}</h4>
-
-        {/* ─── Last score highlight ─── */}
-        <div
-          className="flex items-baseline gap-1.5 px-3 py-1.5 rounded-lg border"
-          style={{ borderColor: color, background: `${color}10` }}
-        >
-          <span
-            className="text-2xl font-bold font-mono leading-none"
-            style={{ color }}
+    <div className="bg-card border rounded-lg p-4 space-y-3">
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h4 className="text-sm font-medium">{title}</h4>
+          <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {data.length > 1 && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">Comparer avec :</span>
+              <select
+                className="text-xs border rounded px-1.5 py-0.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                value={compareIdx ?? ""}
+                onChange={(e) => setCompareIdx(e.target.value === "" ? null : Number(e.target.value))}
+              >
+                <option value="">—</option>
+                {data.slice(0, -1).map((d, i) => (
+                  <option key={i} value={i}>{d.date}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div
+            className="flex items-baseline gap-1 px-3 py-1.5 rounded-lg border"
+            style={{ borderColor: color, background: `${color}12` }}
           >
-            {lastTotal}
-          </span>
-          <span className="text-sm text-muted-foreground font-mono">/ {totalMax}</span>
-          <span className="text-xs text-muted-foreground ml-1">{lastDate}</span>
+            <span className="text-2xl font-bold font-mono leading-none" style={{ color }}>
+              {latest.total}
+            </span>
+            <span className="text-sm text-muted-foreground font-mono">/ {totalMax}</span>
+            <span className="text-xs text-muted-foreground ml-1.5">{latest.date}</span>
+          </div>
         </div>
       </div>
 
-      {/* ─── Per-question rows ─── */}
-      {questions.map((label, i) => {
-        const key = `q${i + 1}`;
-        return (
-          <div key={key}>
-            <p className="text-xs text-muted-foreground mb-1">{i + 1}. {label}</p>
-            <ResponsiveContainer width="100%" height={70}>
-              <LineChart data={data} margin={{ top: 14, right: 20, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="date" tick={{ fontSize: 9 }} />
-                <YAxis domain={[0, yMax]} ticks={Array.from({ length: yMax + 1 }, (_, i) => i)} tick={{ fontSize: 9 }} width={22} />
-                <Tooltip
-                  formatter={(v: any) => [`${v} — ${yLabel}`, label]}
-                  labelFormatter={(l) => `Date: ${l}`}
-                  contentStyle={{ fontSize: 11 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey={key}
-                  stroke={color}
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: color, stroke: "#fff", strokeWidth: 1.5 }}
-                  activeDot={{ r: 6 }}
-                >
-                  <LabelList
-                    dataKey={key}
-                    position="top"
-                    style={{ fontSize: 9, fontWeight: 700, fill: color }}
-                  />
-                </Line>
-              </LineChart>
-            </ResponsiveContainer>
+      {/* Radar */}
+      <ResponsiveContainer width="100%" height={360}>
+        <RadarChart data={radarData} margin={{ top: 16, right: 48, bottom: 16, left: 48 }}>
+          <PolarGrid gridType="polygon" stroke="#e5e7eb" />
+          <PolarAngleAxis
+            dataKey="label"
+            tick={{ fontSize: 10, fill: "#6b7280" }}
+          />
+          <PolarRadiusAxis
+            domain={[0, yMax]}
+            tickCount={yMax + 1}
+            tick={{ fontSize: 9, fill: "#9ca3af" }}
+            angle={90}
+          />
+          <Tooltip
+            contentStyle={{ fontSize: 11 }}
+            formatter={(val: any, name: string) => [
+              `${val} / ${yMax}`,
+              name === "current" ? `Actuel (${latest.date})` : compareEntry?.date ?? name,
+            ]}
+          />
+          <Radar
+            name="current"
+            dataKey="current"
+            stroke={color}
+            fill={color}
+            fillOpacity={0.22}
+            strokeWidth={2}
+            dot={{ r: 4, fill: color, stroke: "#fff", strokeWidth: 1.5 }}
+            activeDot={{ r: 6 }}
+          />
+          {compareEntry && (
+            <Radar
+              name="compare"
+              dataKey="compare"
+              stroke="#94a3b8"
+              fill="#94a3b8"
+              fillOpacity={0.12}
+              strokeWidth={1.5}
+              strokeDasharray="5 3"
+              dot={{ r: 3, fill: "#94a3b8" }}
+            />
+          )}
+          {compareEntry && (
+            <Legend
+              wrapperStyle={{ fontSize: 11, paddingTop: 4 }}
+              formatter={(value) =>
+                value === "current"
+                  ? `Actuel (${latest.date})`
+                  : `Comparaison (${compareEntry.date})`
+              }
+            />
+          )}
+        </RadarChart>
+      </ResponsiveContainer>
+
+      {/* Domain colour legend */}
+      <div className="flex flex-wrap gap-x-5 gap-y-1.5 pt-1 border-t">
+        {domains.map((d, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+            <span className="text-xs text-muted-foreground">
+              {d.label} <span className="font-mono text-[10px]">(Q{i * 3 + 1}–Q{i * 3 + 3})</span>
+            </span>
           </div>
-        );
-      })}
+        ))}
+      </div>
+
+      {/* Past evaluations mini-list */}
+      {data.length > 1 && (
+        <div className="pt-1 border-t">
+          <p className="text-xs text-muted-foreground mb-1.5">Historique des scores totaux</p>
+          <div className="flex flex-wrap gap-1.5">
+            {data.map((d, i) => {
+              const isLatest = i === data.length - 1;
+              const isCompare = i === compareIdx;
+              return (
+                <button
+                  key={i}
+                  onClick={() => setCompareIdx(isCompare || isLatest ? null : i)}
+                  disabled={isLatest}
+                  className={`px-2.5 py-1 rounded-full text-xs font-mono border transition-colors ${
+                    isLatest
+                      ? "border-current opacity-100 font-semibold cursor-default"
+                      : isCompare
+                      ? "bg-muted border-muted-foreground text-foreground"
+                      : "border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground"
+                  }`}
+                  style={isLatest ? { borderColor: color, color, background: `${color}12` } : undefined}
+                  title={isLatest ? "Évaluation actuelle" : "Cliquer pour comparer"}
+                >
+                  {d.date} · {d.total}/{totalMax}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -291,33 +399,35 @@ function KpiContent({ patientId, period }: { patientId: number; period: StatsPer
         )}
       </div>
 
-      {/* I•ROC charts */}
+      {/* I•ROC spider */}
       <div>
         <h3 className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
           I•ROC — Évaluations ({irockData.length})
         </h3>
-        <ChartPanel
-          title="I•ROC · Score 1–6 par question (1 = Jamais, 6 = Tout le temps)"
+        <SpiderPanel
+          title="I•ROC · Diagramme en araignée"
+          subtitle="Modèle HOPE · Score 1–6 par indicateur (1 = Jamais · 6 = Tout le temps)"
           data={irockChartData}
           questions={IROCK_QUESTIONS}
+          domains={IROCK_DOMAINS}
           color={IROCK_COLOR}
-          yLabel="1=Jamais / 6=Toujours"
           yMax={6}
           qCount={12}
         />
       </div>
 
-      {/* HoNOS charts */}
+      {/* HoNOS spider */}
       <div>
         <h3 className="text-sm font-semibold text-destructive uppercase tracking-wider mb-3">
           HoNOS — Évaluations ({honosData.length})
         </h3>
-        <ChartPanel
-          title="HoNOS · Score 0–4 par question (0 = Aucun problème, 4 = Problème grave)"
+        <SpiderPanel
+          title="HoNOS · Diagramme en araignée"
+          subtitle="Score 0–4 par échelle (0 = Aucun problème · 4 = Problème grave)"
           data={honosChartData}
           questions={HONOS_QUESTIONS}
+          domains={HONOS_DOMAINS}
           color={HONOS_COLOR}
-          yLabel="0=Aucun / 4=Grave"
           yMax={4}
           qCount={12}
         />
