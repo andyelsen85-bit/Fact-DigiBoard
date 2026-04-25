@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, patientsTable, historyEntriesTable } from "@workspace/db";
 import { eq, and, ilike, or, isNull, isNotNull, ne } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireAdmin } from "../middlewares/auth";
 
 const router = Router();
 
@@ -33,7 +33,7 @@ router.get("/patients", requireAuth, async (req, res) => {
   res.json(patients);
 });
 
-router.get("/patients/deleted", requireAuth, async (req, res) => {
+router.get("/patients/deleted", requireAuth, requireAdmin, async (req, res) => {
   const patients = await db.select().from(patientsTable)
     .where(isNotNull(patientsTable.deletedAt))
     .orderBy(patientsTable.deletedAt);
@@ -80,7 +80,7 @@ router.get("/patients/:id", requireAuth, async (req, res) => {
   res.json(patient);
 });
 
-router.post("/patients/:id/restore", requireAuth, async (req, res) => {
+router.post("/patients/:id/restore", requireAuth, requireAdmin, async (req, res) => {
   const id = Number(req.params["id"]);
   const [restored] = await db.update(patientsTable)
     .set({ deletedAt: null, updatedAt: new Date() })

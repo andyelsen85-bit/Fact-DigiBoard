@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, settingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireAdmin } from "../middlewares/auth";
 
 const router = Router();
 
@@ -39,7 +39,7 @@ router.get("/settings", requireAuth, async (_req, res) => {
   res.json(result);
 });
 
-router.put("/settings/:key", requireAuth, async (req, res) => {
+router.put("/settings/:key", requireAuth, requireAdmin, async (req, res) => {
   const key = String(req.params["key"]);
   const { value } = req.body as { value: unknown };
 

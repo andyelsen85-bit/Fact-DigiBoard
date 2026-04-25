@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, icd10CodesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireAdmin } from "../middlewares/auth";
 
 const router = Router();
 
@@ -13,7 +13,7 @@ router.get("/icd10", requireAuth, async (req, res) => {
   res.json(rows);
 });
 
-router.post("/icd10", requireAuth, async (req, res) => {
+router.post("/icd10", requireAuth, requireAdmin, async (req, res) => {
   const { code, title, description, risks, isFavorite } = req.body as {
     code: string;
     title: string;
@@ -44,7 +44,7 @@ router.post("/icd10", requireAuth, async (req, res) => {
   res.status(201).json(row);
 });
 
-router.patch("/icd10/:code", requireAuth, async (req, res) => {
+router.patch("/icd10/:code", requireAuth, requireAdmin, async (req, res) => {
   const { code } = req.params;
   const { title, description, risks, isFavorite } = req.body as {
     title?: string;
@@ -70,7 +70,7 @@ router.patch("/icd10/:code", requireAuth, async (req, res) => {
   res.json(row);
 });
 
-router.delete("/icd10/:code", requireAuth, async (req, res) => {
+router.delete("/icd10/:code", requireAuth, requireAdmin, async (req, res) => {
   const { code } = req.params;
   const [row] = await db
     .delete(icd10CodesTable)

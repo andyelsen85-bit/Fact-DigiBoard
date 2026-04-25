@@ -35,6 +35,24 @@ function ProtectedRoute({ component: Component, ...rest }: any) {
   return <Component />;
 }
 
+function AdminRoute({ component: Component }: any) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) return <Redirect to="/login" />;
+  if (user.mustChangePassword) return <Redirect to="/change-password" />;
+  if (user.role !== "admin") return <Redirect to="/board" />;
+
+  return <Component />;
+}
+
 function Router() {
   return (
     <Switch>
@@ -46,7 +64,7 @@ function Router() {
         {() => <ProtectedRoute component={BoardPage} />}
       </Route>
       <Route path="/settings">
-        {() => <ProtectedRoute component={SettingsPage} />}
+        {() => <AdminRoute component={SettingsPage} />}
       </Route>
       <Route component={NotFound} />
     </Switch>
