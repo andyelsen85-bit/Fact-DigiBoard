@@ -4,58 +4,75 @@ import type { IrockEval, HonosEval } from "@/hooks/use-evaluations";
 
 // ─── I•ROC ────────────────────────────────────────────────────────────────────
 
-const IROC_QUESTIONS: { label: string; description: string }[] = [
+const IROC_QUESTIONS: { domain: string; subdomain: string; label: string }[] = [
+  // DOMICILE
   {
-    label: "J'ai des activités qui me procurent du plaisir régulièrement",
-    description: "Loisirs, passe-temps, sport, culture – activités choisies librement et procurant satisfaction.",
+    domain: "DOMICILE",
+    subdomain: "SANTÉ MENTALE",
+    label: "À quelle fréquence vous êtes-vous senti mentalement et émotionnellement en bonne santé, heureux et bien ?",
   },
   {
-    label: "Je me sens appartenir à une communauté",
-    description: "Sentiment d'inclusion et de lien avec un groupe, un voisinage ou un réseau social.",
+    domain: "DOMICILE",
+    subdomain: "COMPÉTENCE DE VIE",
+    label: "À quelle fréquence avez-vous eu le sentiment d'avoir les compétences nécessaires pour prendre soin de vous ?",
   },
   {
-    label: "Je me sens en sécurité dans ma vie",
-    description: "Sécurité physique et émotionnelle dans le logement et l'environnement quotidien.",
+    domain: "DOMICILE",
+    subdomain: "SÉCURITÉ ET CONFORT",
+    label: "À quelle fréquence vous êtes-vous senti en sécurité et confortable chez vous et dans les alentours ?",
+  },
+  // OPPORTUNITÉ
+  {
+    domain: "OPPORTUNITÉ",
+    subdomain: "SANTÉ PHYSIQUE",
+    label: "À quelle fréquence vous êtes-vous en bonne santé physique ?",
   },
   {
-    label: "J'ai de l'espoir pour mon avenir",
-    description: "Sentiment que les choses peuvent s'améliorer ; confiance dans les possibilités à venir.",
+    domain: "OPPORTUNITÉ",
+    subdomain: "EXERCICE ET ACTIVITÉ",
+    label: "À quelle fréquence diriez-vous que vous avez été actif ou avez fait de l'exercice de façon régulière ?",
   },
   {
-    label: "J'ai des objectifs importants pour moi",
-    description: "Avoir des buts personnels significatifs qui donnent un sens à sa vie, quels qu'ils soient.",
+    domain: "OPPORTUNITÉ",
+    subdomain: "OBJECTIF ET ORIENTATION",
+    label: "À quelle fréquence diriez-vous que vous vous êtes senti occupé de manière intentionnelle ?",
+  },
+  // PERSONNES
+  {
+    domain: "PERSONNES",
+    subdomain: "ENTOURAGE",
+    label: "À quelle fréquence avez-vous eu le sentiment d'avoir des personnes / amis / proches pouvant vous soutenir si vous en aviez besoin ?",
   },
   {
-    label: "Je gère bien mes difficultés quotidiennes",
-    description: "Capacité à faire face aux problèmes courants et aux imprévus de la vie de tous les jours.",
+    domain: "PERSONNES",
+    subdomain: "RÉSEAU SOCIAL",
+    label: "À quelle fréquence avez-vous participé à des activités communautaires / de groupe ?",
   },
   {
-    label: "Je suis satisfait(e) de ma santé physique",
-    description: "Évaluation personnelle de l'état physique général et du bien-être corporel.",
+    domain: "PERSONNES",
+    subdomain: "SE VALORISER",
+    label: "À quelle fréquence avez-vous eu le sentiment d'avoir été capable de vous valoriser et de vous respecter ?",
+  },
+  // AUTONOMISATION
+  {
+    domain: "AUTONOMISATION",
+    subdomain: "PARTICIPATION ET CONTRÔLE",
+    label: "À quelle fréquence vous êtes-vous senti impliqué dans les décisions qui affectent votre vie ?",
   },
   {
-    label: "Je gère bien ma santé mentale",
-    description: "Sentiment de contrôle sur l'état psychologique et émotionnel ; gestion des symptômes.",
+    domain: "AUTONOMISATION",
+    subdomain: "AUTOGESTION",
+    label: "À quelle fréquence vous êtes-vous senti en contrôle et capable de gérer votre vie ?",
   },
   {
-    label: "Mes relations avec les autres me satisfont",
-    description: "Qualité des relations familiales, amicales ou sociales et satisfaction générale.",
-  },
-  {
-    label: "J'ai une occupation (travail, études, bénévolat)",
-    description: "Toute activité principale donnant structure et sens à la semaine (emploi, formation, engagement).",
-  },
-  {
-    label: "Je me sens libre de faire mes propres choix",
-    description: "Autodétermination – sentiment de pouvoir décider de sa propre vie sans contrainte excessive.",
-  },
-  {
-    label: "Je gère bien mon budget et mes finances",
-    description: "Capacité à gérer l'argent, payer les factures et faire face aux dépenses courantes.",
+    domain: "AUTONOMISATION",
+    subdomain: "ESPOIR D'AVENIR",
+    label: "À quelle fréquence avez-vous eu de l'espoir pour l'avenir ?",
   },
 ];
 
-const IROC_LABELS = ["Jamais", "Rarement", "Parfois", "Assez souvent", "Souvent", "Toujours"];
+const IROC_LEVELS = [1, 2, 3, 4, 5, 6];
+const IROC_LABELS = ["Jamais", "Presque jamais", "Parfois", "Souvent", "La plupart du temps", "Tout le temps"];
 
 // ─── HoNOS ───────────────────────────────────────────────────────────────────
 
@@ -122,6 +139,7 @@ const HONOS_QUESTIONS: { label: string; include: string; exclude: string }[] = [
   },
 ];
 
+const HONOS_LEVELS = [0, 1, 2, 3, 4];
 const HONOS_LABELS = ["Aucun", "Minime", "Léger", "Modéré", "Grave"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -138,8 +156,9 @@ interface Props {
 
 function makeInitial(type: EvalType, initial?: any) {
   const today = new Date().toISOString().slice(0, 10);
+  const defaultScore = type === "I•ROC" ? 1 : 0;
   const qs: Record<string, number> = {};
-  for (let i = 1; i <= 12; i++) qs[`q${i}`] = initial?.[`q${i}`] ?? 0;
+  for (let i = 1; i <= 12; i++) qs[`q${i}`] = initial?.[`q${i}`] ?? defaultScore;
   const qn: Record<string, string> = {};
   for (let i = 1; i <= 12; i++) qn[`q${i}`] = initial?.questionNotes?.[`q${i}`] ?? "";
   return {
@@ -154,9 +173,8 @@ function makeInitial(type: EvalType, initial?: any) {
 
 export function EvaluationModal({ type, initial, onSave, onClose, isPending }: Props) {
   const isIroc = type === "I•ROC";
-  const questions = isIroc ? IROC_QUESTIONS : HONOS_QUESTIONS;
+  const levels = isIroc ? IROC_LEVELS : HONOS_LEVELS;
   const labels = isIroc ? IROC_LABELS : HONOS_LABELS;
-  const levels = isIroc ? [0, 1, 2, 3, 4, 5] : [0, 1, 2, 3, 4];
 
   const [form, setForm] = useState(() => makeInitial(type, initial));
 
@@ -179,8 +197,11 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
     onSave(payload);
   }
 
-  const total = questions.reduce((sum, _, i) => sum + ((form as any)[`q${i + 1}`] ?? 0), 0);
-  const max = questions.length * (isIroc ? 5 : 4);
+  const total = [...Array(12)].reduce((sum, _, i) => sum + ((form as any)[`q${i + 1}`] ?? 0), 0);
+  const max = isIroc ? 72 : 48;
+
+  // For I•ROC: track which domain headers have been rendered
+  let lastDomain = "";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -193,7 +214,7 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
 
           {/* Date */}
           <div>
@@ -206,78 +227,116 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
             />
           </div>
 
+          {/* I•ROC: scale legend */}
+          {isIroc && (
+            <div className="flex gap-1 text-[10px] text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
+              {IROC_LEVELS.map((v) => (
+                <span key={v} className="flex-1 text-center">
+                  <span className="font-mono font-semibold block">{v}</span>
+                  <span className="leading-tight block">{IROC_LABELS[v - 1]}</span>
+                </span>
+              ))}
+            </div>
+          )}
+
           {/* Questions */}
-          <div className="space-y-4">
-            {questions.map((q, i) => {
+          <div className="space-y-3">
+            {(isIroc ? IROC_QUESTIONS : HONOS_QUESTIONS).map((q, i) => {
               const key = `q${i + 1}`;
-              const val = (form as any)[key] ?? 0;
+              const val = (form as any)[key] ?? (isIroc ? 1 : 0);
               const qNote = form.questionNotes[key] ?? "";
 
+              // Domain separator for I•ROC
+              const iroc = q as typeof IROC_QUESTIONS[0];
+              let domainHeader: React.ReactNode = null;
+              if (isIroc && iroc.domain !== lastDomain) {
+                lastDomain = iroc.domain;
+                domainHeader = (
+                  <div key={`domain-${iroc.domain}`} className="pt-2 pb-1">
+                    <span className="text-xs font-bold uppercase tracking-widest text-primary/70 border-b border-primary/20 pb-0.5">
+                      {iroc.domain}
+                    </span>
+                  </div>
+                );
+              }
+
               return (
-                <div key={key} className="bg-muted/30 rounded-lg p-3 space-y-2">
+                <div key={key}>
+                  {domainHeader}
+                  <div className="bg-muted/30 rounded-lg p-3 space-y-2">
 
-                  {/* Question header */}
-                  <div className="flex items-start gap-2">
-                    <span className="text-xs font-mono text-muted-foreground shrink-0 w-5 mt-0.5">{i + 1}.</span>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-snug">{q.label}</p>
+                    {/* Question header */}
+                    <div className="flex items-start gap-2">
+                      <span className="text-xs font-mono text-muted-foreground shrink-0 w-5 mt-0.5">{i + 1}.</span>
+                      <div className="flex-1 space-y-0.5">
 
-                      {/* I•ROC description */}
-                      {isIroc && (
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          {(q as typeof IROC_QUESTIONS[0]).description}
-                        </p>
-                      )}
+                        {/* I•ROC: subdomain + preamble + question */}
+                        {isIroc && (
+                          <>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                              {iroc.subdomain}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground italic">Au cours des 3 derniers mois…</p>
+                            <p className="text-sm font-medium leading-snug">{iroc.label}</p>
+                          </>
+                        )}
 
-                      {/* HoNOS SAISIR / NE PAS SAISIR */}
-                      {!isIroc && (
-                        <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs">
-                          <span className="text-green-700 dark:text-green-400">
-                            <span className="font-semibold">✓ Saisir :</span>{" "}
-                            {(q as typeof HONOS_QUESTIONS[0]).include}
-                          </span>
-                          <span className="text-red-600 dark:text-red-400">
-                            <span className="font-semibold">✗ Exclure :</span>{" "}
-                            {(q as typeof HONOS_QUESTIONS[0]).exclude}
-                          </span>
-                        </div>
-                      )}
+                        {/* HoNOS: question + 2-line guidance */}
+                        {!isIroc && (
+                          <>
+                            <p className="text-sm font-medium leading-snug">
+                              {(q as typeof HONOS_QUESTIONS[0]).label}
+                            </p>
+                            <p className="text-xs text-green-700 dark:text-green-400 leading-snug">
+                              <span className="font-semibold">✓ Saisir :</span>{" "}
+                              {(q as typeof HONOS_QUESTIONS[0]).include}
+                            </p>
+                            <p className="text-xs text-red-600 dark:text-red-400 leading-snug">
+                              <span className="font-semibold">✗ Exclure :</span>{" "}
+                              {(q as typeof HONOS_QUESTIONS[0]).exclude}
+                            </p>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Score buttons */}
-                  <div className="flex gap-1 pl-7">
-                    {levels.map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => setQ(key, v)}
-                        title={labels[v]}
-                        className={`flex-1 py-1.5 rounded text-xs font-medium border transition-colors ${
-                          val === v
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background text-muted-foreground border-border hover:border-primary/50"
-                        }`}
-                      >
-                        {v}
-                        <span className="hidden sm:block text-[10px] font-normal truncate">{labels[v]}</span>
-                      </button>
-                    ))}
-                  </div>
+                    {/* Score buttons */}
+                    <div className="flex gap-1 pl-7">
+                      {levels.map((v) => {
+                        const labelText = isIroc ? IROC_LABELS[v - 1] : HONOS_LABELS[v];
+                        return (
+                          <button
+                            key={v}
+                            onClick={() => setQ(key, v)}
+                            title={labelText}
+                            className={`flex-1 py-1.5 rounded text-xs font-medium border transition-colors ${
+                              val === v
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                            }`}
+                          >
+                            {v}
+                            <span className="hidden sm:block text-[10px] font-normal truncate">{labelText}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
 
-                  {/* Per-question free-text note */}
-                  <div className="pl-7">
-                    <textarea
-                      rows={1}
-                      placeholder="Note pour cette question…"
-                      value={qNote}
-                      onChange={(e) => setQNote(key, e.target.value)}
-                      className="w-full text-xs border rounded px-2 py-1 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50 leading-relaxed"
-                      onInput={(e) => {
-                        const el = e.currentTarget;
-                        el.style.height = "auto";
-                        el.style.height = `${el.scrollHeight}px`;
-                      }}
-                    />
+                    {/* Per-question free-text note */}
+                    <div className="pl-7">
+                      <textarea
+                        rows={1}
+                        placeholder="Remarques…"
+                        value={qNote}
+                        onChange={(e) => setQNote(key, e.target.value)}
+                        className="w-full text-xs border rounded px-2 py-1 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50 leading-relaxed"
+                        onInput={(e) => {
+                          const el = e.currentTarget;
+                          el.style.height = "auto";
+                          el.style.height = `${el.scrollHeight}px`;
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               );

@@ -622,7 +622,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                       {e.type}
                     </span>
                     <span className="text-xs font-mono text-muted-foreground">{e.date}</span>
-                    <span className="text-xs text-muted-foreground">Score : <span className="font-mono font-medium text-foreground">{total}</span>/{isIroc ? 60 : 48}</span>
+                    <span className="text-xs text-muted-foreground">Score : <span className="font-mono font-medium text-foreground">{total}</span>/{isIroc ? 72 : 48}</span>
                     {(e as any).createdByUsername && (
                       <span className="text-xs text-muted-foreground/70 italic">par {(e as any).createdByUsername}</span>
                     )}

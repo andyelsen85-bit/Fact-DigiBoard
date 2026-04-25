@@ -12,18 +12,18 @@ import { useGetSettings, getGetSettingsQueryKey } from "@workspace/api-client-re
 import { type StatsPeriod, periodToSince } from "@/hooks/use-stats";
 
 const IROCK_QUESTIONS = [
-  "Activités plaisantes",
-  "Appartenance à une communauté",
-  "Sentiment de sécurité",
-  "Espoir pour l'avenir",
-  "Objectifs importants",
-  "Gestion des difficultés",
-  "Santé physique",
   "Santé mentale",
-  "Relations avec les autres",
-  "Occupation",
-  "Liberté de choix",
-  "Budget / finances",
+  "Compétence de vie",
+  "Sécurité et confort",
+  "Santé physique",
+  "Exercice et activité",
+  "Objectif et orientation",
+  "Entourage",
+  "Réseau social",
+  "Se valoriser",
+  "Participation et contrôle",
+  "Autogestion",
+  "Espoir d'avenir",
 ];
 
 const HONOS_QUESTIONS = [
@@ -297,12 +297,12 @@ function KpiContent({ patientId, period }: { patientId: number; period: StatsPer
           I•ROC — Évaluations ({irockData.length})
         </h3>
         <ChartPanel
-          title="I•ROC · Score 0–5 par question (0 = Jamais, 5 = Toujours)"
+          title="I•ROC · Score 1–6 par question (1 = Jamais, 6 = Tout le temps)"
           data={irockChartData}
           questions={IROCK_QUESTIONS}
           color={IROCK_COLOR}
-          yLabel="0=Jamais / 5=Toujours"
-          yMax={5}
+          yLabel="1=Jamais / 6=Toujours"
+          yMax={6}
           qCount={12}
         />
       </div>
