@@ -10,6 +10,7 @@ import actRouter from "./act";
 import settingsRouter from "./settings";
 import icd10Router from "./icd10";
 import evaluationsRouter from "./evaluations";
+import backupRouter from "./backup";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(actRouter);
 router.use(settingsRouter);
 router.use(icd10Router);
 router.use(evaluationsRouter);
+router.use(backupRouter);
 
 export default router;

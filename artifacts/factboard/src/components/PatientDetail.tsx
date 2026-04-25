@@ -622,6 +622,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                     </span>
                     <span className="text-xs font-mono text-muted-foreground">{e.date}</span>
                     <span className="text-xs text-muted-foreground">Score : <span className="font-mono font-medium text-foreground">{total}</span>/{qCount * 4}</span>
+                    {(e as any).createdByUsername && (
+                      <span className="text-xs text-muted-foreground/70 italic">par {(e as any).createdByUsername}</span>
+                    )}
                     <div className="ml-auto flex gap-1">
                       <button
                         className="text-xs text-primary hover:underline px-1"
@@ -674,6 +677,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                   />
                   <span className="flex-1 text-foreground">{entry.action}</span>
                   {entry.boardTo && <BoardBadge board={entry.boardTo} />}
+                  {(entry as any).createdByUsername && (
+                    <span className="text-xs text-muted-foreground/70 italic">par {(entry as any).createdByUsername}</span>
+                  )}
                   <span className="font-mono text-xs text-muted-foreground">{duration} j</span>
                 </div>
               );

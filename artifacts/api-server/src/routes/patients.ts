@@ -62,6 +62,7 @@ router.post("/patients", requireAuth, async (req, res) => {
     date: today,
     action: `Ajouté au board ${finalPatient!.board}`,
     boardTo: finalPatient!.board,
+    createdByUsername: (req as any).user?.username ?? null,
   });
 
   res.status(201).json(finalPatient);
@@ -144,6 +145,7 @@ async function moveBoardHandler(req: any, res: any) {
     date: today,
     action: `Déplacé vers ${board}`,
     boardTo: board,
+    createdByUsername: (req as any).user?.username ?? null,
   });
 
   res.json(updated);

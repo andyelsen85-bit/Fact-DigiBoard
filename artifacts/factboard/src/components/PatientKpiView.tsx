@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
+  ResponsiveContainer, LabelList,
 } from "recharts";
 import {
   usePatientSelector, useListIrock, useListHonos, usePatientKpi,
@@ -48,14 +48,27 @@ const HONOS_COLOR = "#dc2626";
 
 interface ChartPanelProps {
   title: string;
-  data: Record<string, number>[];
+  data: Record<string, any>[];
   questions: string[];
   color: string;
   yLabel: string;
   yMax: number;
+  qCount: number;
 }
 
-function ChartPanel({ title, data, questions, color, yLabel, yMax }: ChartPanelProps) {
+function SummaryDot({ cx, cy, value, color }: { cx?: number; cy?: number; value?: number; color?: string }) {
+  if (cx === undefined || cy === undefined) return null;
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={6} fill={color} stroke="#fff" strokeWidth={2} />
+      <text x={cx} y={cy - 10} textAnchor="middle" fontSize={10} fontWeight={700} fill={color}>
+        {value}
+      </text>
+    </g>
+  );
+}
+
+function ChartPanel({ title, data, questions, color, yLabel, yMax, qCount }: ChartPanelProps) {
   if (data.length < 1) {
     return (
       <div className="bg-card border rounded-lg p-4">
@@ -65,19 +78,63 @@ function ChartPanel({ title, data, questions, color, yLabel, yMax }: ChartPanelP
     );
   }
 
+  const totalMax = yMax * qCount;
+
   return (
     <div className="bg-card border rounded-lg p-4 space-y-4">
       <h4 className="text-sm font-medium">{title}</h4>
+
+      {/* ─── Summary total score row ─── */}
+      <div className="border rounded-lg p-3 bg-muted/20">
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color }}>
+            Score total / {totalMax}
+          </p>
+          <div className="flex gap-2">
+            {data.map((d, i) => (
+              <span
+                key={i}
+                className="text-xs font-mono font-bold px-2 py-0.5 rounded border"
+                style={{ color, borderColor: color, background: `${color}12` }}
+              >
+                {d.total}/{totalMax}
+              </span>
+            ))}
+          </div>
+        </div>
+        <ResponsiveContainer width="100%" height={90}>
+          <LineChart data={data} margin={{ top: 16, right: 20, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+            <YAxis domain={[0, totalMax]} tick={{ fontSize: 10 }} width={36} />
+            <Tooltip
+              formatter={(v: any) => [`${v} / ${totalMax}`, "Score total"]}
+              labelFormatter={(l) => `Date: ${l}`}
+              contentStyle={{ fontSize: 11 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="total"
+              stroke={color}
+              strokeWidth={3}
+              dot={(props: any) => <SummaryDot {...props} color={color} />}
+              activeDot={{ r: 7 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* ─── Per-question rows ─── */}
       {questions.map((label, i) => {
         const key = `q${i + 1}`;
         return (
           <div key={key}>
             <p className="text-xs text-muted-foreground mb-1">{i + 1}. {label}</p>
-            <ResponsiveContainer width="100%" height={80}>
-              <LineChart data={data} margin={{ top: 2, right: 8, left: -20, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height={70}>
+              <LineChart data={data} margin={{ top: 14, right: 20, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                <YAxis domain={[0, yMax]} tick={{ fontSize: 10 }} width={30} />
+                <XAxis dataKey="date" tick={{ fontSize: 9 }} />
+                <YAxis domain={[0, yMax]} ticks={[0, 1, 2, 3, 4]} tick={{ fontSize: 9 }} width={22} />
                 <Tooltip
                   formatter={(v: any) => [`${v} — ${yLabel}`, label]}
                   labelFormatter={(l) => `Date: ${l}`}
@@ -88,9 +145,15 @@ function ChartPanel({ title, data, questions, color, yLabel, yMax }: ChartPanelP
                   dataKey={key}
                   stroke={color}
                   strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                />
+                  dot={{ r: 4, fill: color, stroke: "#fff", strokeWidth: 1.5 }}
+                  activeDot={{ r: 6 }}
+                >
+                  <LabelList
+                    dataKey={key}
+                    position="top"
+                    style={{ fontSize: 9, fontWeight: 700, fill: color }}
+                  />
+                </Line>
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -113,18 +176,26 @@ function KpiContent({ patientId }: { patientId: number }) {
     );
   }
 
-  const irockChartData = irockData.map((e) => ({
-    date: e.date,
-    q1: e.q1, q2: e.q2, q3: e.q3, q4: e.q4, q5: e.q5,
-    q6: e.q6, q7: e.q7, q8: e.q8, q9: e.q9, q10: e.q10,
-  }));
+  const irockChartData = irockData.map((e) => {
+    const qs = [e.q1, e.q2, e.q3, e.q4, e.q5, e.q6, e.q7, e.q8, e.q9, e.q10];
+    return {
+      date: e.date,
+      q1: e.q1, q2: e.q2, q3: e.q3, q4: e.q4, q5: e.q5,
+      q6: e.q6, q7: e.q7, q8: e.q8, q9: e.q9, q10: e.q10,
+      total: qs.reduce((s, v) => s + v, 0),
+    };
+  });
 
-  const honosChartData = honosData.map((e) => ({
-    date: e.date,
-    q1: e.q1, q2: e.q2, q3: e.q3, q4: e.q4, q5: e.q5,
-    q6: e.q6, q7: e.q7, q8: e.q8, q9: e.q9, q10: e.q10,
-    q11: e.q11, q12: e.q12,
-  }));
+  const honosChartData = honosData.map((e) => {
+    const qs = [e.q1, e.q2, e.q3, e.q4, e.q5, e.q6, e.q7, e.q8, e.q9, e.q10, e.q11, e.q12];
+    return {
+      date: e.date,
+      q1: e.q1, q2: e.q2, q3: e.q3, q4: e.q4, q5: e.q5,
+      q6: e.q6, q7: e.q7, q8: e.q8, q9: e.q9, q10: e.q10,
+      q11: e.q11, q12: e.q12,
+      total: qs.reduce((s, v) => s + v, 0),
+    };
+  });
 
   const daysPerBoard = kpi?.daysPerBoard ?? {};
   const regressions = kpi?.regressions ?? 0;
@@ -168,12 +239,13 @@ function KpiContent({ patientId }: { patientId: number }) {
           iRock — Évaluations ({irockData.length})
         </h3>
         <ChartPanel
-          title="iRock · Score 0–4 (0 = Jamais, 4 = Toujours)"
+          title="iRock · Score 0–4 par question (0 = Jamais, 4 = Toujours)"
           data={irockChartData}
           questions={IROCK_QUESTIONS}
           color={IROCK_COLOR}
           yLabel="0=Jamais / 4=Toujours"
           yMax={4}
+          qCount={10}
         />
       </div>
 
@@ -183,12 +255,13 @@ function KpiContent({ patientId }: { patientId: number }) {
           HoNOS — Évaluations ({honosData.length})
         </h3>
         <ChartPanel
-          title="HoNOS · Score 0–4 (0 = Aucun problème, 4 = Problème grave)"
+          title="HoNOS · Score 0–4 par question (0 = Aucun problème, 4 = Problème grave)"
           data={honosChartData}
           questions={HONOS_QUESTIONS}
           color={HONOS_COLOR}
           yLabel="0=Aucun / 4=Grave"
           yMax={4}
+          qCount={12}
         />
       </div>
     </div>

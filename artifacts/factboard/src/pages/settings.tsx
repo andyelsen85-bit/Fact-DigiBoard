@@ -247,6 +247,99 @@ function getAuthHeaders(): HeadersInit {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function BackupSection() {
+  const { toast } = useToast();
+  const [importing, setImporting] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handleExport() {
+    try {
+      const res = await fetch("/api/backup/export", { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const cd = res.headers.get("Content-Disposition") ?? "";
+      const match = cd.match(/filename="([^"]+)"/);
+      a.download = match?.[1] ?? "digiboard-backup.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast({ title: "Sauvegarde téléchargée" });
+    } catch {
+      toast({ title: "Erreur", description: "Impossible d'exporter la sauvegarde", variant: "destructive" });
+    }
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+      if (!confirm(
+        `⚠️ ATTENTION — Restaurer cette sauvegarde va effacer TOUTES les données actuelles (patients, historiques, évaluations) et les remplacer par celles de la sauvegarde datée du ${payload.exportedAt?.slice(0, 10) ?? "?"} .\n\nContinuer ?`
+      )) return;
+      setRestoring(true);
+      const res = await fetch("/api/backup/restore", {
+        method: "POST",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: text,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? "Restore failed");
+      }
+      toast({ title: "Restauration réussie", description: "Les données ont été restaurées. Rechargez la page." });
+    } catch (err: any) {
+      toast({ title: "Erreur de restauration", description: err.message ?? "Fichier invalide", variant: "destructive" });
+    } finally {
+      setImporting(false);
+      setRestoring(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  return (
+    <div className="bg-card border rounded-lg p-4">
+      <h3 className="text-sm font-medium mb-1">Sauvegarde et restauration</h3>
+      <p className="text-xs text-muted-foreground mb-4">
+        Exportez toutes les données (patients, historiques, évaluations iRock/HoNOS, notes, codes ICD-10, paramètres) en un fichier JSON.
+        La restauration remplace l'intégralité des données — les comptes utilisateurs ne sont pas touchés.
+      </p>
+      <div className="flex items-center gap-3">
+        <Button size="sm" variant="outline" onClick={handleExport} data-testid="button-backup-export">
+          ⬇ Télécharger la sauvegarde
+        </Button>
+        <div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={handleFileChange}
+            data-testid="input-backup-file"
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-destructive text-destructive hover:bg-destructive/10"
+            disabled={importing || restoring}
+            onClick={() => fileRef.current?.click()}
+            data-testid="button-backup-restore"
+          >
+            {restoring ? "Restauration en cours..." : "⬆ Restaurer depuis un fichier"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface DeletedPatient {
   id: number;
   clientNum: string;
@@ -598,6 +691,13 @@ export default function SettingsPage() {
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Corbeille</h3>
             <DeletedPatientsSection />
           </div>
+
+          {user?.role === "admin" && (
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Sauvegarde</h3>
+              <BackupSection />
+            </div>
+          )}
 
           {user?.role === "admin" && (
             <div className="bg-card border rounded-lg p-4">

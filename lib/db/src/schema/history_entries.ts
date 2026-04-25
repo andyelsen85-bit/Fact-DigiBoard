@@ -9,6 +9,7 @@ export const historyEntriesTable = pgTable("history_entries", {
   date: text("date").notNull(),
   action: text("action").notNull(),
   boardTo: text("board_to"),
+  createdByUsername: text("created_by_username"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
