@@ -147,15 +147,13 @@ router.get("/patients/:id/kpi", requireAuth, async (req, res) => {
     daysPerBoard[entry.boardTo!] = (daysPerBoard[entry.boardTo!] ?? 0) + days;
   }
 
-  // If patient is currently in a clinical board and has no later history, count today
-  if (patient && CLINICAL_BOARDS.includes(patient.board)) {
-    const lastEntry = history[history.length - 1];
-    if (lastEntry?.boardTo === patient.board) {
-      // Already counted above as "to today"
-    }
+  // Apply manual offset (for clients imported from legacy systems)
+  const offset: Record<string, number> = (patient?.boardDaysOffset as Record<string, number>) ?? {};
+  for (const board of CLINICAL_BOARDS) {
+    daysPerBoard[board] = (daysPerBoard[board] ?? 0) + (offset[board] ?? 0);
   }
 
-  res.json({ regressions, daysPerBoard });
+  res.json({ regressions, daysPerBoard, boardDaysOffset: offset });
 });
 
 export default router;

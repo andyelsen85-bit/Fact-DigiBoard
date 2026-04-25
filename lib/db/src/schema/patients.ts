@@ -37,6 +37,7 @@ export const patientsTable = pgTable("patients", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   photo: text("photo"),
+  boardDaysOffset: jsonb("board_days_offset").$type<Record<string, number>>().default({}),
 });
 
 export const insertPatientSchema = createInsertSchema(patientsTable).omit({ id: true, createdAt: true, updatedAt: true });

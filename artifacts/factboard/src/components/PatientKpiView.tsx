@@ -5,6 +5,7 @@ import {
 } from "recharts";
 import {
   usePatientSelector, useListIrock, useListHonos, usePatientKpi,
+  useUpdateBoardDaysOffset,
 } from "@/hooks/use-evaluations";
 import { useGetSettings, getGetSettingsQueryKey } from "@workspace/api-client-react";
 import { type StatsPeriod, periodToSince } from "@/hooks/use-stats";
@@ -139,6 +140,24 @@ function KpiContent({ patientId, period }: { patientId: number; period: StatsPer
   const { data: irockRaw = [], isLoading: irockLoading } = useListIrock(patientId);
   const { data: honosRaw = [], isLoading: honosLoading } = useListHonos(patientId);
   const { data: kpi, isLoading: kpiLoading } = usePatientKpi(patientId);
+  const updateOffset = useUpdateBoardDaysOffset(patientId);
+  const [editingOffset, setEditingOffset] = useState(false);
+  const [offsetDraft, setOffsetDraft] = useState<Record<string, number>>({});
+
+  function openOffsetEditor() {
+    setOffsetDraft({
+      PréAdmission: kpi?.boardDaysOffset?.["PréAdmission"] ?? 0,
+      FactBoard: kpi?.boardDaysOffset?.["FactBoard"] ?? 0,
+      RecoveryBoard: kpi?.boardDaysOffset?.["RecoveryBoard"] ?? 0,
+    });
+    setEditingOffset(true);
+  }
+
+  function saveOffset() {
+    updateOffset.mutate(offsetDraft, {
+      onSuccess: () => setEditingOffset(false),
+    });
+  }
 
   if (irockLoading || honosLoading || kpiLoading) {
     return (
@@ -181,33 +200,94 @@ function KpiContent({ patientId, period }: { patientId: number; period: StatsPer
     <div className="space-y-6">
       {/* Board stability */}
       <div className="bg-card border rounded-lg p-4">
-        <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground mb-4">
-          Stabilité par board
-        </h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground mb-2">Jours par board (PréAdmission / FactBoard / RecoveryBoard)</p>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            Stabilité par board
+          </h3>
+          {!editingOffset ? (
+            <button
+              onClick={openOffsetEditor}
+              className="text-xs px-2.5 py-1 rounded border border-border hover:bg-muted transition-colors text-muted-foreground"
+            >
+              Ajuster jours initiaux
+            </button>
+          ) : (
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => setEditingOffset(false)}
+                className="text-xs px-2.5 py-1 rounded border border-border hover:bg-muted transition-colors text-muted-foreground"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={saveOffset}
+                disabled={updateOffset.isPending}
+                className="text-xs px-2.5 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {updateOffset.isPending ? "…" : "Enregistrer"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {editingOffset ? (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Saisissez les jours déjà passés sur chaque board avant l'entrée dans DigiBoard.
+              Le calcul automatique s'ajoutera à ces valeurs.
+            </p>
             {CLINICAL_BOARDS.map((board) => (
-              <div key={board} className="flex items-center gap-2">
+              <div key={board} className="flex items-center gap-3">
                 <span
                   className="w-3 h-3 rounded-full shrink-0"
                   style={{ backgroundColor: BOARD_COLORS[board] }}
                 />
                 <span className="text-xs text-muted-foreground w-32 shrink-0">{board}</span>
-                <span className="font-mono text-sm font-medium">{daysPerBoard[board] ?? 0} j</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={offsetDraft[board] ?? 0}
+                  onChange={(e) =>
+                    setOffsetDraft((d) => ({ ...d, [board]: Math.max(0, parseInt(e.target.value) || 0) }))
+                  }
+                  className="w-24 border rounded px-2 py-1 text-sm bg-background font-mono"
+                />
+                <span className="text-xs text-muted-foreground">jours</span>
               </div>
             ))}
           </div>
-          <div className="flex flex-col items-center justify-center bg-muted/30 rounded-lg p-4">
-            <div className="text-4xl font-light font-mono text-destructive">{regressions}</div>
-            <div className="text-xs text-muted-foreground mt-1 text-center">
-              Retours de RecoveryBoard → FactBoard
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground mb-2">Jours par board (incluant ajustement initial)</p>
+              {CLINICAL_BOARDS.map((board) => {
+                const offset = kpi?.boardDaysOffset?.[board] ?? 0;
+                return (
+                  <div key={board} className="flex items-center gap-2">
+                    <span
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: BOARD_COLORS[board] }}
+                    />
+                    <span className="text-xs text-muted-foreground w-32 shrink-0">{board}</span>
+                    <span className="font-mono text-sm font-medium">{daysPerBoard[board] ?? 0} j</span>
+                    {offset > 0 && (
+                      <span className="text-[10px] text-muted-foreground">(dont {offset} j initiaux)</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            <div className="text-xs text-muted-foreground mt-1 text-center italic">
-              (indicateur d'instabilité)
+            <div className="flex flex-col items-center justify-center bg-muted/30 rounded-lg p-4">
+              <div className="text-4xl font-light font-mono text-destructive">{regressions}</div>
+              <div className="text-xs text-muted-foreground mt-1 text-center">
+                Retours de RecoveryBoard → FactBoard
+              </div>
+              <div className="text-xs text-muted-foreground mt-1 text-center italic">
+                (indicateur d'instabilité)
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* iRock charts */}

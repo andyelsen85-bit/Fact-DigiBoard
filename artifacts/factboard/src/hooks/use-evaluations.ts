@@ -41,6 +41,7 @@ export interface HonosEval {
 export interface PatientKpi {
   regressions: number;
   daysPerBoard: Record<string, number>;
+  boardDaysOffset: Record<string, number>;
 }
 
 export interface PatientSelectorItem {
@@ -145,5 +146,17 @@ export function usePatientSelector() {
   return useQuery<PatientSelectorItem[]>({
     queryKey: ["patients-selector"],
     queryFn: () => apiFetch("/api/patients-selector"),
+  });
+}
+
+export function useUpdateBoardDaysOffset(patientId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (boardDaysOffset: Record<string, number>) =>
+      apiFetch(`/api/patients/${patientId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ boardDaysOffset }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["kpi", patientId] }),
   });
 }
