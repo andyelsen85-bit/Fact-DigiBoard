@@ -64,6 +64,7 @@ export function StatsView() {
   const aggCounts = stats.aggCounts ?? {};
   const avgDurations = stats.avgDurations ?? {};
   const ageCounts = stats.ageCounts ?? {};
+  const visitsByLieu: { lieu: string; count: number }[] = (stats as any).visitsByLieu ?? [];
 
   const maxBoardCount = Math.max(...Object.values(boardCounts), 1);
   const maxPathoCount = Math.max(...pathoCounts.map((p) => p.count), 1);
@@ -131,6 +132,26 @@ export function StatsView() {
           <span className="text-2xl font-semibold text-red-200">HoNOS</span>
         </div>
       </div>
+
+      {visitsByLieu.length > 0 && (
+        <div className="bg-card border rounded-lg p-4">
+          <h3 className="text-sm font-medium mb-3">Visites par lieu (ACT)</h3>
+          <div className="space-y-2">
+            {visitsByLieu.map((item) => (
+              <div key={item.lieu} className="flex items-center gap-2">
+                <div className="w-32 text-xs text-right text-muted-foreground shrink-0 truncate">{item.lieu}</div>
+                <div className="flex-1 bg-muted rounded-full h-4 relative">
+                  <div
+                    className="h-4 rounded-full transition-all bg-emerald-700/70"
+                    style={{ width: `${(item.count / visitsByLieu[0].count) * 100}%` }}
+                  />
+                </div>
+                <div className="font-mono text-sm w-6 text-right shrink-0">{item.count}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-card border rounded-lg p-4">
         <h3 className="text-sm font-medium mb-3">Clients par board</h3>

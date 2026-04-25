@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, patientsTable, irockEvaluationsTable, honosEvaluationsTable } from "@workspace/db";
-import { isNull } from "drizzle-orm";
+import { db, patientsTable, irockEvaluationsTable, honosEvaluationsTable, actNotesTable, actRegionsTable } from "@workspace/db";
+import { isNull, eq } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
@@ -83,6 +83,24 @@ router.get("/stats", requireAuth, async (req, res) => {
     ? allHonos.filter((e) => e.date >= since).length
     : allHonos.length;
 
+  const regions = await db.select().from(actRegionsTable);
+  const regionMap: Record<number, string> = {};
+  for (const r of regions) regionMap[r.id] = r.nom;
+
+  const allActNotes = await db.select().from(actNotesTable);
+  const filteredActNotes = since
+    ? allActNotes.filter((n) => n.date && n.date >= since)
+    : allActNotes;
+
+  const visitCounts: Record<string, number> = {};
+  for (const n of filteredActNotes) {
+    const lieu = regionMap[n.regionId] ?? "Inconnu";
+    visitCounts[lieu] = (visitCounts[lieu] ?? 0) + 1;
+  }
+  const visitsByLieu = Object.entries(visitCounts)
+    .map(([lieu, count]) => ({ lieu, count }))
+    .sort((a, b) => b.count - a.count);
+
   res.json({
     total,
     active,
@@ -94,6 +112,7 @@ router.get("/stats", requireAuth, async (req, res) => {
     ageCounts,
     irockCount,
     honosCount,
+    visitsByLieu,
   });
 });
 
