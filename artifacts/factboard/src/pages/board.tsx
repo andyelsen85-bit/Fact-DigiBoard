@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { PatientList } from "@/components/PatientList";
 import { PatientDetail } from "@/components/PatientDetail";
 import { PatientModal } from "@/components/PatientModal";
+import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 import { StatsView } from "@/components/StatsView";
 import { ActView } from "@/components/ActView";
 import { PatientKpiView } from "@/components/PatientKpiView";
@@ -35,6 +36,7 @@ export default function BoardPage() {
   const [search, setSearch] = useState("");
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   const [sidebarWidth, setSidebarWidth] = useState(256);
   const [sidebarVisible, setSidebarVisible] = useState(() => window.innerWidth >= 640);
@@ -127,7 +129,13 @@ export default function BoardPage() {
           >
             + Nouveau client
           </button>
-          <span className="text-xs text-muted-foreground">{user?.username}</span>
+          <button
+            className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors"
+            onClick={() => setShowChangePassword(true)}
+            title="Changer le mot de passe"
+          >
+            {user?.username}
+          </button>
           {user?.role === "admin" && (
             <button
               className="text-xs text-muted-foreground hover:text-foreground"
@@ -234,6 +242,10 @@ export default function BoardPage() {
         onSave={handleCreatePatient}
         isPending={createPatient.isPending}
         title="Nouveau client"
+      />
+      <ChangePasswordModal
+        open={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
       />
     </div>
   );

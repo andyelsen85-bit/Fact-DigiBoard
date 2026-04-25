@@ -96,9 +96,21 @@ router.get("/auth/me", requireAuth, async (req, res) => {
 
 router.post("/auth/change-password", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const { newPassword } = req.body as { newPassword: string };
+  const { currentPassword, newPassword } = req.body as { currentPassword: string; newPassword: string };
+
+  if (!currentPassword) {
+    res.status(400).json({ error: "Le mot de passe actuel est requis" });
+    return;
+  }
   if (!newPassword || newPassword.length < 6) {
-    res.status(400).json({ error: "Password must be at least 6 characters" });
+    res.status(400).json({ error: "Le nouveau mot de passe doit comporter au moins 6 caractères" });
+    return;
+  }
+
+  const [dbUser] = await db.select().from(usersTable).where(eq(usersTable.id, user.id)).limit(1);
+  const valid = await bcrypt.compare(currentPassword, dbUser.passwordHash);
+  if (!valid) {
+    res.status(401).json({ error: "Mot de passe actuel incorrect" });
     return;
   }
 
@@ -107,7 +119,7 @@ router.post("/auth/change-password", requireAuth, async (req, res) => {
     .set({ passwordHash, mustChangePassword: false })
     .where(eq(usersTable.id, user.id));
 
-  res.json({ message: "Password changed" });
+  res.json({ message: "Mot de passe modifié" });
 });
 
 export default router;
