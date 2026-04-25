@@ -152,13 +152,7 @@ router.get("/patients/:id/kpi", requireAuth, async (req, res) => {
     daysPerBoard[entry.boardTo!] = (daysPerBoard[entry.boardTo!] ?? 0) + days;
   }
 
-  // Apply manual offset (for clients imported from legacy systems)
-  const offset: Record<string, number> = (patient?.boardDaysOffset as Record<string, number>) ?? {};
-  for (const board of CLINICAL_BOARDS) {
-    daysPerBoard[board] = (daysPerBoard[board] ?? 0) + (offset[board] ?? 0);
-  }
-
-  res.json({ regressions, daysPerBoard, boardDaysOffset: offset });
+  res.json({ regressions, daysPerBoard });
 });
 
 export default router;
