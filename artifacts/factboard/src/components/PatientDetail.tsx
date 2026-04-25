@@ -312,7 +312,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                   <img
                     src={patient.photo}
                     alt="Photo agrandie"
-                    className="w-64 h-64 rounded-lg shadow-2xl border border-border object-cover bg-black/80"
+                    className="max-w-[320px] max-h-[320px] w-auto h-auto rounded-lg shadow-2xl border border-border object-contain bg-black/80"
                   />
                 </div>
               )}
