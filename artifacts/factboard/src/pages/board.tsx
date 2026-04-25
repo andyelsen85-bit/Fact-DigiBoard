@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCreatePatient, getListPatientsQueryKey } from "@workspace/api-client-react";
@@ -38,8 +39,8 @@ export default function BoardPage() {
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
 
-  const [sidebarWidth, setSidebarWidth] = useState(256);
-  const [sidebarVisible, setSidebarVisible] = useState(() => window.innerWidth >= 640);
+  const [sidebarWidth, setSidebarWidth] = useLocalStorage("board-sidebar-width", 256);
+  const [sidebarVisible, setSidebarVisible] = useLocalStorage("board-sidebar-visible", window.innerWidth >= 640);
   const isResizing = useRef(false);
 
   const startResize = useCallback((e: React.MouseEvent) => {

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, LabelList,
@@ -340,6 +341,27 @@ export function PatientKpiView() {
   const [search, setSearch] = useState("");
   const [showHidden, setShowHidden] = useState(false);
   const [period, setPeriod] = useState<StatsPeriod | null>(null);
+  const [sidebarWidth, setSidebarWidth] = useLocalStorage("kpi-sidebar-width", 256);
+  const isResizing = useRef(false);
+
+  const startResize = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+    const onMove = (ev: MouseEvent) => {
+      if (!isResizing.current) return;
+      const next = Math.min(600, Math.max(200, startWidth + ev.clientX - startX));
+      setSidebarWidth(next);
+    };
+    const onUp = () => {
+      isResizing.current = false;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, [sidebarWidth]);
 
   const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
   const defaultPeriod = ((settings as any)?.defaultStatsPeriod as StatsPeriod) ?? "6m";
@@ -361,7 +383,7 @@ export function PatientKpiView() {
   return (
     <div className="flex h-full overflow-hidden">
       {/* Sidebar — patient picker */}
-      <aside className="w-64 border-r bg-card flex flex-col shrink-0">
+      <aside className="border-r bg-card flex flex-col shrink-0" style={{ width: sidebarWidth }}>
         <div className="p-3 border-b space-y-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Client KPI</p>
           <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
@@ -437,6 +459,12 @@ export function PatientKpiView() {
           )}
         </div>
       </aside>
+
+      {/* Resize handle */}
+      <div
+        onMouseDown={startResize}
+        className="w-1 cursor-col-resize hover:bg-primary/40 active:bg-primary/60 shrink-0 transition-colors"
+      />
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto p-6">
