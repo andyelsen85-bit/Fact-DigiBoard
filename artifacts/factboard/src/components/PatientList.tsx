@@ -65,7 +65,7 @@ export function PatientList({ board, search, selectedId, onSelect }: PatientList
           onClick={() => onSelect(patient.id)}
         >
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full overflow-hidden border border-border bg-muted shrink-0 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full overflow-hidden border border-border bg-muted shrink-0 flex items-center justify-center relative transition-transform duration-200 hover:scale-[2] hover:z-10">
               {(patient as any).photo ? (
                 <img src={(patient as any).photo} alt="" className="w-full h-full object-cover" />
               ) : (
