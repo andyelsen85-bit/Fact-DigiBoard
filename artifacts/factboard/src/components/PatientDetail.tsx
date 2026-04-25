@@ -285,7 +285,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                 onClick={() => photoInputRef.current?.click()}
                 onMouseEnter={() => patient.photo && setShowPhotoOverlay(true)}
                 onMouseLeave={() => setShowPhotoOverlay(false)}
-                className="w-16 h-16 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary relative"
+                className="w-16 h-16 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary relative transition-transform duration-200 hover:scale-[4] hover:z-50"
                 title="Changer la photo"
                 disabled={photoUploading}
               >
