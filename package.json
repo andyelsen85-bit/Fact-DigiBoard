@@ -14,6 +14,15 @@
       "os": ["linux"],
       "cpu": ["x64"],
       "libc": ["glibc", "musl"]
+    },
+    "overrides": {
+      "picomatch@^2": "2.3.2",
+      "picomatch@^4": "4.0.4",
+      "path-to-regexp@^8": "8.4.2",
+      "lodash@^4": "4.18.1",
+      "yaml@^2": "2.8.3",
+      "brace-expansion@^2": "2.0.3",
+      "postcss@^8": "8.5.10"
     }
   },
   "devDependencies": {
