@@ -65,8 +65,15 @@ router.get("/stats", requireAuth, async (req, res) => {
     ageCounts[key] = (ageCounts[key] ?? 0) + 1;
   }
 
-  const irockCount = await db.select().from(irockEvaluationsTable).then((r) => r.length);
-  const honosCount = await db.select().from(honosEvaluationsTable).then((r) => r.length);
+  const allIrock = await db.select().from(irockEvaluationsTable);
+  const irockCount = since
+    ? allIrock.filter((e) => e.date >= since).length
+    : allIrock.length;
+
+  const allHonos = await db.select().from(honosEvaluationsTable);
+  const honosCount = since
+    ? allHonos.filter((e) => e.date >= since).length
+    : allHonos.length;
 
   res.json({
     total,
