@@ -27,6 +27,7 @@ const AGG_LABELS: Record<string, string> = {
 const PERIOD_OPTIONS: { value: StatsPeriod; label: string }[] = [
   { value: "1m", label: "1 mois" },
   { value: "6m", label: "6 mois" },
+  { value: "12m", label: "12 mois" },
   { value: "all", label: "Tout le temps" },
 ];
 

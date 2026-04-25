@@ -16,13 +16,14 @@ async function apiFetch<T>(url: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export type StatsPeriod = "all" | "1m" | "6m";
+export type StatsPeriod = "all" | "1m" | "6m" | "12m";
 
 export function periodToSince(period: StatsPeriod): string | undefined {
   if (period === "all") return undefined;
   const d = new Date();
   if (period === "1m") d.setMonth(d.getMonth() - 1);
   if (period === "6m") d.setMonth(d.getMonth() - 6);
+  if (period === "12m") d.setMonth(d.getMonth() - 12);
   return d.toISOString().slice(0, 10);
 }
 
