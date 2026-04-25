@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import {
   useGetSettings, getGetSettingsQueryKey, useUpdateSetting,
   useListUsers, getListUsersQueryKey, useCreateUser, useUpdateUser, useDeleteUser,
@@ -582,6 +582,85 @@ function UserModal({
   );
 }
 
+function ResetPasswordModal({
+  open, onClose, user: targetUser,
+}: { open: boolean; onClose: () => void; user: { id: number; username: string } | null }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+
+  useEffect(() => { if (open) { setPassword(""); setConfirm(""); } }, [open]);
+
+  const reset = useMutation({
+    mutationFn: async ({ id, password }: { id: number; password: string }) => {
+      const token = localStorage.getItem("auth-token");
+      const res = await fetch(`/api/users/${id}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error ?? "Erreur"); }
+      return res.json();
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+      toast({ title: "Mot de passe réinitialisé", description: `${targetUser?.username} devra le changer à la prochaine connexion.` });
+      onClose();
+    },
+    onError: (e: any) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+  });
+
+  const canSave = password.length >= 6 && password === confirm;
+
+  if (!targetUser) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Réinitialiser le mot de passe</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <p className="text-sm text-muted-foreground">
+            Nouveau mot de passe pour <strong>{targetUser.username}</strong>. L'utilisateur devra le modifier à la prochaine connexion.
+          </p>
+          <div className="space-y-1">
+            <Label>Nouveau mot de passe <span className="text-muted-foreground font-normal">(min. 6 caractères)</span></Label>
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Nouveau mot de passe"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Confirmer le mot de passe</Label>
+            <Input
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Répéter le mot de passe"
+            />
+            {confirm && password !== confirm && (
+              <p className="text-xs text-destructive">Les mots de passe ne correspondent pas</p>
+            )}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Annuler</Button>
+          <Button
+            onClick={() => reset.mutate({ id: targetUser.id, password })}
+            disabled={!canSave || reset.isPending}
+          >
+            {reset.isPending ? "Enregistrement…" : "Réinitialiser"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function DefaultPeriodSection() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -644,6 +723,7 @@ export default function SettingsPage() {
 
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState<{ id: number; username: string } | null>(null);
 
   const { data: users = [] } = useListUsers({ query: { queryKey: getListUsersQueryKey() } });
   const createUser = useCreateUser();
@@ -792,7 +872,7 @@ export default function SettingsPage() {
                         )}
                       </td>
                       <td className="py-2">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
                           <button
                             className="text-xs text-primary hover:underline"
                             data-testid={`button-edit-user-${u.id}`}
@@ -800,6 +880,15 @@ export default function SettingsPage() {
                           >
                             Modifier
                           </button>
+                          {u.id !== user?.id && (
+                            <button
+                              className="text-xs text-amber-600 hover:underline"
+                              data-testid={`button-reset-password-${u.id}`}
+                              onClick={() => setResetPasswordUser({ id: u.id, username: u.username })}
+                            >
+                              Réinitialiser MDP
+                            </button>
+                          )}
                           {u.id !== user?.id && (
                             <button
                               className="text-xs text-destructive hover:underline"
@@ -841,6 +930,12 @@ export default function SettingsPage() {
         isPending={updateUser.isPending}
         initial={editingUser}
         title="Modifier l'utilisateur"
+      />
+
+      <ResetPasswordModal
+        open={!!resetPasswordUser}
+        onClose={() => setResetPasswordUser(null)}
+        user={resetPasswordUser}
       />
     </div>
   );

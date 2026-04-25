@@ -99,6 +99,7 @@ router.get("/patients-selector", requireAuth, async (_req, res) => {
       nom: patientsTable.nom,
       prenom: patientsTable.prenom,
       board: patientsTable.board,
+      photo: patientsTable.photo,
     })
     .from(patientsTable)
     .where(isNull(patientsTable.deletedAt))

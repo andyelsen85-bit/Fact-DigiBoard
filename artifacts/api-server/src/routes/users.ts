@@ -72,6 +72,25 @@ router.put("/users/:id", requireAuth, requireAdmin, async (req, res) => {
   res.json(updated);
 });
 
+router.post("/users/:id/reset-password", requireAuth, requireAdmin, async (req, res) => {
+  const id = Number(req.params["id"]);
+  const { password } = req.body as { password?: string };
+  if (!password || password.length < 6) {
+    res.status(400).json({ error: "Le mot de passe doit comporter au moins 6 caractères" });
+    return;
+  }
+  const passwordHash = await bcrypt.hash(password, 12);
+  const [updated] = await db.update(usersTable)
+    .set({ passwordHash, mustChangePassword: true })
+    .where(eq(usersTable.id, id))
+    .returning({ id: usersTable.id, username: usersTable.username });
+  if (!updated) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  res.json({ message: "Password reset", username: updated.username });
+});
+
 router.delete("/users/:id", requireAuth, requireAdmin, async (req, res) => {
   const id = Number(req.params["id"]);
   await db.delete(usersTable).where(eq(usersTable.id, id));

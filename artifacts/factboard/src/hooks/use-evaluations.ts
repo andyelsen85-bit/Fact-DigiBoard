@@ -46,6 +46,7 @@ export interface PatientKpi {
 
 export interface PatientSelectorItem {
   id: number; clientNum: string; nom: string; prenom: string; board: string;
+  photo?: string | null;
 }
 
 // ─── iRock ───────────────────────────────────────────────────────────────────
