@@ -26,7 +26,7 @@ const patientSchema = z.object({
   tel: z.string().optional(),
   sexe: z.string().optional(),
   medecinFamille: z.string().optional(),
-  patho: z.string().optional(),
+  pathos: z.array(z.string()).default([]),
   psy: z.string().optional(),
   responsable: z.string().optional(),
   casemanager2: z.string().optional(),
@@ -47,12 +47,12 @@ interface PatientModalProps {
   onClose: () => void;
   onSave: (values: PatientFormValues & { clientNum?: string }) => void;
   isPending?: boolean;
-  initialValues?: Partial<PatientFormValues & { clientNum?: string }>;
+  initialValues?: Partial<PatientFormValues & { clientNum?: string; patho?: string; pathos?: string[] }>;
   title?: string;
   isEdit?: boolean;
 }
 
-function buildDefaults(initialValues?: Partial<PatientFormValues & { clientNum?: string }>): PatientFormValues {
+function buildDefaults(initialValues?: Partial<PatientFormValues & { clientNum?: string; patho?: string; pathos?: string[] }>): PatientFormValues {
   return {
     nom: initialValues?.nom ?? "",
     prenom: initialValues?.prenom ?? "",
@@ -61,7 +61,9 @@ function buildDefaults(initialValues?: Partial<PatientFormValues & { clientNum?:
     tel: initialValues?.tel ?? "",
     sexe: initialValues?.sexe ?? "",
     medecinFamille: initialValues?.medecinFamille ?? "",
-    patho: initialValues?.patho ?? "",
+    pathos: Array.isArray(initialValues?.pathos) && initialValues.pathos!.length > 0
+      ? initialValues.pathos!
+      : (initialValues?.patho ? [initialValues.patho] : []),
     psy: initialValues?.psy ?? "",
     responsable: initialValues?.responsable ?? "",
     casemanager2: initialValues?.casemanager2 ?? "",
@@ -77,7 +79,7 @@ function buildDefaults(initialValues?: Partial<PatientFormValues & { clientNum?:
 }
 
 export function PatientModal({ open, onClose, onSave, isPending, initialValues, title = "Nouveau client", isEdit = false }: PatientModalProps) {
-  const [pathoSearch, setPathoSearch] = useState(initialValues?.patho ?? "");
+  const [pathoSearch, setPathoSearch] = useState("");
   const [pathoDropdownOpen, setPathoDropdownOpen] = useState(false);
 
   const { data: formOptions } = useFormOptions();
@@ -97,26 +99,35 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
   useEffect(() => {
     if (open) {
       form.reset(buildDefaults(initialValues));
-      setPathoSearch(initialValues?.patho ?? "");
+      setPathoSearch("");
       setPathoDropdownOpen(false);
     }
   }, [open]);
 
-  const pathoValue = form.watch("patho");
-  const pathoInfo = icd10Codes.find((d) => d.code === pathoValue);
+  const pathosValue: string[] = form.watch("pathos") ?? [];
 
   const filteredCim10 = pathoSearch.length >= 1
     ? icd10Codes.filter(
         (d) =>
-          d.code.toLowerCase().includes(pathoSearch.toLowerCase()) ||
-          d.title.toLowerCase().includes(pathoSearch.toLowerCase())
+          !pathosValue.includes(d.code) && (
+            d.code.toLowerCase().includes(pathoSearch.toLowerCase()) ||
+            d.title.toLowerCase().includes(pathoSearch.toLowerCase())
+          )
       ).slice(0, 8)
     : [];
 
-  const handlePathoSelect = useCallback((code: string) => {
-    form.setValue("patho", code);
-    setPathoSearch(code);
+  const handlePathoAdd = useCallback((code: string) => {
+    const current: string[] = form.getValues("pathos") ?? [];
+    if (!current.includes(code)) {
+      form.setValue("pathos", [...current, code]);
+    }
+    setPathoSearch("");
     setPathoDropdownOpen(false);
+  }, [form]);
+
+  const handlePathoRemove = useCallback((code: string) => {
+    const current: string[] = form.getValues("pathos") ?? [];
+    form.setValue("pathos", current.filter((c) => c !== code));
   }, [form]);
 
   function onSubmit(values: PatientFormValues) {
@@ -357,40 +368,66 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
             </div>
 
             <div className="space-y-1">
-              <Label>Pathologie (ICD-10)</Label>
+              <Label>Diagnostic(s) CIM-10</Label>
+              {pathosValue.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {pathosValue.map((code) => {
+                    const info = icd10Codes.find((d) => d.code === code);
+                    return (
+                      <span
+                        key={code}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20"
+                      >
+                        <span className="font-mono">{code}</span>
+                        {info && <span className="text-foreground/70">{info.title}</span>}
+                        <button
+                          type="button"
+                          className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+                          onMouseDown={() => handlePathoRemove(code)}
+                          aria-label={`Supprimer ${code}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
               <div className="relative">
                 <Input
                   data-testid="input-patho-search"
-                  placeholder="Rechercher code ou libellé..."
-                  value={pathoSearch || pathoValue || ""}
+                  placeholder="Rechercher et ajouter un code CIM-10…"
+                  value={pathoSearch}
                   onChange={(e) => {
                     setPathoSearch(e.target.value);
                     setPathoDropdownOpen(true);
-                    if (!e.target.value) form.setValue("patho", "");
                   }}
                   onFocus={() => setPathoDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setPathoDropdownOpen(false), 150)}
                 />
-                {pathoDropdownOpen && (filteredCim10.length > 0 || (pathoSearch.length === 0 && favoriteCim10.length > 0)) && (
+                {pathoDropdownOpen && (filteredCim10.length > 0 || (pathoSearch.length === 0 && favoriteCim10.filter((c) => !pathosValue.includes(c.code)).length > 0)) && (
                   <div className="absolute z-50 top-full left-0 right-0 bg-popover border rounded-md shadow-md mt-1 overflow-hidden max-h-64 overflow-y-auto">
-                    {pathoSearch.length === 0 && favoriteCim10.length > 0 && (
+                    {pathoSearch.length === 0 && (
                       <>
                         <div className="px-3 py-1 text-xs font-medium text-muted-foreground bg-muted/40 border-b">
                           Pathologies favorites ★
                         </div>
-                        {favoriteCim10.map((item) => (
+                        {favoriteCim10.filter((c) => !pathosValue.includes(c.code)).map((item) => (
                           <button
                             key={item.code}
                             type="button"
                             className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex gap-2"
-                            onMouseDown={() => handlePathoSelect(item.code)}
+                            onMouseDown={() => handlePathoAdd(item.code)}
                           >
                             <span className="font-mono text-xs font-medium text-muted-foreground w-10 shrink-0">{item.code}</span>
                             <span className="truncate">{item.title}</span>
                           </button>
                         ))}
-                        <div className="px-3 py-1 text-xs text-muted-foreground bg-muted/20 border-t border-b italic">
-                          Tapez pour rechercher dans tous les codes ICD-10…
-                        </div>
+                        {favoriteCim10.filter((c) => !pathosValue.includes(c.code)).length > 0 && (
+                          <div className="px-3 py-1 text-xs text-muted-foreground bg-muted/20 border-t italic">
+                            Tapez pour rechercher dans tous les codes CIM-10…
+                          </div>
+                        )}
                       </>
                     )}
                     {pathoSearch.length > 0 && filteredCim10.map((item) => (
@@ -398,7 +435,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                         key={item.code}
                         type="button"
                         className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex gap-2"
-                        onMouseDown={() => handlePathoSelect(item.code)}
+                        onMouseDown={() => handlePathoAdd(item.code)}
                       >
                         <span className="font-mono text-xs font-medium text-muted-foreground w-10 shrink-0">{item.code}</span>
                         <span className="truncate">{item.title}</span>
@@ -407,12 +444,6 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                   </div>
                 )}
               </div>
-              {pathoInfo && (
-                <div className="mt-2 p-3 bg-muted/50 rounded-md text-sm space-y-1">
-                  {pathoInfo.description && <p className="text-foreground">{pathoInfo.description}</p>}
-                  {pathoInfo.risks && <p className="text-destructive text-xs">Risques : {pathoInfo.risks}</p>}
-                </div>
-              )}
             </div>
 
             <div className="grid grid-cols-3 gap-3">

@@ -79,9 +79,6 @@ export function PatientList({ board, search, selectedId, onSelect }: PatientList
                 <span className="font-medium text-xs text-foreground truncate">
                   {patient.nom} {patient.prenom}
                 </span>
-                {patient.patho && (
-                  <span className="font-mono text-xs text-muted-foreground shrink-0">{patient.patho}</span>
-                )}
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="font-mono text-xs text-muted-foreground">{patient.clientNum}</span>

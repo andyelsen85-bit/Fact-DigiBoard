@@ -32,7 +32,13 @@ router.get("/stats", requireAuth, async (req, res) => {
   for (const p of all) {
     boardCounts[p.board] = (boardCounts[p.board] ?? 0) + 1;
     if (p.sexe) sexeCounts[p.sexe] = (sexeCounts[p.sexe] ?? 0) + 1;
-    if (p.patho) pathoCounts[p.patho] = (pathoCounts[p.patho] ?? 0) + 1;
+    if (Array.isArray((p as any).pathos) && (p as any).pathos.length > 0) {
+      for (const code of (p as any).pathos as string[]) {
+        if (code) pathoCounts[code] = (pathoCounts[code] ?? 0) + 1;
+      }
+    } else if (p.patho) {
+      pathoCounts[p.patho] = (pathoCounts[p.patho] ?? 0) + 1;
+    }
     aggCounts[p.agressivite] = (aggCounts[p.agressivite] ?? 0) + 1;
   }
 

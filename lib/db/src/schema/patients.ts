@@ -13,6 +13,7 @@ export const patientsTable = pgTable("patients", {
   sexe: text("sexe"),
   medecinFamille: text("medecin_famille"),
   patho: text("patho"),
+  pathos: jsonb("pathos").$type<string[]>(),
   psy: text("psy"),
   responsable: text("responsable"),
   casemanager2: text("casemanager2"),
