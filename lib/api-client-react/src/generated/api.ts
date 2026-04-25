@@ -2261,6 +2261,83 @@ export const useUpdatePatientHistoryEntry = <
   return useMutation(getUpdatePatientHistoryEntryMutationOptions(options));
 };
 
+export const getDeletePatientHistoryEntryUrl = (id: number, historyId: number) => {
+  return `/api/patients/${id}/history/${historyId}`;
+};
+
+export const deletePatientHistoryEntry = async (
+  id: number,
+  historyId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeletePatientHistoryEntryUrl(id, historyId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeletePatientHistoryEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePatientHistoryEntry>>,
+    TError,
+    { id: number; historyId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deletePatientHistoryEntry>>,
+  TError,
+  { id: number; historyId: number },
+  TContext
+> => {
+  const mutationKey = ["deletePatientHistoryEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deletePatientHistoryEntry>>,
+    { id: number; historyId: number }
+  > = (props) => {
+    const { id, historyId } = props ?? {};
+    return deletePatientHistoryEntry(id, historyId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeletePatientHistoryEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deletePatientHistoryEntry>>
+>;
+export type DeletePatientHistoryEntryMutationError = ErrorType<unknown>;
+
+export const useDeletePatientHistoryEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePatientHistoryEntry>>,
+    TError,
+    { id: number; historyId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deletePatientHistoryEntry>>,
+  TError,
+  { id: number; historyId: number },
+  TContext
+> => {
+  return useMutation(getDeletePatientHistoryEntryMutationOptions(options));
+};
+
 /**
  * @summary Get dashboard statistics
  */

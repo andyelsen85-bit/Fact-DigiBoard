@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { Trash2 } from "lucide-react";
 import { EvaluationModal } from "./EvaluationModal";
 import {
   useListIrock, useCreateIrock, useUpdateIrock, useDeleteIrock,
@@ -14,7 +15,7 @@ import {
   useListPatientNotes, getListPatientNotesQueryKey,
   useCreatePatientNote, useUpdatePatientNote, useDeletePatientNote,
   useListPatientHistory, getListPatientHistoryQueryKey,
-  useUpdatePatientHistoryEntry,
+  useUpdatePatientHistoryEntry, useDeletePatientHistoryEntry,
   getListPatientsQueryKey,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const [showPhotoOverlay, setShowPhotoOverlay] = useState(false);
   const [evalModal, setEvalModal] = useState<{ type: "I•ROC" | "HoNOS"; edit?: IrockEval | HonosEval } | null>(null);
   const [notesPage, setNotesPage] = useState(0);
+  const [deleteHistoryConfirmId, setDeleteHistoryConfirmId] = useState<number | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { uploadPhoto } = usePatientPhotoUpload(patientId);
 
@@ -105,6 +107,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const updateNote = useUpdatePatientNote();
   const deleteNote = useDeletePatientNote();
   const updateHistoryEntry = useUpdatePatientHistoryEntry();
+  const deleteHistoryEntry = useDeletePatientHistoryEntry();
 
   const { data: irockEvals = [] } = useListIrock(patientId);
   const { data: honosEvals = [] } = useListHonos(patientId);
@@ -126,6 +129,8 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
 
   const invalidateHistory = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: getListPatientHistoryQueryKey(patientId) });
+    queryClient.invalidateQueries({ queryKey: getGetPatientQueryKey(patientId) });
+    queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
   }, [queryClient, patientId]);
 
   if (isLoading) {
@@ -726,6 +731,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
             {sortedHistory.map((entry, idx) => {
               const nextDate = sortedHistory[idx + 1]?.date;
               const duration = daysBetween(entry.date, nextDate);
+              const isConfirming = deleteHistoryConfirmId === entry.id;
               return (
                 <div key={entry.id} className="flex items-center gap-3 text-sm border-b pb-2">
                   <input
@@ -749,6 +755,43 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                     <span className="text-xs text-muted-foreground/70 italic">par {(entry as any).createdByUsername}</span>
                   )}
                   <span className="font-mono text-xs text-muted-foreground">{duration} j</span>
+                  {isConfirming ? (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        className="text-xs text-red-600 font-medium hover:underline"
+                        disabled={deleteHistoryEntry.isPending}
+                        onClick={() => {
+                          deleteHistoryEntry.mutate(
+                            { id: patientId, historyId: entry.id },
+                            {
+                              onSuccess: () => {
+                                setDeleteHistoryConfirmId(null);
+                                invalidateHistory();
+                                toast({ title: "Mouvement supprimé" });
+                              },
+                            }
+                          );
+                        }}
+                      >
+                        Confirmer
+                      </button>
+                      <span className="text-muted-foreground">·</span>
+                      <button
+                        className="text-xs text-muted-foreground hover:underline"
+                        onClick={() => setDeleteHistoryConfirmId(null)}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="shrink-0 text-muted-foreground/40 hover:text-red-500 transition-colors"
+                      title="Supprimer ce mouvement"
+                      onClick={() => setDeleteHistoryConfirmId(entry.id)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               );
             })}

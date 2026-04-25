@@ -51,4 +51,35 @@ async function updateHistoryEntryHandler(req: any, res: any) {
 router.put("/patients/:patientId/history/:entryId", requireAuth, updateHistoryEntryHandler);
 router.patch("/patients/:id/history/:historyId", requireAuth, updateHistoryEntryHandler);
 
+router.delete("/patients/:id/history/:historyId", requireAuth, async (req, res) => {
+  const patientId = Number(req.params["id"]);
+  const historyId = Number(req.params["historyId"]);
+
+  const [deleted] = await db.delete(historyEntriesTable)
+    .where(eq(historyEntriesTable.id, historyId))
+    .returning();
+
+  if (!deleted) {
+    res.status(404).json({ error: "Entry not found" });
+    return;
+  }
+
+  // After deletion, find the remaining entries ordered by date to determine
+  // what the patient's board should be.
+  const remaining = await db.select().from(historyEntriesTable)
+    .where(eq(historyEntriesTable.patientId, patientId))
+    .orderBy(historyEntriesTable.date);
+
+  if (remaining.length > 0) {
+    const last = remaining[remaining.length - 1]!;
+    if (last.boardTo) {
+      await db.update(patientsTable)
+        .set({ board: last.boardTo, boardEntryDate: last.date, updatedAt: new Date() })
+        .where(eq(patientsTable.id, patientId));
+    }
+  }
+
+  res.json({ deleted, newBoard: remaining.length > 0 ? remaining[remaining.length - 1]!.boardTo : null });
+});
+
 export default router;
