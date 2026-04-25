@@ -31,8 +31,16 @@ app.use(
   }),
 );
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({
+  limit: "100mb",
+  reviver: (_key, value) => {
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+      return new Date(value);
+    }
+    return value;
+  },
+}));
+app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 
 app.use("/api", router);
 
