@@ -13,6 +13,18 @@ import { requireAuth, requireAdmin } from "../middlewares/auth";
 
 const router = Router();
 
+function coerceDates(row: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(row)) {
+    if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(v)) {
+      out[k] = new Date(v);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
 // ─── Export ───────────────────────────────────────────────────────────────────
 
 router.get("/backup/export", requireAuth, requireAdmin, async (_req, res) => {
@@ -88,7 +100,7 @@ router.post("/backup/restore", requireAuth, requireAdmin, async (req, res) => {
       // Re-insert patients first (other tables FK to them)
       if (patients.length > 0) {
         for (const p of patients) {
-          await tx.insert(patientsTable).values(p).onConflictDoNothing();
+          await tx.insert(patientsTable).values(coerceDates(p) as any).onConflictDoNothing();
         }
         await tx.execute(
           `SELECT setval('patients_id_seq', (SELECT COALESCE(MAX(id), 1) FROM patients))`
@@ -97,7 +109,7 @@ router.post("/backup/restore", requireAuth, requireAdmin, async (req, res) => {
 
       if (history_entries.length > 0) {
         for (const h of history_entries) {
-          await tx.insert(historyEntriesTable).values(h).onConflictDoNothing();
+          await tx.insert(historyEntriesTable).values(coerceDates(h) as any).onConflictDoNothing();
         }
         await tx.execute(
           `SELECT setval('history_entries_id_seq', (SELECT COALESCE(MAX(id), 1) FROM history_entries))`
@@ -106,7 +118,7 @@ router.post("/backup/restore", requireAuth, requireAdmin, async (req, res) => {
 
       if (meeting_notes.length > 0) {
         for (const n of meeting_notes) {
-          await tx.insert(meetingNotesTable).values(n).onConflictDoNothing();
+          await tx.insert(meetingNotesTable).values(coerceDates(n) as any).onConflictDoNothing();
         }
         await tx.execute(
           `SELECT setval('meeting_notes_id_seq', (SELECT COALESCE(MAX(id), 1) FROM meeting_notes))`
@@ -115,7 +127,7 @@ router.post("/backup/restore", requireAuth, requireAdmin, async (req, res) => {
 
       if (irock_evaluations.length > 0) {
         for (const e of irock_evaluations) {
-          await tx.insert(irockEvaluationsTable).values(e).onConflictDoNothing();
+          await tx.insert(irockEvaluationsTable).values(coerceDates(e) as any).onConflictDoNothing();
         }
         await tx.execute(
           `SELECT setval('irock_evaluations_id_seq', (SELECT COALESCE(MAX(id), 1) FROM irock_evaluations))`
@@ -124,7 +136,7 @@ router.post("/backup/restore", requireAuth, requireAdmin, async (req, res) => {
 
       if (honos_evaluations.length > 0) {
         for (const e of honos_evaluations) {
-          await tx.insert(honosEvaluationsTable).values(e).onConflictDoNothing();
+          await tx.insert(honosEvaluationsTable).values(coerceDates(e) as any).onConflictDoNothing();
         }
         await tx.execute(
           `SELECT setval('honos_evaluations_id_seq', (SELECT COALESCE(MAX(id), 1) FROM honos_evaluations))`
