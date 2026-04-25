@@ -91,6 +91,8 @@ Un patient peut être déplacé vers n'importe quel autre board depuis sa fiche.
 | Médecin de famille | Sélection parmi la liste configurée dans les Paramètres |
 | Agressivité | Niveau de 0 à 3 avec badge visuel coloré (vert → rouge) |
 
+Chaque code CIM-10 sélectionné est affiché dans la fiche avec son libellé, sa description (si disponible) et sa ligne de **risques cliniques** — toujours visible, en rouge lorsque des risques sont renseignés.
+
 ### Informations administratives
 | Champ | Description |
 |-------|-------------|
@@ -149,17 +151,33 @@ Indicateur de risque à 4 niveaux (0–3) affiché sous forme de badge coloré d
 
 ## Évaluations psychométriques
 
-### iRock
-Évaluation du bien-être et de la progression vers le rétablissement. Composée de **12 questions** notées de 0 à 4. Les résultats sont enregistrés avec date, horodatage et auteur, et consultables sous forme de graphique longitudinal (global et par question). Un champ de notes libres est disponible par évaluation et par question.
+### I•ROC (Individual Recovery Outcomes Counter)
+Évaluation du bien-être et de la progression vers le rétablissement. Composée de **12 questions** notées de **1 à 6** (1 = Très mauvais → 6 = Excellent), regroupées en 4 domaines HOPE :
+
+| Domaine | Questions | Couleur |
+|---------|-----------|---------|
+| Domicile | Q1–Q3 | Bleu |
+| Opportunité | Q4–Q6 | Vert |
+| Personnes | Q7–Q9 | Orange |
+| Autonomisation | Q10–Q12 | Violet |
 
 ### HoNOS (Health of the Nation Outcome Scales)
-Échelle clinique standardisée d'évaluation des outcomes de santé mentale. Composée de **12 questions** notées de 0 à 4. Les résultats sont enregistrés avec date, horodatage et auteur, et consultables sous forme de graphique longitudinal (global et par question). Un champ de notes libres est disponible par évaluation et par question.
+Échelle clinique standardisée d'évaluation des outcomes de santé mentale. Composée de **12 questions** notées de **0 à 4** (0 = Aucun problème → 4 = Problème grave), regroupées en 4 groupes cliniques :
+
+| Groupe | Questions | Couleur |
+|--------|-----------|---------|
+| Comportement | Q1–Q3 | Rouge |
+| Déficiences | Q4–Q6 | Ambre |
+| Symptômes | Q7–Q9 | Rose |
+| Social | Q10–Q12 | Cyan |
+
+Les résultats sont enregistrés avec date, horodatage et auteur. Un champ de notes libres est disponible par évaluation et par question.
 
 ### Indicateurs KPI par patient
 Depuis la fiche patient, un tableau de bord analytique affiche :
-- **Temps passé par board** : durée cumulée dans chaque board (stabilité)
+- **Temps passé par board** : durée cumulée dans chaque board (stabilité parcours)
 - **Alertes de régression** : détection des retours de RecoveryBoard vers FactBoard
-- **Courbes d'évolution** : scores iRock et HoNOS dans le temps (graphiques)
+- **Diagrammes radar** : scores I•ROC et HoNOS sous forme de toile d'araignée — chaque axe est coloré selon son domaine clinique, avec superposition d'une évaluation de comparaison sélectionnable et un historique des scores totaux
 
 ---
 
@@ -196,9 +214,9 @@ Tableau de bord analytique global accessible depuis le menu principal. Un filtre
 | Répartition par âge | Groupes décennaux (< 70 ans) et 70+ |
 | Répartition par agressivité | Nombre de patients par niveau (0–3) |
 | Pathologies fréquentes | Codes CIM-10 les plus représentés (multi-diagnostics pris en compte) |
-| Durée moyenne par board | Temps moyen de séjour dans chaque board actif |
-| Évaluations I•ROC | Nombre d'évaluations iRock dans la période |
-| Évaluations HoNOS | Nombre d'évaluations HoNOS dans la période |
+| Durée moyenne par board | Temps moyen de séjour dans chaque board actif, calculé sur tous les mouvements historiques (patients clôturés inclus) |
+| Évaluations I•ROC | Nombre d'évaluations I•ROC dans la période (patients supprimés exclus) |
+| Évaluations HoNOS | Nombre d'évaluations HoNOS dans la période (patients supprimés exclus) |
 | Visites par lieu (ACT) | Nombre de notes ACT par région, triées par fréquence |
 
 ---
@@ -215,11 +233,14 @@ Les listes utilisées dans les formulaires patients sont gérables depuis les Pa
 | Articles légaux | Bases juridiques applicables |
 | Curatelles / Tutelles | Types de mesures de protection |
 
-### Codes CIM-10 personnalisés
-- **Ajout** de codes CIM-10 personnalisés (code + libellé + description + risques)
-- **Modification** de tout code existant
-- **Suppression** d'un code
-- **Favoris** : marquage pour accès rapide dans le formulaire patient
+### Codes CIM-10
+La base contient **381 codes CIM-10** (chapitre F, troubles mentaux) pré-chargés avec pour chacun :
+- **Code** et **libellé** officiel
+- **Description** clinique (optionnelle)
+- **Risques cliniques** : synthèse concise en français des risques associés au diagnostic — affichés dans la fiche patient et dans les paramètres
+- **Favori** (★) : marquage pour accès rapide dans le formulaire de création/modification d'un patient
+
+Depuis les Paramètres il est possible d'**ajouter**, **modifier** ou **supprimer** tout code, et de gérer les favoris.
 
 ### Gestion des utilisateurs _(admin uniquement)_
 - **Création** de comptes utilisateur avec rôle (Admin / Utilisateur)
@@ -231,7 +252,7 @@ Les listes utilisées dans les formulaires patients sont gérables depuis les Pa
 Restauration des patients supprimés (suppression douce) vers leur dernier board connu.
 
 ### Sauvegarde & Restauration
-- **Export JSON** : téléchargement de l'intégralité des données (patients, historiques, évaluations iRock/HoNOS, notes, codes CIM-10, paramètres)
+- **Export JSON** : téléchargement de l'intégralité des données (patients, historiques, évaluations I•ROC/HoNOS, notes, codes CIM-10, paramètres)
 - **Import JSON** : restauration complète du système depuis un fichier de sauvegarde
 
 ---
@@ -245,6 +266,7 @@ Restauration des patients supprimés (suppression douce) vers leur dernier board
 | Frontend | React + Vite + Tailwind CSS 4 |
 | Composants UI | Radix UI / shadcn/ui |
 | État / données | TanStack Query |
+| Graphiques | Recharts (RadarChart) |
 | Auth | Tokens Bearer (bcrypt) |
 | Spécification API | OpenAPI / Swagger |
 | Déploiement | Docker + Docker Compose |
@@ -272,7 +294,7 @@ pnpm --filter @workspace/factboard run dev
 
 L'application est accessible sur `http://localhost:18576`.
 
-> Au premier démarrage, les migrations sont appliquées automatiquement et la base de données est initialisée avec les codes CIM-10 et le compte administrateur par défaut.
+> Au premier démarrage, les migrations sont appliquées automatiquement et la base de données est initialisée avec les 381 codes CIM-10 et le compte administrateur par défaut.
 
 ### Production (Docker)
 
@@ -316,7 +338,7 @@ docker compose logs -f app
 
 L'application est accessible sur `http://localhost` (ou le port défini par `APP_PORT`).
 
-> Au premier démarrage, les migrations sont appliquées automatiquement et la base est initialisée avec le compte administrateur par défaut et les codes CIM-10.
+> Au premier démarrage, les migrations sont appliquées automatiquement et la base est initialisée avec le compte administrateur par défaut et les 381 codes CIM-10 avec leurs risques cliniques.
 
 **Mise à jour :**
 ```bash
@@ -345,10 +367,10 @@ workspace/
 │   │   └── src/routes/      # patients, notes, auth, settings, users, stats, icd10, evaluations, act, backup
 │   └── factboard/           # Frontend React + Vite (port 18576)
 │       └── src/
-│           ├── components/  # PatientList, PatientDetail, PatientModal, StatsView, AggBadge, BoardBadge…
+│           ├── components/  # PatientList, PatientDetail, PatientModal, PatientKpiView, StatsView…
 │           └── pages/       # board.tsx, settings.tsx, statistics.tsx
 ├── lib/
-│   ├── db/                  # Schéma Drizzle ORM + migrations (0000–0007)
+│   ├── db/                  # Schéma Drizzle ORM + migrations (0000–0009)
 │   ├── api-client-react/    # Hooks React Query générés (Orval)
 │   └── api-spec/            # Spécification OpenAPI
 ├── Dockerfile               # Build multi-stage (builder → runner)
@@ -364,12 +386,12 @@ workspace/
 | `patients` | Dossiers patients complets — voir colonnes ci-dessous |
 | `meeting_notes` | Notes de réunion par patient (patient_id FK, date, texte) |
 | `history_entries` | Historique des transitions de board (patient_id FK, date, action, board_to, created_by_username) |
-| `irock_evaluations` | Évaluations iRock q1–q12, notes, question_notes, created_by_username |
-| `honos_evaluations` | Évaluations HoNOS q1–q12, notes, question_notes, created_by_username |
+| `irock_evaluations` | Évaluations I•ROC q1–q12 (score 1–6), notes, question_notes, created_by_username |
+| `honos_evaluations` | Évaluations HoNOS q1–q12 (score 0–4), notes, question_notes, created_by_username |
 | `act_regions` | Régions ACT (id, nom) |
 | `act_notes` | Notes par région ACT (region_id FK, date, texte) |
 | `settings` | Listes configurables clé/valeur |
-| `icd10_codes` | Codes CIM-10 (code PK, title, description, risks, is_favorite) |
+| `icd10_codes` | 381 codes CIM-10 (code PK, title, description, risks, is_favorite) |
 
 #### Colonnes notables de `patients`
 
@@ -400,6 +422,8 @@ Les migrations sont appliquées automatiquement au démarrage du serveur via Dri
 | `0005` | Colonnes `notes` et `question_notes` sur irock/honos |
 | `0006` | Colonne `pathos` (jsonb) sur patients + migration des données depuis `patho` |
 | `0007` | Colonnes `date_admission` et `date_fin_suivi` sur patients |
+| `0008` | Valeur par défaut `Pas connu` pour la colonne `agressivite` |
+| `0009` | Risques cliniques renseignés sur les 381 codes CIM-10 (chapitre F00–F99) |
 
 ### Endpoints API
 
@@ -440,15 +464,20 @@ Les migrations sont appliquées automatiquement au démarrage du serveur via Dri
 #### Évaluations
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| `GET` | `/api/patients/:id/irock` | Historique des évaluations iRock |
-| `POST` | `/api/patients/:id/irock` | Enregistrement d'une évaluation iRock |
+| `GET` | `/api/patients/:id/irock` | Historique des évaluations I•ROC |
+| `POST` | `/api/patients/:id/irock` | Enregistrement d'une évaluation I•ROC |
+| `PATCH` | `/api/patients/:id/irock/:eid` | Mise à jour d'une évaluation I•ROC |
+| `DELETE` | `/api/patients/:id/irock/:eid` | Suppression d'une évaluation I•ROC |
 | `GET` | `/api/patients/:id/honos` | Historique des évaluations HoNOS |
 | `POST` | `/api/patients/:id/honos` | Enregistrement d'une évaluation HoNOS |
+| `PATCH` | `/api/patients/:id/honos/:eid` | Mise à jour d'une évaluation HoNOS |
+| `DELETE` | `/api/patients/:id/honos/:eid` | Suppression d'une évaluation HoNOS |
+| `GET` | `/api/patients/:id/kpi` | KPI de stabilité parcours (durées par board, régressions) |
 
 #### Codes CIM-10
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| `GET` | `/api/icd10` | Liste de tous les codes |
+| `GET` | `/api/icd10` | Liste de tous les codes (code, title, description, risks, isFavorite) |
 | `POST` | `/api/icd10` | Création d'un code personnalisé |
 | `PATCH` | `/api/icd10/:code` | Modification d'un code |
 | `DELETE` | `/api/icd10/:code` | Suppression d'un code |
