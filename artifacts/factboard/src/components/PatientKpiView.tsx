@@ -20,6 +20,8 @@ const IROCK_QUESTIONS = [
   "Santé mentale",
   "Relations avec les autres",
   "Occupation (travail/études/bénévolat)",
+  "Liberté de choix",
+  "Gestion budget/finances",
 ];
 
 const HONOS_QUESTIONS = [
@@ -104,7 +106,7 @@ function ChartPanel({ title, data, questions, color, yLabel, yMax, qCount }: Cha
               <LineChart data={data} margin={{ top: 14, right: 20, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="date" tick={{ fontSize: 9 }} />
-                <YAxis domain={[0, yMax]} ticks={[0, 1, 2, 3, 4]} tick={{ fontSize: 9 }} width={22} />
+                <YAxis domain={[0, yMax]} ticks={Array.from({ length: yMax + 1 }, (_, i) => i)} tick={{ fontSize: 9 }} width={22} />
                 <Tooltip
                   formatter={(v: any) => [`${v} — ${yLabel}`, label]}
                   labelFormatter={(l) => `Date: ${l}`}
@@ -151,11 +153,12 @@ function KpiContent({ patientId, period }: { patientId: number; period: StatsPer
   const honosData = since ? honosRaw.filter((e) => e.date >= since) : honosRaw;
 
   const irockChartData = irockData.map((e) => {
-    const qs = [e.q1, e.q2, e.q3, e.q4, e.q5, e.q6, e.q7, e.q8, e.q9, e.q10];
+    const qs = [e.q1, e.q2, e.q3, e.q4, e.q5, e.q6, e.q7, e.q8, e.q9, e.q10, e.q11, e.q12];
     return {
       date: e.date,
       q1: e.q1, q2: e.q2, q3: e.q3, q4: e.q4, q5: e.q5,
       q6: e.q6, q7: e.q7, q8: e.q8, q9: e.q9, q10: e.q10,
+      q11: e.q11, q12: e.q12,
       total: qs.reduce((s, v) => s + v, 0),
     };
   });
@@ -213,13 +216,13 @@ function KpiContent({ patientId, period }: { patientId: number; period: StatsPer
           iRock — Évaluations ({irockData.length})
         </h3>
         <ChartPanel
-          title="iRock · Score 0–4 par question (0 = Jamais, 4 = Toujours)"
+          title="iRock · Score 0–5 par question (0 = Jamais, 5 = Toujours)"
           data={irockChartData}
           questions={IROCK_QUESTIONS}
           color={IROCK_COLOR}
-          yLabel="0=Jamais / 4=Toujours"
-          yMax={4}
-          qCount={10}
+          yLabel="0=Jamais / 5=Toujours"
+          yMax={5}
+          qCount={12}
         />
       </div>
 

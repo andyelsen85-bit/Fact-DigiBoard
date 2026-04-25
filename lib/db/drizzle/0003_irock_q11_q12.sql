@@ -1,0 +1,2 @@
+ALTER TABLE "irock_evaluations" ADD COLUMN IF NOT EXISTS "q11" integer NOT NULL DEFAULT 0;
+ALTER TABLE "irock_evaluations" ADD COLUMN IF NOT EXISTS "q12" integer NOT NULL DEFAULT 0;

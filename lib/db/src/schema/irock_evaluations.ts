@@ -15,6 +15,8 @@ export const irockEvaluationsTable = pgTable("irock_evaluations", {
   q8: integer("q8").notNull().default(0),
   q9: integer("q9").notNull().default(0),
   q10: integer("q10").notNull().default(0),
+  q11: integer("q11").notNull().default(0),
+  q12: integer("q12").notNull().default(0),
   createdByUsername: text("created_by_username"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

@@ -13,9 +13,11 @@ const IROCK_QUESTIONS = [
   "Je gère bien ma santé mentale",
   "Mes relations avec les autres me satisfont",
   "J'ai une occupation (travail, études, bénévolat)",
+  "Je me sens libre de faire mes propres choix",
+  "Je gère bien mon budget et mes finances",
 ];
 
-const IROCK_LABELS = ["Jamais", "Rarement", "Parfois", "Souvent", "Toujours"];
+const IROCK_LABELS = ["Jamais", "Rarement", "Parfois", "Assez souvent", "Souvent", "Toujours"];
 
 const HONOS_QUESTIONS = [
   "Comportement hyperactif, agressif, perturbateur ou agité",
@@ -46,7 +48,7 @@ interface Props {
 
 function makeInitial(type: EvalType, initial?: any) {
   const today = new Date().toISOString().slice(0, 10);
-  const n = type === "iRock" ? 10 : 12;
+  const n = type === "iRock" ? 12 : 12;
   const qs: Record<string, number> = {};
   for (let i = 1; i <= n; i++) qs[`q${i}`] = initial?.[`q${i}`] ?? 0;
   return { date: initial?.date ?? today, ...qs };
@@ -55,6 +57,7 @@ function makeInitial(type: EvalType, initial?: any) {
 export function EvaluationModal({ type, initial, onSave, onClose, isPending }: Props) {
   const questions = type === "iRock" ? IROCK_QUESTIONS : HONOS_QUESTIONS;
   const labels = type === "iRock" ? IROCK_LABELS : HONOS_LABELS;
+  const levels = type === "iRock" ? [0, 1, 2, 3, 4, 5] : [0, 1, 2, 3, 4];
   const [form, setForm] = useState(() => makeInitial(type, initial));
 
   function setQ(q: string, v: number) {
@@ -62,7 +65,7 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
   }
 
   const total = questions.reduce((sum, _, i) => sum + ((form as any)[`q${i + 1}`] ?? 0), 0);
-  const max = questions.length * 4;
+  const max = questions.length * (type === "iRock" ? 5 : 4);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -94,7 +97,7 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
                     <span className="text-sm">{q}</span>
                   </div>
                   <div className="flex gap-1 pl-7">
-                    {[0, 1, 2, 3, 4].map((v) => (
+                    {levels.map((v) => (
                       <button
                         key={v}
                         onClick={() => setQ(key, v)}
