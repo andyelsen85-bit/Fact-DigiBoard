@@ -11,10 +11,12 @@ router.get("/stats", requireAuth, async (req, res) => {
   let all = await db.select().from(patientsTable).where(isNull(patientsTable.deletedAt));
 
   if (since) {
+    const closedBoards = ["Clôturé", "Irrecevable"];
     all = all.filter((p) => {
-      const d = p.dateEntree ?? p.createdAt?.toISOString().slice(0, 10);
-      if (!d) return false;
-      return d >= since;
+      if (!closedBoards.includes(p.board)) return true;
+      const closedDate = p.dateSortie ?? p.updatedAt?.toISOString().slice(0, 10);
+      if (!closedDate) return false;
+      return closedDate >= since;
     });
   }
 
