@@ -137,8 +137,9 @@ async function moveBoardHandler(req: any, res: any) {
   }
 
   const extraFields: Record<string, unknown> = {};
-  if (board === "FactBoard" && !current.dateAdmission) {
-    extraFields.dateAdmission = today;
+  if (board === "FactBoard") {
+    if (!current.dateAdmission) extraFields.dateAdmission = today;
+    extraFields.dateFinSuivi = null;
   }
   if (board === "Clôturé" && !current.dateFinSuivi) {
     extraFields.dateFinSuivi = today;
