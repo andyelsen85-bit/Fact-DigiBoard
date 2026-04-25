@@ -1,4 +1,6 @@
-import { useGetStats, getGetStatsQueryKey } from "@workspace/api-client-react";
+import { useState, useEffect } from "react";
+import { useGetSettings, getGetSettingsQueryKey } from "@workspace/api-client-react";
+import { useStats, type StatsPeriod } from "@/hooks/use-stats";
 
 const BOARD_COLORS: Record<string, string> = {
   FactBoard: "#2d5a2d",
@@ -22,8 +24,28 @@ const AGG_LABELS: Record<string, string> = {
   "3": "Niveau 3",
 };
 
+const PERIOD_OPTIONS: { value: StatsPeriod; label: string }[] = [
+  { value: "1m", label: "1 mois" },
+  { value: "6m", label: "6 mois" },
+  { value: "all", label: "Tout le temps" },
+];
+
+const AGE_ORDER = ["0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70+"];
+
 export function StatsView() {
-  const { data: stats, isLoading } = useGetStats({ query: { queryKey: getGetStatsQueryKey() } });
+  const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
+  const defaultPeriod = ((settings as any)?.defaultStatsPeriod as StatsPeriod) ?? "6m";
+
+  const [period, setPeriod] = useState<StatsPeriod | null>(null);
+  const activePeriod: StatsPeriod = period ?? defaultPeriod;
+
+  useEffect(() => {
+    if (period === null && defaultPeriod) {
+      setPeriod(defaultPeriod);
+    }
+  }, [defaultPeriod]);
+
+  const { data: stats, isLoading } = useStats(activePeriod);
 
   if (isLoading) {
     return (
@@ -35,26 +57,48 @@ export function StatsView() {
 
   if (!stats) return null;
 
-  const boardCounts = (stats as any).boardCounts as Record<string, number> ?? {};
-  const sexeCounts = (stats as any).sexeCounts as Record<string, number> ?? {};
-  const pathoCounts = (stats as any).pathoCounts as { patho: string; count: number }[] ?? [];
-  const aggCounts = (stats as any).aggCounts as Record<string, number> ?? {};
-  const avgDurations = (stats as any).avgDurations as Record<string, number> ?? {};
+  const boardCounts = stats.boardCounts ?? {};
+  const sexeCounts = stats.sexeCounts ?? {};
+  const pathoCounts = stats.pathoCounts ?? [];
+  const aggCounts = stats.aggCounts ?? {};
+  const avgDurations = stats.avgDurations ?? {};
+  const ageCounts = stats.ageCounts ?? {};
 
   const maxBoardCount = Math.max(...Object.values(boardCounts), 1);
   const maxPathoCount = Math.max(...pathoCounts.map((p) => p.count), 1);
+  const maxAge = Math.max(...Object.values(ageCounts), 1);
+
+  const sortedAges = AGE_ORDER.filter((k) => ageCounts[k] !== undefined)
+    .concat(Object.keys(ageCounts).filter((k) => !AGE_ORDER.includes(k)).sort());
 
   return (
     <div className="space-y-6 p-6 max-w-4xl mx-auto" data-testid="stats-view">
-      <h2 className="text-xl font-semibold">Statistiques</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Statistiques</h2>
+        <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+          {PERIOD_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setPeriod(opt.value)}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                activePeriod === opt.value
+                  ? "bg-card shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-card border rounded-lg p-4">
-          <div className="text-3xl font-light font-mono">{(stats as any).total ?? 0}</div>
+          <div className="text-3xl font-light font-mono">{stats.total ?? 0}</div>
           <div className="text-sm text-muted-foreground mt-1">Total clients</div>
         </div>
         <div className="bg-card border rounded-lg p-4">
-          <div className="text-3xl font-light font-mono">{(stats as any).active ?? 0}</div>
+          <div className="text-3xl font-light font-mono">{stats.active ?? 0}</div>
           <div className="text-sm text-muted-foreground mt-1">Clients actifs</div>
         </div>
         <div className="bg-card border rounded-lg p-4">
@@ -73,14 +117,14 @@ export function StatsView() {
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-card border rounded-lg p-4 flex items-center gap-4">
           <div className="flex-1">
-            <div className="text-3xl font-light font-mono text-blue-700">{(stats as any).irockCount ?? 0}</div>
+            <div className="text-3xl font-light font-mono text-blue-700">{stats.irockCount ?? 0}</div>
             <div className="text-sm text-muted-foreground mt-1">Évaluations iRock</div>
           </div>
           <span className="text-2xl font-semibold text-blue-200">iRock</span>
         </div>
         <div className="bg-card border rounded-lg p-4 flex items-center gap-4">
           <div className="flex-1">
-            <div className="text-3xl font-light font-mono text-red-700">{(stats as any).honosCount ?? 0}</div>
+            <div className="text-3xl font-light font-mono text-red-700">{stats.honosCount ?? 0}</div>
             <div className="text-sm text-muted-foreground mt-1">Évaluations HoNOS</div>
           </div>
           <span className="text-2xl font-semibold text-red-200">HoNOS</span>
@@ -107,6 +151,29 @@ export function StatsView() {
           ))}
         </div>
       </div>
+
+      {sortedAges.length > 0 && (
+        <div className="bg-card border rounded-lg p-4">
+          <h3 className="text-sm font-medium mb-3">Répartition par âge</h3>
+          <div className="space-y-2">
+            {sortedAges.map((group) => {
+              const count = ageCounts[group] ?? 0;
+              return (
+                <div key={group} className="flex items-center gap-2">
+                  <div className="w-14 text-xs text-right text-muted-foreground shrink-0 font-mono">{group}</div>
+                  <div className="flex-1 bg-muted rounded-full h-4 relative">
+                    <div
+                      className="h-4 rounded-full transition-all bg-primary/60"
+                      style={{ width: `${(count / maxAge) * 100}%` }}
+                    />
+                  </div>
+                  <div className="font-mono text-sm w-6 text-right">{count}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-card border rounded-lg p-4">

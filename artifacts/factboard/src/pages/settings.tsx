@@ -582,6 +582,59 @@ function UserModal({
   );
 }
 
+function DefaultPeriodSection() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
+  const updateSetting = useUpdateSetting();
+  const current = ((settings as any)?.defaultStatsPeriod as string) ?? "6m";
+
+  const PERIOD_OPTIONS = [
+    { value: "1m", label: "1 mois" },
+    { value: "6m", label: "6 mois" },
+    { value: "all", label: "Tout le temps" },
+  ];
+
+  function handleChange(value: string) {
+    updateSetting.mutate(
+      { key: "defaultStatsPeriod", data: { value } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey() });
+          toast({ title: "Période par défaut mise à jour" });
+        },
+        onError: () => toast({ title: "Erreur", description: "Impossible de sauvegarder", variant: "destructive" }),
+      }
+    );
+  }
+
+  return (
+    <div className="bg-card border rounded-lg p-4">
+      <div className="mb-3">
+        <p className="text-sm font-medium">Période par défaut des statistiques et KPI</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Période appliquée par défaut à l'ouverture des vues Statistiques et Client KPI.
+        </p>
+      </div>
+      <div className="flex gap-2">
+        {PERIOD_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => handleChange(opt.value)}
+            className={`px-4 py-1.5 rounded border text-sm font-medium transition-colors ${
+              current === opt.value
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card text-foreground border-border hover:bg-muted"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
@@ -690,6 +743,11 @@ export default function SettingsPage() {
           <div>
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Corbeille</h3>
             <DeletedPatientsSection />
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Filtres par défaut</h3>
+            <DefaultPeriodSection />
           </div>
 
           {user?.role === "admin" && (

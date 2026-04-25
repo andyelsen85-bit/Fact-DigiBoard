@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, LabelList,
@@ -6,6 +6,8 @@ import {
 import {
   usePatientSelector, useListIrock, useListHonos, usePatientKpi,
 } from "@/hooks/use-evaluations";
+import { useGetSettings, getGetSettingsQueryKey } from "@workspace/api-client-react";
+import { type StatsPeriod, periodToSince } from "@/hooks/use-stats";
 
 const IROCK_QUESTIONS = [
   "Activités plaisantes",
@@ -131,9 +133,9 @@ function ChartPanel({ title, data, questions, color, yLabel, yMax, qCount }: Cha
   );
 }
 
-function KpiContent({ patientId }: { patientId: number }) {
-  const { data: irockData = [], isLoading: irockLoading } = useListIrock(patientId);
-  const { data: honosData = [], isLoading: honosLoading } = useListHonos(patientId);
+function KpiContent({ patientId, period }: { patientId: number; period: StatsPeriod }) {
+  const { data: irockRaw = [], isLoading: irockLoading } = useListIrock(patientId);
+  const { data: honosRaw = [], isLoading: honosLoading } = useListHonos(patientId);
   const { data: kpi, isLoading: kpiLoading } = usePatientKpi(patientId);
 
   if (irockLoading || honosLoading || kpiLoading) {
@@ -143,6 +145,10 @@ function KpiContent({ patientId }: { patientId: number }) {
       </div>
     );
   }
+
+  const since = periodToSince(period);
+  const irockData = since ? irockRaw.filter((e) => e.date >= since) : irockRaw;
+  const honosData = since ? honosRaw.filter((e) => e.date >= since) : honosRaw;
 
   const irockChartData = irockData.map((e) => {
     const qs = [e.q1, e.q2, e.q3, e.q4, e.q5, e.q6, e.q7, e.q8, e.q9, e.q10];
@@ -238,11 +244,28 @@ function KpiContent({ patientId }: { patientId: number }) {
 
 const HIDDEN_BOARDS = ["Clôturé", "Irrecevable"];
 
+const PERIOD_OPTIONS: { value: StatsPeriod; label: string }[] = [
+  { value: "1m", label: "1 mois" },
+  { value: "6m", label: "6 mois" },
+  { value: "all", label: "Tout" },
+];
+
 export function PatientKpiView() {
   const { data: patients = [], isLoading } = usePatientSelector();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [showHidden, setShowHidden] = useState(false);
+  const [period, setPeriod] = useState<StatsPeriod | null>(null);
+
+  const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
+  const defaultPeriod = ((settings as any)?.defaultStatsPeriod as StatsPeriod) ?? "6m";
+  const activePeriod: StatsPeriod = period ?? defaultPeriod;
+
+  useEffect(() => {
+    if (period === null && defaultPeriod) {
+      setPeriod(defaultPeriod);
+    }
+  }, [defaultPeriod]);
 
   const hiddenCount = patients.filter((p) => HIDDEN_BOARDS.includes(p.board)).length;
 
@@ -257,6 +280,21 @@ export function PatientKpiView() {
       <aside className="w-64 border-r bg-card flex flex-col shrink-0">
         <div className="p-3 border-b space-y-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Client KPI</p>
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
+            {PERIOD_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setPeriod(opt.value)}
+                className={`flex-1 py-1 rounded-md text-xs font-medium transition-colors ${
+                  activePeriod === opt.value
+                    ? "bg-card shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           <input
             type="search"
             placeholder="Rechercher un client…"
@@ -311,10 +349,10 @@ export function PatientKpiView() {
       {/* Main content */}
       <main className="flex-1 overflow-y-auto p-6">
         {selectedId ? (
-          <KpiContent patientId={selectedId} />
+          <KpiContent patientId={selectedId} period={activePeriod} />
         ) : (
           <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-            Sélectionnez un patient pour afficher ses KPI
+            Sélectionnez un client pour afficher ses KPI
           </div>
         )}
       </main>

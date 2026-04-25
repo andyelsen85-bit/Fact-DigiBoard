@@ -1,12 +1,22 @@
 import { Router } from "express";
 import { db, patientsTable, irockEvaluationsTable, honosEvaluationsTable } from "@workspace/db";
-import { sql, eq, not, isNull } from "drizzle-orm";
+import { isNull } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
 
-router.get("/stats", requireAuth, async (_req, res) => {
-  const all = await db.select().from(patientsTable).where(isNull(patientsTable.deletedAt));
+router.get("/stats", requireAuth, async (req, res) => {
+  const since = req.query.since as string | undefined;
+
+  let all = await db.select().from(patientsTable).where(isNull(patientsTable.deletedAt));
+
+  if (since) {
+    all = all.filter((p) => {
+      const d = p.dateEntree ?? p.createdAt?.toISOString().slice(0, 10);
+      if (!d) return false;
+      return d >= since;
+    });
+  }
 
   const total = all.length;
   const activeBoards = ["FactBoard", "RecoveryBoard", "PréAdmission"];
@@ -30,6 +40,7 @@ router.get("/stats", requireAuth, async (_req, res) => {
     .slice(0, 10);
 
   const today = new Date();
+
   const avgDurations: Record<string, number> = {};
   for (const board of activeBoards) {
     const pts = all.filter((p) => p.board === board && p.boardEntryDate);
@@ -42,8 +53,20 @@ router.get("/stats", requireAuth, async (_req, res) => {
     avgDurations[board] = Math.round(totalDays / pts.length);
   }
 
-  const [irockCountRow] = await db.select({ count: sql<number>`count(*)::int` }).from(irockEvaluationsTable);
-  const [honosCountRow] = await db.select({ count: sql<number>`count(*)::int` }).from(honosEvaluationsTable);
+  const ageCounts: Record<string, number> = {};
+  for (const p of all) {
+    if (!p.dob) continue;
+    const birth = new Date(p.dob);
+    if (isNaN(birth.getTime())) continue;
+    const age = Math.floor((today.getTime() - birth.getTime()) / (365.25 * 24 * 3600 * 1000));
+    if (age < 0 || age > 120) continue;
+    const decade = Math.floor(age / 10) * 10;
+    const key = decade >= 70 ? "70+" : `${decade}-${decade + 9}`;
+    ageCounts[key] = (ageCounts[key] ?? 0) + 1;
+  }
+
+  const irockCount = await db.select().from(irockEvaluationsTable).then((r) => r.length);
+  const honosCount = await db.select().from(honosEvaluationsTable).then((r) => r.length);
 
   res.json({
     total,
@@ -53,8 +76,9 @@ router.get("/stats", requireAuth, async (_req, res) => {
     pathoCounts: pathoArray,
     aggCounts,
     avgDurations,
-    irockCount: irockCountRow?.count ?? 0,
-    honosCount: honosCountRow?.count ?? 0,
+    ageCounts,
+    irockCount,
+    honosCount,
   });
 });
 

@@ -6,12 +6,21 @@ import { requireAuth } from "../middlewares/auth";
 const router = Router();
 
 const SETTING_KEYS = ["psychiatrists", "casemanagers", "medecinsfamille", "articles", "curatelles", "icd10favorites"];
+const SETTING_SCALAR_DEFAULTS: Record<string, string> = {
+  defaultStatsPeriod: "6m",
+};
 
 async function ensureDefaults() {
   for (const key of SETTING_KEYS) {
     const existing = await db.select().from(settingsTable).where(eq(settingsTable.key, key)).limit(1);
     if (!existing[0]) {
       await db.insert(settingsTable).values({ key, value: "[]" });
+    }
+  }
+  for (const [key, value] of Object.entries(SETTING_SCALAR_DEFAULTS)) {
+    const existing = await db.select().from(settingsTable).where(eq(settingsTable.key, key)).limit(1);
+    if (!existing[0]) {
+      await db.insert(settingsTable).values({ key, value });
     }
   }
 }
