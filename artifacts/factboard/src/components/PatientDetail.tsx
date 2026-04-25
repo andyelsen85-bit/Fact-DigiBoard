@@ -76,6 +76,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const [photoUploading, setPhotoUploading] = useState(false);
   const [showPhotoOverlay, setShowPhotoOverlay] = useState(false);
   const [evalModal, setEvalModal] = useState<{ type: "I•ROC" | "HoNOS"; edit?: IrockEval | HonosEval } | null>(null);
+  const [notesPage, setNotesPage] = useState(0);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { uploadPhoto } = usePatientPhotoUpload(patientId);
 
@@ -215,7 +216,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   function handleAddNote() {
     createNote.mutate(
       { id: patientId, data: { date: new Date().toISOString().slice(0, 10), texte: "" } },
-      { onSuccess: () => invalidateNotes() }
+      { onSuccess: () => { invalidateNotes(); setNotesPage(0); } }
     );
   }
 
@@ -579,49 +580,81 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
             + Ajouter
           </Button>
         </div>
-        <div className="space-y-2">
-          {sortedNotes.map((note) => (
-            <div key={note.id} className="flex gap-2 items-start border rounded-md p-2">
-              <input
-                type="date"
-                className="text-xs border rounded px-1 h-7 w-32 bg-background"
-                defaultValue={note.date ?? ""}
-                data-testid={`note-date-${note.id}`}
-                onBlur={(e) => {
-                  if (e.target.value !== note.date) {
-                    updateNote.mutate(
-                      { patientId, noteId: note.id, data: { date: e.target.value } },
-                      { onSuccess: invalidateNotes }
-                    );
-                  }
-                }}
-              />
-              <textarea
-                className="flex-1 text-sm border rounded px-2 py-1 bg-background resize-none min-h-[60px]"
-                defaultValue={note.texte ?? ""}
-                data-testid={`note-text-${note.id}`}
-                onBlur={(e) => {
-                  if (e.target.value !== note.texte) {
-                    updateNote.mutate(
-                      { patientId, noteId: note.id, data: { texte: e.target.value } },
-                      { onSuccess: invalidateNotes }
-                    );
-                  }
-                }}
-              />
-              <button
-                className="text-xs text-destructive hover:text-destructive/80 px-1 py-1"
-                data-testid={`button-delete-note-${note.id}`}
-                onClick={() => handleDeleteNote(note.id)}
-              >
-                Supprimer
-              </button>
-            </div>
-          ))}
-          {sortedNotes.length === 0 && (
-            <p className="text-xs text-muted-foreground py-2">Aucune note</p>
-          )}
-        </div>
+        {(() => {
+          const NOTES_PER_PAGE = 5;
+          const totalPages = Math.max(1, Math.ceil(sortedNotes.length / NOTES_PER_PAGE));
+          const safePage = Math.min(notesPage, totalPages - 1);
+          const pagedNotes = sortedNotes.slice(safePage * NOTES_PER_PAGE, (safePage + 1) * NOTES_PER_PAGE);
+          return (
+            <>
+              <div className="space-y-2">
+                {pagedNotes.map((note) => (
+                  <div key={note.id} className="flex gap-2 items-start border rounded-md p-2">
+                    <input
+                      type="date"
+                      className="text-xs border rounded px-1 h-7 w-32 bg-background"
+                      defaultValue={note.date ?? ""}
+                      data-testid={`note-date-${note.id}`}
+                      onBlur={(e) => {
+                        if (e.target.value !== note.date) {
+                          updateNote.mutate(
+                            { patientId, noteId: note.id, data: { date: e.target.value } },
+                            { onSuccess: invalidateNotes }
+                          );
+                        }
+                      }}
+                    />
+                    <textarea
+                      className="flex-1 text-sm border rounded px-2 py-1 bg-background resize-none min-h-[60px]"
+                      defaultValue={note.texte ?? ""}
+                      data-testid={`note-text-${note.id}`}
+                      onBlur={(e) => {
+                        if (e.target.value !== note.texte) {
+                          updateNote.mutate(
+                            { patientId, noteId: note.id, data: { texte: e.target.value } },
+                            { onSuccess: invalidateNotes }
+                          );
+                        }
+                      }}
+                    />
+                    <button
+                      className="text-xs text-destructive hover:text-destructive/80 px-1 py-1"
+                      data-testid={`button-delete-note-${note.id}`}
+                      onClick={() => handleDeleteNote(note.id)}
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                ))}
+                {sortedNotes.length === 0 && (
+                  <p className="text-xs text-muted-foreground py-2">Aucune note</p>
+                )}
+              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                  <button
+                    className="text-xs px-3 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    onClick={() => setNotesPage((p) => Math.max(0, p - 1))}
+                    disabled={safePage === 0}
+                  >
+                    ← Précédent
+                  </button>
+                  <span className="text-xs text-muted-foreground">
+                    Page {safePage + 1} / {totalPages}
+                    <span className="ml-2 text-muted-foreground/60">({sortedNotes.length} notes)</span>
+                  </span>
+                  <button
+                    className="text-xs px-3 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    onClick={() => setNotesPage((p) => Math.min(totalPages - 1, p + 1))}
+                    disabled={safePage === totalPages - 1}
+                  >
+                    Suivant →
+                  </button>
+                </div>
+              )}
+            </>
+          );
+        })()}
       </div>
 
       {/* Evaluations history */}
