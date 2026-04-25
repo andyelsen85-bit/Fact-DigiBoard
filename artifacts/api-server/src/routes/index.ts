@@ -9,6 +9,7 @@ import statsRouter from "./stats";
 import actRouter from "./act";
 import settingsRouter from "./settings";
 import icd10Router from "./icd10";
+import evaluationsRouter from "./evaluations";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(statsRouter);
 router.use(actRouter);
 router.use(settingsRouter);
 router.use(icd10Router);
+router.use(evaluationsRouter);
 
 export default router;

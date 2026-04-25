@@ -13,6 +13,7 @@ router.get("/patients", requireAuth, async (req, res) => {
     conditions.push(eq(patientsTable.board, board));
   } else {
     conditions.push(ne(patientsTable.board, "Clôturé"));
+    conditions.push(ne(patientsTable.board, "Irrecevable"));
   }
   if (search) {
     conditions.push(

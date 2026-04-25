@@ -7,3 +7,5 @@ export * from "./act_notes";
 export * from "./settings";
 export * from "./icd10_codes";
 export * from "./sessions";
+export * from "./irock_evaluations";
+export * from "./honos_evaluations";

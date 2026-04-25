@@ -8,6 +8,7 @@ import { PatientDetail } from "@/components/PatientDetail";
 import { PatientModal } from "@/components/PatientModal";
 import { StatsView } from "@/components/StatsView";
 import { ActView } from "@/components/ActView";
+import { PatientKpiView } from "@/components/PatientKpiView";
 import { useToast } from "@/hooks/use-toast";
 
 const BOARD_NAV = [
@@ -22,6 +23,7 @@ const BOARD_NAV = [
 const TOOL_NAV = [
   { label: "ACT", value: "ACT" },
   { label: "Statistiques", value: "Statistiques" },
+  { label: "Patient KPI", value: "PatientKPI" },
 ];
 
 export default function BoardPage() {
@@ -130,6 +132,10 @@ export default function BoardPage() {
         ) : activeBoard === "ACT" ? (
           <div className="flex-1 overflow-hidden">
             <ActView />
+          </div>
+        ) : activeBoard === "PatientKPI" ? (
+          <div className="flex-1 overflow-hidden">
+            <PatientKpiView />
           </div>
         ) : (
           <>

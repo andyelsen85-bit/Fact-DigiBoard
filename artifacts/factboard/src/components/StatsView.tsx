@@ -70,6 +70,23 @@ export function StatsView() {
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-card border rounded-lg p-4 flex items-center gap-4">
+          <div className="flex-1">
+            <div className="text-3xl font-light font-mono text-blue-700">{(stats as any).irockCount ?? 0}</div>
+            <div className="text-sm text-muted-foreground mt-1">Évaluations iRock</div>
+          </div>
+          <span className="text-2xl font-semibold text-blue-200">iRock</span>
+        </div>
+        <div className="bg-card border rounded-lg p-4 flex items-center gap-4">
+          <div className="flex-1">
+            <div className="text-3xl font-light font-mono text-red-700">{(stats as any).honosCount ?? 0}</div>
+            <div className="text-sm text-muted-foreground mt-1">Évaluations HoNOS</div>
+          </div>
+          <span className="text-2xl font-semibold text-red-200">HoNOS</span>
+        </div>
+      </div>
+
       <div className="bg-card border rounded-lg p-4">
         <h3 className="text-sm font-medium mb-3">Patients par board</h3>
         <div className="space-y-2">

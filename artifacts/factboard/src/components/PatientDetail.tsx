@@ -1,4 +1,10 @@
 import { useState, useCallback, useRef } from "react";
+import { EvaluationModal } from "./EvaluationModal";
+import {
+  useListIrock, useCreateIrock, useUpdateIrock, useDeleteIrock,
+  useListHonos, useCreateHonos, useUpdateHonos, useDeleteHonos,
+  type IrockEval, type HonosEval,
+} from "@/hooks/use-evaluations";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetPatient, getGetPatientQueryKey,
@@ -68,6 +74,8 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [showPhotoOverlay, setShowPhotoOverlay] = useState(false);
+  const [evalModal, setEvalModal] = useState<{ type: "iRock" | "HoNOS"; edit?: IrockEval | HonosEval } | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { uploadPhoto } = usePatientPhotoUpload(patientId);
 
@@ -95,6 +103,15 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const updateNote = useUpdatePatientNote();
   const deleteNote = useDeletePatientNote();
   const updateHistoryEntry = useUpdatePatientHistoryEntry();
+
+  const { data: irockEvals = [] } = useListIrock(patientId);
+  const { data: honosEvals = [] } = useListHonos(patientId);
+  const createIrock = useCreateIrock(patientId);
+  const updateIrock = useUpdateIrock(patientId);
+  const deleteIrock = useDeleteIrock(patientId);
+  const createHonos = useCreateHonos(patientId);
+  const updateHonos = useUpdateHonos(patientId);
+  const deleteHonos = useDeleteHonos(patientId);
 
   const invalidatePatient = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: getGetPatientQueryKey(patientId) });
@@ -214,6 +231,33 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
     }
   }
 
+  function handleEvalSave(data: any) {
+    if (!evalModal) return;
+    if (evalModal.type === "iRock") {
+      if (evalModal.edit) {
+        updateIrock.mutate(
+          { evalId: evalModal.edit.id, data },
+          { onSuccess: () => { setEvalModal(null); toast({ title: "iRock mis à jour" }); } }
+        );
+      } else {
+        createIrock.mutate(data, {
+          onSuccess: () => { setEvalModal(null); toast({ title: "iRock enregistré" }); },
+        });
+      }
+    } else {
+      if (evalModal.edit) {
+        updateHonos.mutate(
+          { evalId: evalModal.edit.id, data },
+          { onSuccess: () => { setEvalModal(null); toast({ title: "HoNOS mis à jour" }); } }
+        );
+      } else {
+        createHonos.mutate(data, {
+          onSuccess: () => { setEvalModal(null); toast({ title: "HoNOS enregistré" }); },
+        });
+      }
+    }
+  }
+
   function handleDeleteNote(noteId: number) {
     deleteNote.mutate(
       { patientId, noteId },
@@ -238,6 +282,8 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
               <button
                 type="button"
                 onClick={() => photoInputRef.current?.click()}
+                onMouseEnter={() => patient.photo && setShowPhotoOverlay(true)}
+                onMouseLeave={() => setShowPhotoOverlay(false)}
                 className="w-16 h-16 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary relative"
                 title="Changer la photo"
                 disabled={photoUploading}
@@ -260,6 +306,15 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                   )}
                 </div>
               </button>
+              {showPhotoOverlay && patient.photo && (
+                <div className="absolute left-20 top-0 z-50 pointer-events-none">
+                  <img
+                    src={patient.photo}
+                    alt="Photo agrandie"
+                    className="max-w-xs max-h-80 rounded-lg shadow-2xl border border-border object-contain bg-black/80"
+                  />
+                </div>
+              )}
             </div>
             <div>
               <h2 className="text-2xl font-light tracking-tight">
@@ -277,7 +332,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
             <Button size="sm" variant="outline" onClick={() => setShowMoveModal(true)} data-testid="button-move-board">
               Changer de board
             </Button>
@@ -286,6 +341,24 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
             </Button>
             <Button size="sm" variant="destructive" onClick={handleDelete} data-testid="button-delete-patient">
               Supprimer
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
+              onClick={() => setEvalModal({ type: "iRock" })}
+              data-testid="button-irock"
+            >
+              iRock
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-red-300 text-red-700 hover:bg-red-50"
+              onClick={() => setEvalModal({ type: "HoNOS" })}
+              data-testid="button-honos"
+            >
+              HoNOS
             </Button>
           </div>
         </div>
@@ -521,6 +594,59 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
         </div>
       </div>
 
+      {/* Evaluations history */}
+      {(irockEvals.length > 0 || honosEvals.length > 0) && (
+        <div className="bg-card border rounded-lg p-4">
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Évaluations</h3>
+          <div className="space-y-2">
+            {[
+              ...irockEvals.map((e) => ({ ...e, type: "iRock" as const })),
+              ...honosEvals.map((e) => ({ ...e, type: "HoNOS" as const })),
+            ]
+              .sort((a, b) => b.date.localeCompare(a.date))
+              .map((e) => {
+                const isIrock = e.type === "iRock";
+                const qCount = isIrock ? 10 : 12;
+                const total = Array.from({ length: qCount }, (_, i) => (e as any)[`q${i + 1}`] ?? 0)
+                  .reduce((s, v) => s + v, 0);
+                return (
+                  <div key={`${e.type}-${e.id}`} className="flex items-center gap-3 border rounded-md px-3 py-2">
+                    <span
+                      className={`text-xs font-semibold px-2 py-0.5 rounded border ${
+                        isIrock
+                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                          : "bg-red-50 text-red-700 border-red-200"
+                      }`}
+                    >
+                      {e.type}
+                    </span>
+                    <span className="text-xs font-mono text-muted-foreground">{e.date}</span>
+                    <span className="text-xs text-muted-foreground">Score : <span className="font-mono font-medium text-foreground">{total}</span>/{qCount * 4}</span>
+                    <div className="ml-auto flex gap-1">
+                      <button
+                        className="text-xs text-primary hover:underline px-1"
+                        onClick={() => setEvalModal({ type: e.type, edit: e as any })}
+                      >
+                        Modifier
+                      </button>
+                      <button
+                        className="text-xs text-destructive hover:underline px-1"
+                        onClick={() => {
+                          if (!confirm(`Supprimer cette évaluation ${e.type} ?`)) return;
+                          if (isIrock) deleteIrock.mutate(e.id);
+                          else deleteHonos.mutate(e.id);
+                        }}
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
       <div className="bg-card border rounded-lg p-4">
         <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Historique des mouvements</h3>
         {sortedHistory.length === 0 ? (
@@ -555,6 +681,20 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
           </div>
         )}
       </div>
+
+      {evalModal && (
+        <EvaluationModal
+          type={evalModal.type}
+          initial={evalModal.edit}
+          onSave={handleEvalSave}
+          onClose={() => setEvalModal(null)}
+          isPending={
+            evalModal.type === "iRock"
+              ? (createIrock.isPending || updateIrock.isPending)
+              : (createHonos.isPending || updateHonos.isPending)
+          }
+        />
+      )}
 
       <MoveBoardModal
         open={showMoveModal}

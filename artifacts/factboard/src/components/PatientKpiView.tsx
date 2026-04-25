@@ -1,0 +1,256 @@
+import { useState } from "react";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Legend,
+} from "recharts";
+import {
+  usePatientSelector, useListIrock, useListHonos, usePatientKpi,
+} from "@/hooks/use-evaluations";
+
+const IROCK_QUESTIONS = [
+  "Activités plaisantes",
+  "Sentiment d'appartenance",
+  "Sentiment de sécurité",
+  "Espoir pour l'avenir",
+  "Objectifs importants",
+  "Gestion des difficultés",
+  "Santé physique",
+  "Santé mentale",
+  "Relations avec les autres",
+  "Occupation (travail/études/bénévolat)",
+];
+
+const HONOS_QUESTIONS = [
+  "Comportement hyperactif/agressif",
+  "Automutilation",
+  "Alcool ou drogues",
+  "Problèmes cognitifs",
+  "Maladie physique",
+  "Hallucinations/délires",
+  "Humeur dépressive",
+  "Autres troubles mentaux",
+  "Relations",
+  "Vie quotidienne",
+  "Conditions de vie",
+  "Occupation et activités",
+];
+
+const CLINICAL_BOARDS = ["PréAdmission", "FactBoard", "RecoveryBoard"];
+
+const BOARD_COLORS: Record<string, string> = {
+  "PréAdmission": "#6b4c1e",
+  FactBoard: "#2d5a2d",
+  RecoveryBoard: "#1e3a6e",
+};
+
+const IROCK_COLOR = "#2563eb";
+const HONOS_COLOR = "#dc2626";
+
+interface ChartPanelProps {
+  title: string;
+  data: Record<string, number>[];
+  questions: string[];
+  color: string;
+  yLabel: string;
+  yMax: number;
+}
+
+function ChartPanel({ title, data, questions, color, yLabel, yMax }: ChartPanelProps) {
+  if (data.length < 1) {
+    return (
+      <div className="bg-card border rounded-lg p-4">
+        <h4 className="text-sm font-medium mb-2">{title}</h4>
+        <p className="text-xs text-muted-foreground">Aucune évaluation enregistrée</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-card border rounded-lg p-4 space-y-4">
+      <h4 className="text-sm font-medium">{title}</h4>
+      {questions.map((label, i) => {
+        const key = `q${i + 1}`;
+        return (
+          <div key={key}>
+            <p className="text-xs text-muted-foreground mb-1">{i + 1}. {label}</p>
+            <ResponsiveContainer width="100%" height={80}>
+              <LineChart data={data} margin={{ top: 2, right: 8, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                <YAxis domain={[0, yMax]} tick={{ fontSize: 10 }} width={30} />
+                <Tooltip
+                  formatter={(v: any) => [`${v} — ${yLabel}`, label]}
+                  labelFormatter={(l) => `Date: ${l}`}
+                  contentStyle={{ fontSize: 11 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey={key}
+                  stroke={color}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function KpiContent({ patientId }: { patientId: number }) {
+  const { data: irockData = [], isLoading: irockLoading } = useListIrock(patientId);
+  const { data: honosData = [], isLoading: honosLoading } = useListHonos(patientId);
+  const { data: kpi, isLoading: kpiLoading } = usePatientKpi(patientId);
+
+  if (irockLoading || honosLoading || kpiLoading) {
+    return (
+      <div className="flex items-center justify-center h-40">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  const irockChartData = irockData.map((e) => ({
+    date: e.date,
+    q1: e.q1, q2: e.q2, q3: e.q3, q4: e.q4, q5: e.q5,
+    q6: e.q6, q7: e.q7, q8: e.q8, q9: e.q9, q10: e.q10,
+  }));
+
+  const honosChartData = honosData.map((e) => ({
+    date: e.date,
+    q1: e.q1, q2: e.q2, q3: e.q3, q4: e.q4, q5: e.q5,
+    q6: e.q6, q7: e.q7, q8: e.q8, q9: e.q9, q10: e.q10,
+    q11: e.q11, q12: e.q12,
+  }));
+
+  const daysPerBoard = kpi?.daysPerBoard ?? {};
+  const regressions = kpi?.regressions ?? 0;
+
+  return (
+    <div className="space-y-6">
+      {/* Board stability */}
+      <div className="bg-card border rounded-lg p-4">
+        <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground mb-4">
+          Stabilité par board
+        </h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground mb-2">Jours par board (PréAdmission / FactBoard / RecoveryBoard)</p>
+            {CLINICAL_BOARDS.map((board) => (
+              <div key={board} className="flex items-center gap-2">
+                <span
+                  className="w-3 h-3 rounded-full shrink-0"
+                  style={{ backgroundColor: BOARD_COLORS[board] }}
+                />
+                <span className="text-xs text-muted-foreground w-32 shrink-0">{board}</span>
+                <span className="font-mono text-sm font-medium">{daysPerBoard[board] ?? 0} j</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col items-center justify-center bg-muted/30 rounded-lg p-4">
+            <div className="text-4xl font-light font-mono text-destructive">{regressions}</div>
+            <div className="text-xs text-muted-foreground mt-1 text-center">
+              Retours de RecoveryBoard → FactBoard
+            </div>
+            <div className="text-xs text-muted-foreground mt-1 text-center italic">
+              (indicateur d'instabilité)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* iRock charts */}
+      <div>
+        <h3 className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
+          iRock — Évaluations ({irockData.length})
+        </h3>
+        <ChartPanel
+          title="iRock · Score 0–4 (0 = Jamais, 4 = Toujours)"
+          data={irockChartData}
+          questions={IROCK_QUESTIONS}
+          color={IROCK_COLOR}
+          yLabel="0=Jamais / 4=Toujours"
+          yMax={4}
+        />
+      </div>
+
+      {/* HoNOS charts */}
+      <div>
+        <h3 className="text-sm font-semibold text-destructive uppercase tracking-wider mb-3">
+          HoNOS — Évaluations ({honosData.length})
+        </h3>
+        <ChartPanel
+          title="HoNOS · Score 0–4 (0 = Aucun problème, 4 = Problème grave)"
+          data={honosChartData}
+          questions={HONOS_QUESTIONS}
+          color={HONOS_COLOR}
+          yLabel="0=Aucun / 4=Grave"
+          yMax={4}
+        />
+      </div>
+    </div>
+  );
+}
+
+export function PatientKpiView() {
+  const { data: patients = [], isLoading } = usePatientSelector();
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filtered = patients.filter((p) =>
+    `${p.nom} ${p.prenom} ${p.clientNum}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="flex h-full overflow-hidden">
+      {/* Sidebar — patient picker */}
+      <aside className="w-64 border-r bg-card flex flex-col shrink-0">
+        <div className="p-3 border-b">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Patient KPI</p>
+          <input
+            type="search"
+            placeholder="Rechercher un patient…"
+            className="w-full px-2.5 py-1.5 border rounded bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-20">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+            </div>
+          ) : (
+            filtered.map((p) => (
+              <button
+                key={p.id}
+                className={`w-full text-left px-3 py-2.5 border-b border-border hover:bg-muted/40 transition-colors ${
+                  selectedId === p.id ? "bg-muted/60 border-l-2 border-l-primary" : ""
+                }`}
+                onClick={() => setSelectedId(p.id)}
+              >
+                <div className="font-medium text-xs">{p.nom} {p.prenom}</div>
+                <div className="text-xs text-muted-foreground font-mono">{p.clientNum}</div>
+                <div className="text-xs text-muted-foreground">{p.board}</div>
+              </button>
+            ))
+          )}
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 overflow-y-auto p-6">
+        {selectedId ? (
+          <KpiContent patientId={selectedId} />
+        ) : (
+          <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+            Sélectionnez un patient pour afficher ses KPI
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

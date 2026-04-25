@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, patientsTable } from "@workspace/db";
+import { db, patientsTable, irockEvaluationsTable, honosEvaluationsTable } from "@workspace/db";
 import { sql, eq, not, isNull } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 
@@ -42,6 +42,9 @@ router.get("/stats", requireAuth, async (_req, res) => {
     avgDurations[board] = Math.round(totalDays / pts.length);
   }
 
+  const [irockCountRow] = await db.select({ count: sql<number>`count(*)::int` }).from(irockEvaluationsTable);
+  const [honosCountRow] = await db.select({ count: sql<number>`count(*)::int` }).from(honosEvaluationsTable);
+
   res.json({
     total,
     active,
@@ -50,6 +53,8 @@ router.get("/stats", requireAuth, async (_req, res) => {
     pathoCounts: pathoArray,
     aggCounts,
     avgDurations,
+    irockCount: irockCountRow?.count ?? 0,
+    honosCount: honosCountRow?.count ?? 0,
   });
 });
 
