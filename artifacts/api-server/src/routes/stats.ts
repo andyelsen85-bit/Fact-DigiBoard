@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, patientsTable, historyEntriesTable, irockEvaluationsTable, honosEvaluationsTable, actNotesTable, actRegionsTable } from "@workspace/db";
-import { isNull, inArray } from "drizzle-orm";
+import { isNull, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
@@ -49,46 +49,41 @@ router.get("/stats", requireAuth, async (req, res) => {
 
   const today = new Date();
 
-  // Load all history entries for active patients in one query, then derive
-  // the board entry date from the most recent history entry (not boardEntryDate,
-  // which may be stale if history dates were manually edited).
-  const activePatientIds = all
-    .filter((p) => activeBoards.includes(p.board))
-    .map((p) => p.id);
+  // Calculate average days on current board per board using pure SQL.
+  // For each active patient, the effective entry date is:
+  //   1. The most recent history entry date where board_to = patient's current board
+  //   2. Falling back to board_entry_date if no matching history entry exists.
+  // This is computed entirely in the database to avoid JS type/comparison issues.
+  const durationRows = await db.execute<{ board: string; avg_days: string }>(sql`
+    SELECT
+      p.board,
+      ROUND(AVG(CURRENT_DATE - effective_date::date))::text AS avg_days
+    FROM (
+      SELECT
+        p.id,
+        p.board,
+        COALESCE(
+          (SELECT MAX(h.date)
+           FROM history_entries h
+           WHERE h.patient_id = p.id
+             AND h.board_to = p.board),
+          p.board_entry_date
+        ) AS effective_date
+      FROM patients p
+      WHERE p.deleted_at IS NULL
+        AND p.board IN ('FactBoard', 'RecoveryBoard', 'PréAdmission')
+    ) p
+    WHERE p.effective_date IS NOT NULL
+    GROUP BY p.board
+  `);
 
-  const allHistory = activePatientIds.length > 0
-    ? await db.select().from(historyEntriesTable)
-        .where(inArray(historyEntriesTable.patientId, activePatientIds))
-    : [];
-
-  // Group history by patientId+boardTo, keep the most recent date for each combination.
-  // This lets us look up "when did patient X most recently arrive on board Y?"
-  const latestBoardEntryDate: Record<number, Record<string, string>> = {};
-  for (const entry of allHistory) {
-    if (!entry.boardTo) continue;
-    const byBoard = (latestBoardEntryDate[entry.patientId] ??= {});
-    const cur = byBoard[entry.boardTo];
-    if (!cur || entry.date > cur) byBoard[entry.boardTo] = entry.date;
-  }
-
-  const avgDurations: Record<string, number> = {};
-  for (const board of activeBoards) {
-    const pts = all.filter((p) => p.board === board);
-    if (pts.length === 0) { avgDurations[board] = 0; continue; }
-    let counted = 0;
-    const totalDays = pts.reduce((sum, p) => {
-      // Use the most recent arrival date for the patient's current board.
-      // Fall back to boardEntryDate (legacy) if no matching history entry.
-      const entryDate = latestBoardEntryDate[p.id]?.[p.board] ?? p.boardEntryDate;
-      if (!entryDate) return sum;
-      const days = Math.floor(
-        (today.getTime() - new Date(entryDate).getTime()) / (1000 * 3600 * 24)
-      );
-      if (isNaN(days) || days < 0) return sum;
-      counted++;
-      return sum + days;
-    }, 0);
-    avgDurations[board] = counted > 0 ? Math.round(totalDays / counted) : 0;
+  const avgDurations: Record<string, number> = {
+    FactBoard: 0,
+    RecoveryBoard: 0,
+    "PréAdmission": 0,
+  };
+  for (const row of durationRows.rows) {
+    avgDurations[row.board] = Math.round(Number(row.avg_days));
   }
 
   const ageCounts: Record<string, number> = {};
