@@ -236,21 +236,27 @@ function KpiContent({ patientId }: { patientId: number }) {
   );
 }
 
+const HIDDEN_BOARDS = ["Clôturé", "Irrecevable"];
+
 export function PatientKpiView() {
   const { data: patients = [], isLoading } = usePatientSelector();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
+  const [showHidden, setShowHidden] = useState(false);
 
-  const filtered = patients.filter((p) =>
-    `${p.nom} ${p.prenom} ${p.clientNum}`.toLowerCase().includes(search.toLowerCase())
-  );
+  const hiddenCount = patients.filter((p) => HIDDEN_BOARDS.includes(p.board)).length;
+
+  const filtered = patients.filter((p) => {
+    if (!showHidden && HIDDEN_BOARDS.includes(p.board)) return false;
+    return `${p.nom} ${p.prenom} ${p.clientNum}`.toLowerCase().includes(search.toLowerCase());
+  });
 
   return (
     <div className="flex h-full overflow-hidden">
       {/* Sidebar — patient picker */}
       <aside className="w-64 border-r bg-card flex flex-col shrink-0">
-        <div className="p-3 border-b">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Patient KPI</p>
+        <div className="p-3 border-b space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Patient KPI</p>
           <input
             type="search"
             placeholder="Rechercher un patient…"
@@ -258,6 +264,21 @@ export function PatientKpiView() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          <button
+            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded border text-xs transition-colors ${
+              showHidden
+                ? "bg-muted border-border text-foreground"
+                : "border-dashed border-border text-muted-foreground hover:text-foreground hover:border-border"
+            }`}
+            onClick={() => setShowHidden((v) => !v)}
+          >
+            <span>{showHidden ? "Masquer les archivés" : "Afficher les archivés"}</span>
+            {hiddenCount > 0 && (
+              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-muted-foreground/15">
+                {hiddenCount}
+              </span>
+            )}
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
@@ -265,19 +286,24 @@ export function PatientKpiView() {
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
             </div>
           ) : (
-            filtered.map((p) => (
-              <button
-                key={p.id}
-                className={`w-full text-left px-3 py-2.5 border-b border-border hover:bg-muted/40 transition-colors ${
-                  selectedId === p.id ? "bg-muted/60 border-l-2 border-l-primary" : ""
-                }`}
-                onClick={() => setSelectedId(p.id)}
-              >
-                <div className="font-medium text-xs">{p.nom} {p.prenom}</div>
-                <div className="text-xs text-muted-foreground font-mono">{p.clientNum}</div>
-                <div className="text-xs text-muted-foreground">{p.board}</div>
-              </button>
-            ))
+            filtered.map((p) => {
+              const isArchived = HIDDEN_BOARDS.includes(p.board);
+              return (
+                <button
+                  key={p.id}
+                  className={`w-full text-left px-3 py-2.5 border-b border-border hover:bg-muted/40 transition-colors ${
+                    selectedId === p.id ? "bg-muted/60 border-l-2 border-l-primary" : ""
+                  } ${isArchived ? "opacity-60" : ""}`}
+                  onClick={() => setSelectedId(p.id)}
+                >
+                  <div className="font-medium text-xs">{p.nom} {p.prenom}</div>
+                  <div className="text-xs text-muted-foreground font-mono">{p.clientNum}</div>
+                  <div className={`text-xs ${isArchived ? "text-muted-foreground/60 italic" : "text-muted-foreground"}`}>
+                    {p.board}
+                  </div>
+                </button>
+              );
+            })
           )}
         </div>
       </aside>
