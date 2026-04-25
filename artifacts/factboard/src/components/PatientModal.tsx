@@ -15,8 +15,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { useGetSettings, getGetSettingsQueryKey } from "@workspace/api-client-react";
-import { useIcd10Codes } from "@/hooks/use-icd10";
+import { useFormOptions } from "@/hooks/use-form-options";
 import { BOARDS } from "./BoardBadge";
 
 const patientSchema = z.object({
@@ -81,14 +80,13 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
   const [pathoSearch, setPathoSearch] = useState(initialValues?.patho ?? "");
   const [pathoDropdownOpen, setPathoDropdownOpen] = useState(false);
 
-  const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
-  const psychiatrists: string[] = (settings as any)?.psychiatrists ?? [];
-  const casemanagers: string[] = (settings as any)?.casemanagers ?? [];
-  const medecinsfamille: string[] = (settings as any)?.medecinsfamille ?? [];
-  const articles: string[] = (settings as any)?.articles ?? [];
-  const curatelles: string[] = (settings as any)?.curatelles ?? [];
-
-  const { data: icd10Codes = [] } = useIcd10Codes();
+  const { data: formOptions } = useFormOptions();
+  const psychiatrists: string[] = formOptions?.psychiatrists ?? [];
+  const casemanagers: string[] = formOptions?.casemanagers ?? [];
+  const medecinsfamille: string[] = formOptions?.medecinsfamille ?? [];
+  const articles: string[] = formOptions?.articles ?? [];
+  const curatelles: string[] = formOptions?.curatelles ?? [];
+  const icd10Codes = formOptions?.icd10Codes ?? [];
   const favoriteCim10 = icd10Codes.filter((c) => c.isFavorite);
 
   const form = useForm<PatientFormValues>({

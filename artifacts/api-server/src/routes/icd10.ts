@@ -5,7 +5,7 @@ import { requireAuth, requireAdmin } from "../middlewares/auth";
 
 const router = Router();
 
-router.get("/icd10", requireAuth, async (req, res) => {
+router.get("/icd10", requireAuth, requireAdmin, async (req, res) => {
   const rows = await db
     .select()
     .from(icd10CodesTable)

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, settingsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, settingsTable, icd10CodesTable } from "@workspace/db";
+import { eq, inArray } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middlewares/auth";
 
 const router = Router();
@@ -25,7 +25,7 @@ async function ensureDefaults() {
   }
 }
 
-router.get("/settings", requireAuth, async (_req, res) => {
+router.get("/settings", requireAuth, requireAdmin, async (_req, res) => {
   await ensureDefaults();
   const rows = await db.select().from(settingsTable);
   const result: Record<string, unknown> = {};
@@ -37,6 +37,22 @@ router.get("/settings", requireAuth, async (_req, res) => {
     }
   }
   res.json(result);
+});
+
+const FORM_OPTION_KEYS = ["psychiatrists", "casemanagers", "medecinsfamille", "articles", "curatelles", "icd10favorites"];
+
+router.get("/form-options", requireAuth, async (_req, res) => {
+  const settingRows = await db.select().from(settingsTable).where(inArray(settingsTable.key, FORM_OPTION_KEYS));
+  const result: Record<string, unknown> = {};
+  for (const row of settingRows) {
+    try {
+      result[row.key] = JSON.parse(row.value);
+    } catch {
+      result[row.key] = row.value;
+    }
+  }
+  const icd10Codes = await db.select().from(icd10CodesTable).orderBy(icd10CodesTable.code);
+  res.json({ ...result, icd10Codes });
 });
 
 router.put("/settings/:key", requireAuth, requireAdmin, async (req, res) => {

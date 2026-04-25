@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { BoardBadge } from "./BoardBadge";
 import { AggBadge } from "./AggBadge";
-import { useIcd10Codes } from "@/hooks/use-icd10";
+import { useFormOptions } from "@/hooks/use-form-options";
 import { usePatientPhotoUpload } from "@/hooks/use-patient-photo";
 import { MoveBoardModal } from "./MoveBoardModal";
 import { PatientModal } from "./PatientModal";
@@ -82,7 +82,8 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const { data: patient, isLoading } = useGetPatient(patientId, {
     query: { queryKey: getGetPatientQueryKey(patientId) },
   });
-  const { data: icd10Codes = [] } = useIcd10Codes();
+  const { data: formOptions } = useFormOptions();
+  const icd10Codes = formOptions?.icd10Codes ?? [];
   const { data: notes = [] } = useListPatientNotes(patientId, {
     query: { queryKey: getListPatientNotesQueryKey(patientId) },
   });
