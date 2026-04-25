@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCreatePatient, getListPatientsQueryKey } from "@workspace/api-client-react";
@@ -35,6 +35,28 @@ export default function BoardPage() {
   const [search, setSearch] = useState("");
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
+
+  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const isResizing = useRef(false);
+
+  const startResize = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+    const onMove = (ev: MouseEvent) => {
+      if (!isResizing.current) return;
+      const next = Math.min(600, Math.max(200, startWidth + ev.clientX - startX));
+      setSidebarWidth(next);
+    };
+    const onUp = () => {
+      isResizing.current = false;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, [sidebarWidth]);
 
   const createPatient = useCreatePatient();
 
@@ -139,7 +161,7 @@ export default function BoardPage() {
           </div>
         ) : (
           <>
-            <aside className="w-64 border-r bg-card flex flex-col shrink-0">
+            <aside className="border-r bg-card flex flex-col shrink-0" style={{ width: sidebarWidth }}>
               <div className="p-3 border-b">
                 <input
                   type="search"
@@ -157,6 +179,10 @@ export default function BoardPage() {
                 onSelect={setSelectedPatientId}
               />
             </aside>
+            <div
+              className="w-1 cursor-col-resize shrink-0 hover:bg-primary/40 active:bg-primary/60 transition-colors"
+              onMouseDown={startResize}
+            />
             <main className="flex-1 overflow-hidden flex flex-col">
               {selectedPatientId ? (
                 <PatientDetail
