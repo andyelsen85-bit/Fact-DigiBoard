@@ -285,7 +285,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                 onClick={() => photoInputRef.current?.click()}
                 onMouseEnter={() => patient.photo && setShowPhotoOverlay(true)}
                 onMouseLeave={() => setShowPhotoOverlay(false)}
-                className="w-16 h-16 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary relative transition-transform duration-200 hover:scale-[4] hover:z-50"
+                className="w-16 h-16 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary relative"
                 title="Changer la photo"
                 disabled={photoUploading}
               >
@@ -312,7 +312,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                   <img
                     src={patient.photo}
                     alt="Photo agrandie"
-                    className="max-w-xs max-h-80 rounded-lg shadow-2xl border border-border object-contain bg-black/80"
+                    className="w-64 h-64 rounded-lg shadow-2xl border border-border object-cover bg-black/80"
                   />
                 </div>
               )}
