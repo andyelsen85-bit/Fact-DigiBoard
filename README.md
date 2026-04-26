@@ -292,9 +292,8 @@ pnpm --filter @workspace/api-server run dev &
 pnpm --filter @workspace/factboard run dev
 ```
 
-L'application est accessible sur `http://localhost:18576`.
 
-> Au premier démarrage, les migrations sont appliquées automatiquement et la base de données est initialisée avec les 381 codes CIM-10 et le compte administrateur par défaut.
+> Au premier démarrage, les migrations sont appliquées automatiquement et la base de données est initialisée avec les 381 codes CIM-10.
 
 ### Production (Docker)
 
