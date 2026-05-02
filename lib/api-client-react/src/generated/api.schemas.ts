@@ -51,7 +51,6 @@ export interface CreateUserBody {
   /** @nullable */
   email?: string | null;
   role: string;
-  password?: string;
 }
 
 export interface UpdateUserBody {
@@ -118,6 +117,8 @@ export interface Patient {
   infosRecoltees?: string | null;
   /** @nullable */
   motifIrrecevable?: string | null;
+  /** @nullable */
+  depotARefaire?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -159,6 +160,8 @@ export interface CreatePatientBody {
   /** @nullable */
   remarques?: string | null;
   board: string;
+  /** @nullable */
+  depotARefaire?: string | null;
 }
 
 export interface UpdatePatientBody {
@@ -198,6 +201,8 @@ export interface UpdatePatientBody {
   /** @nullable */
   remarques?: string | null;
   board?: string;
+  /** @nullable */
+  depotARefaire?: string | null;
 }
 
 export interface MovePatientBoardBody {

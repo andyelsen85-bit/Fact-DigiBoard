@@ -43,4 +43,6 @@ export interface UpdatePatientBody {
   /** @nullable */
   remarques?: string | null;
   board?: string;
+  /** @nullable */
+  depotARefaire?: string | null;
 }

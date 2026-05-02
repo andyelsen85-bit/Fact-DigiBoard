@@ -151,6 +151,7 @@ export const ListPatientsResponseItem = zod.object({
   recoveryAction: zod.string().nullish(),
   infosRecoltees: zod.string().nullish(),
   motifIrrecevable: zod.string().nullish(),
+  depotARefaire: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -180,6 +181,7 @@ export const CreatePatientBody = zod.object({
   curatelle: zod.string().nullish(),
   remarques: zod.string().nullish(),
   board: zod.string(),
+  depotARefaire: zod.string().nullish(),
 });
 
 /**
@@ -220,6 +222,7 @@ export const GetPatientResponse = zod.object({
   recoveryAction: zod.string().nullish(),
   infosRecoltees: zod.string().nullish(),
   motifIrrecevable: zod.string().nullish(),
+  depotARefaire: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -252,6 +255,7 @@ export const UpdatePatientBody = zod.object({
   curatelle: zod.string().nullish(),
   remarques: zod.string().nullish(),
   board: zod.string().optional(),
+  depotARefaire: zod.string().nullish(),
 });
 
 export const UpdatePatientResponse = zod.object({
@@ -285,6 +289,7 @@ export const UpdatePatientResponse = zod.object({
   recoveryAction: zod.string().nullish(),
   infosRecoltees: zod.string().nullish(),
   motifIrrecevable: zod.string().nullish(),
+  depotARefaire: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -339,6 +344,7 @@ export const MovePatientBoardResponse = zod.object({
   recoveryAction: zod.string().nullish(),
   infosRecoltees: zod.string().nullish(),
   motifIrrecevable: zod.string().nullish(),
+  depotARefaire: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -385,6 +391,7 @@ export const UpdatePatientPassagesResponse = zod.object({
   recoveryAction: zod.string().nullish(),
   infosRecoltees: zod.string().nullish(),
   motifIrrecevable: zod.string().nullish(),
+  depotARefaire: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -431,6 +438,7 @@ export const UpdatePatientPhaseResponse = zod.object({
   recoveryAction: zod.string().nullish(),
   infosRecoltees: zod.string().nullish(),
   motifIrrecevable: zod.string().nullish(),
+  depotARefaire: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -479,6 +487,7 @@ export const UpdatePatientRecoveryResponse = zod.object({
   recoveryAction: zod.string().nullish(),
   infosRecoltees: zod.string().nullish(),
   motifIrrecevable: zod.string().nullish(),
+  depotARefaire: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -525,6 +534,7 @@ export const UpdatePatientInfosRecolteesResponse = zod.object({
   recoveryAction: zod.string().nullish(),
   infosRecoltees: zod.string().nullish(),
   motifIrrecevable: zod.string().nullish(),
+  depotARefaire: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -571,6 +581,7 @@ export const UpdatePatientMotifIrrecevableResponse = zod.object({
   recoveryAction: zod.string().nullish(),
   infosRecoltees: zod.string().nullish(),
   motifIrrecevable: zod.string().nullish(),
+  depotARefaire: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -668,6 +679,14 @@ export const UpdatePatientHistoryEntryResponse = zod.object({
   date: zod.string(),
   action: zod.string(),
   boardTo: zod.string().nullish(),
+});
+
+/**
+ * @summary Delete a history entry
+ */
+export const DeletePatientHistoryEntryParams = zod.object({
+  id: zod.coerce.number(),
+  historyId: zod.coerce.number(),
 });
 
 /**

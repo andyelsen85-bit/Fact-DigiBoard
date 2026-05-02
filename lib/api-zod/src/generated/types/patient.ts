@@ -61,6 +61,8 @@ export interface Patient {
   infosRecoltees?: string | null;
   /** @nullable */
   motifIrrecevable?: string | null;
+  /** @nullable */
+  depotARefaire?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -92,10 +92,47 @@ export function PatientList({ board, search, selectedId, onSelect }: PatientList
                   <AggBadge level={patient.agressivite ?? -1} />
                 </span>
               </div>
+              {patient.depotARefaire && (
+                <div className="mt-0.5">
+                  <DepotBadge date={patient.depotARefaire} />
+                </div>
+              )}
             </div>
           </div>
         </button>
       ))}
     </div>
+  );
+}
+
+function daysUntil(dateStr: string): number {
+  const target = new Date(dateStr + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const ms = target.getTime() - today.getTime();
+  return Math.ceil(ms / (1000 * 60 * 60 * 24));
+}
+
+function DepotBadge({ date }: { date: string }) {
+  const days = daysUntil(date);
+  const isUrgent = days <= 7;
+  const label = days < 0
+    ? `Dépôt en retard (${Math.abs(days)} j)`
+    : days === 0
+      ? "Dépôt aujourd'hui"
+      : `Dépôt dans ${days} j`;
+  return (
+    <span
+      data-testid="badge-depot"
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+        isUrgent
+          ? "bg-destructive/10 text-destructive border-destructive/30"
+          : "bg-muted text-muted-foreground border-border"
+      }`}
+      title={`Dépôt à refaire le ${date}`}
+    >
+      <span aria-hidden>💊</span>
+      <span>{label}</span>
+    </span>
   );
 }

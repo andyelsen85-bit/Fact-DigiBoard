@@ -2261,7 +2261,13 @@ export const useUpdatePatientHistoryEntry = <
   return useMutation(getUpdatePatientHistoryEntryMutationOptions(options));
 };
 
-export const getDeletePatientHistoryEntryUrl = (id: number, historyId: number) => {
+/**
+ * @summary Delete a history entry
+ */
+export const getDeletePatientHistoryEntryUrl = (
+  id: number,
+  historyId: number,
+) => {
   return `/api/patients/${id}/history/${historyId}`;
 };
 
@@ -2277,7 +2283,7 @@ export const deletePatientHistoryEntry = async (
 };
 
 export const getDeletePatientHistoryEntryMutationOptions = <
-  TError = ErrorType<unknown>,
+  TError = ErrorType<ErrorResponse>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -2307,6 +2313,7 @@ export const getDeletePatientHistoryEntryMutationOptions = <
     { id: number; historyId: number }
   > = (props) => {
     const { id, historyId } = props ?? {};
+
     return deletePatientHistoryEntry(id, historyId, requestOptions);
   };
 
@@ -2316,10 +2323,14 @@ export const getDeletePatientHistoryEntryMutationOptions = <
 export type DeletePatientHistoryEntryMutationResult = NonNullable<
   Awaited<ReturnType<typeof deletePatientHistoryEntry>>
 >;
-export type DeletePatientHistoryEntryMutationError = ErrorType<unknown>;
 
+export type DeletePatientHistoryEntryMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete a history entry
+ */
 export const useDeletePatientHistoryEntry = <
-  TError = ErrorType<unknown>,
+  TError = ErrorType<ErrorResponse>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<

@@ -36,6 +36,7 @@ export const patientsTable = pgTable("patients", {
   recoveryAction: text("recovery_action"),
   infosRecoltees: text("infos_recoltees"),
   motifIrrecevable: text("motif_irrecevable"),
+  depotARefaire: text("depot_a_refaire"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),

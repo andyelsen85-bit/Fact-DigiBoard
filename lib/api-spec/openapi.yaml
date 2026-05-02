@@ -633,6 +633,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HistoryEntry"
+    delete:
+      operationId: deletePatientHistoryEntry
+      tags: [history]
+      summary: Delete a history entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: historyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   # ─── STATS ─────────────────────────────────────────────────────────────────
 
@@ -1020,6 +1044,8 @@ components:
           type: ["string", "null"]
         motifIrrecevable:
           type: ["string", "null"]
+        depotARefaire:
+          type: ["string", "null"]
         createdAt:
           type: string
         updatedAt:
@@ -1069,6 +1095,8 @@ components:
           type: ["string", "null"]
         board:
           type: string
+        depotARefaire:
+          type: ["string", "null"]
       required: [nom, prenom, board]
 
     UpdatePatientBody:
@@ -1114,6 +1142,8 @@ components:
           type: ["string", "null"]
         board:
           type: string
+        depotARefaire:
+          type: ["string", "null"]
 
     MovePatientBoardBody:
       type: object

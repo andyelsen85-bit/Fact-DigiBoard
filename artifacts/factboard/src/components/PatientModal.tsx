@@ -37,14 +37,19 @@ const patientSchema = z.object({
   curatelle: z.string().optional(),
   remarques: z.string().optional(),
   board: z.string(),
+  depotARefaire: z.string().nullish(),
 });
 
 type PatientFormValues = z.infer<typeof patientSchema>;
+type PatientSavePayload = Omit<PatientFormValues, "depotARefaire"> & {
+  depotARefaire: string | null;
+  clientNum?: string;
+};
 
 interface PatientModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (values: PatientFormValues & { clientNum?: string }) => void;
+  onSave: (values: PatientSavePayload) => void;
   isPending?: boolean;
   initialValues?: Partial<PatientFormValues & { clientNum?: string; patho?: string; pathos?: string[] }>;
   title?: string;
@@ -73,6 +78,7 @@ function buildDefaults(initialValues?: Partial<PatientFormValues & { clientNum?:
     curatelle: initialValues?.curatelle ?? "",
     remarques: initialValues?.remarques ?? "",
     board: initialValues?.board ?? "PréAdmission",
+    depotARefaire: initialValues?.depotARefaire ?? "",
   };
 }
 
@@ -129,9 +135,11 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
   }, [form]);
 
   function onSubmit(values: PatientFormValues) {
-    const payload = isEdit
-      ? { ...values, clientNum: initialValues?.clientNum }
-      : values;
+    const payload: PatientSavePayload = {
+      ...values,
+      depotARefaire: values.depotARefaire ? values.depotARefaire : null,
+      ...(isEdit ? { clientNum: initialValues?.clientNum } : {}),
+    };
     onSave(payload);
   }
 
@@ -445,7 +453,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <FormField control={form.control} name="datePremierContact" render={({ field }) => (
                 <FormItem>
                   <FormLabel>1er contact</FormLabel>
@@ -467,6 +475,22 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                       ))}
                     </SelectContent>
                   </Select>
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="depotARefaire" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dépôt à refaire</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="date"
+                      data-testid="input-depot-a-refaire"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                    />
+                  </FormControl>
                 </FormItem>
               )} />
             </div>
