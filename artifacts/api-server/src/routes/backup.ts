@@ -8,6 +8,9 @@ import {
   settingsTable,
   icd10CodesTable,
   meetingNotesTable,
+  actRegionsTable,
+  actNotesTable,
+  usersTable,
 } from "@workspace/db";
 import { requireAuth, requireAdmin } from "../middlewares/auth";
 
@@ -36,6 +39,9 @@ router.get("/backup/export", requireAuth, requireAdmin, async (_req, res) => {
     honos,
     settings,
     icd10,
+    actRegions,
+    actNotes,
+    users,
   ] = await Promise.all([
     db.select().from(patientsTable),
     db.select().from(historyEntriesTable),
@@ -44,11 +50,14 @@ router.get("/backup/export", requireAuth, requireAdmin, async (_req, res) => {
     db.select().from(honosEvaluationsTable),
     db.select().from(settingsTable),
     db.select().from(icd10CodesTable),
+    db.select().from(actRegionsTable),
+    db.select().from(actNotesTable),
+    db.select().from(usersTable),
   ]);
 
   const payload = {
     exportedAt: new Date().toISOString(),
-    version: 1,
+    version: 2,
     patients,
     history_entries: history,
     meeting_notes: notes,
@@ -56,6 +65,9 @@ router.get("/backup/export", requireAuth, requireAdmin, async (_req, res) => {
     honos_evaluations: honos,
     settings,
     icd10_codes: icd10,
+    act_regions: actRegions,
+    act_notes: actNotes,
+    users,
   };
 
   res.setHeader("Content-Type", "application/json");
@@ -71,7 +83,7 @@ router.get("/backup/export", requireAuth, requireAdmin, async (_req, res) => {
 router.post("/backup/restore", requireAuth, requireAdmin, async (req, res) => {
   const payload = req.body;
 
-  if (!payload || payload.version !== 1) {
+  if (!payload || (payload.version !== 1 && payload.version !== 2)) {
     res.status(400).json({ error: "Format de sauvegarde invalide ou version incompatible" });
     return;
   }
@@ -84,6 +96,9 @@ router.post("/backup/restore", requireAuth, requireAdmin, async (req, res) => {
     honos_evaluations = [],
     settings: settingRows = [],
     icd10_codes = [],
+    act_regions = null,
+    act_notes = null,
+    users = null,
   } = payload;
 
   try {
@@ -96,6 +111,14 @@ router.post("/backup/restore", requireAuth, requireAdmin, async (req, res) => {
       await tx.delete(patientsTable);
       await tx.delete(icd10CodesTable);
       await tx.delete(settingsTable);
+
+      // ACT data — only wipe if backup contains a valid array (v2 backups), otherwise leave intact.
+      // We require Array.isArray so a malformed non-null/non-array value cannot wipe without restoring.
+      if (Array.isArray(act_notes)) await tx.delete(actNotesTable);
+      if (Array.isArray(act_regions)) await tx.delete(actRegionsTable);
+
+      // Users — only wipe if backup contains a valid array (v2 backups). Sessions cascade.
+      if (Array.isArray(users)) await tx.delete(usersTable);
 
       // Re-insert patients first (other tables FK to them)
       if (patients.length > 0) {
@@ -164,6 +187,34 @@ router.post("/backup/restore", requireAuth, requireAdmin, async (req, res) => {
             },
           });
         }
+      }
+
+      // ACT regions must be inserted before act_notes (FK)
+      if (Array.isArray(act_regions) && act_regions.length > 0) {
+        for (const r of act_regions) {
+          await tx.insert(actRegionsTable).values(coerceDates(r) as any).onConflictDoNothing();
+        }
+        await tx.execute(
+          `SELECT setval('act_regions_id_seq', (SELECT COALESCE(MAX(id), 1) FROM act_regions))`
+        );
+      }
+
+      if (Array.isArray(act_notes) && act_notes.length > 0) {
+        for (const n of act_notes) {
+          await tx.insert(actNotesTable).values(coerceDates(n) as any).onConflictDoNothing();
+        }
+        await tx.execute(
+          `SELECT setval('act_notes_id_seq', (SELECT COALESCE(MAX(id), 1) FROM act_notes))`
+        );
+      }
+
+      if (Array.isArray(users) && users.length > 0) {
+        for (const u of users) {
+          await tx.insert(usersTable).values(coerceDates(u) as any).onConflictDoNothing();
+        }
+        await tx.execute(
+          `SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 1) FROM users))`
+        );
       }
     });
 
