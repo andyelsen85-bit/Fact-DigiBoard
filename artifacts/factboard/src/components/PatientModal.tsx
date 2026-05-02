@@ -106,7 +106,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
       setPathoSearch("");
       setPathoDropdownOpen(false);
     }
-  }, [open]);
+  }, [open, initialValues]);
 
   const pathosValue: string[] = form.watch("pathos") ?? [];
 
