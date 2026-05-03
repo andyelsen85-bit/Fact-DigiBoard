@@ -19,9 +19,12 @@ Application web de gestion de patients psychiatriques pour les case managers lux
 7. [Régions ACT](#régions-act)
 8. [Statistiques](#statistiques)
 9. [Paramètres & Administration](#paramètres--administration)
-10. [Stack technique](#stack-technique)
-11. [Installation](#installation)
-12. [Architecture & API](#architecture--api)
+10. [Sauvegarde & Restauration](#sauvegarde--restauration)
+11. [Sécurité & Authentification](#sécurité--authentification)
+12. [Stack technique](#stack-technique)
+13. [Installation](#installation)
+14. [Architecture & API](#architecture--api)
+15. [Développement](#développement)
 
 ---
 
@@ -40,7 +43,7 @@ Les patients sont répartis en **5 boards cliniques** représentant chaque étap
 > Les patients **Clôturés** sont exclus de la vue "Tous" et n'apparaissent que dans leur propre onglet.
 
 ### Transitions entre boards
-Chaque déplacement est enregistré automatiquement avec la date et les boards source/destination. L'historique complet des transitions est consultable directement depuis la fiche du patient.
+Chaque déplacement est enregistré automatiquement avec la date, les boards source/destination et le nom de l'utilisateur ayant effectué le mouvement (`created_by_username`). L'historique complet des transitions est consultable directement depuis la fiche du patient.
 
 Le passage vers **FactBoard** positionne automatiquement la `date d'admission`, et le passage vers **Clôturé** positionne automatiquement la `date de fin de suivi`. Ces dates restent éditables manuellement depuis la fiche.
 
@@ -58,15 +61,16 @@ La liste latérale affiche pour chaque patient :
 Recherche en temps réel par nom, prénom, psychiatre ou numéro client. Le filtre s'applique à l'intérieur du board sélectionné ou sur l'ensemble des patients (vue "Tous").
 
 ### Création d'un patient
-- Numérotation automatique `FACT-XXXX` générée côté serveur
+- Numérotation automatique `FACT-XXXX` générée côté serveur (zéros à gauche, basée sur l'`id` de la table)
 - Formulaire complet avec toutes les informations générales, médicales et administratives
-- Recherche et sélection de plusieurs codes CIM-10 par code ou libellé
+- Recherche et sélection de plusieurs codes CIM-10 par code ou libellé, avec affichage prioritaire des favoris (★)
+- Aucune date n'est pré-remplie automatiquement (sauf `board_entry_date` côté serveur)
 
 ### Déplacement entre boards
 Un patient peut être déplacé vers n'importe quel autre board depuis sa fiche. La transition est horodatée et versée dans l'historique.
 
 ### Suppression et restauration
-- **Suppression douce** : le patient est masqué de toutes les vues mais conservé en base de données
+- **Suppression douce** (`deleted_at`) : le patient est masqué de toutes les vues mais conservé en base de données
 - **Restauration** : depuis la corbeille dans les Paramètres, le patient est réintégré dans son dernier board connu
 
 ---
@@ -76,7 +80,7 @@ Un patient peut être déplacé vers n'importe quel autre board depuis sa fiche.
 ### Informations générales
 | Champ | Description |
 |-------|-------------|
-| Photo | Upload et prévisualisation d'une photo de profil |
+| Photo | Upload base64 et prévisualisation d'une photo de profil (route dédiée `/patients/:id/photo`) |
 | Nom / Prénom | Identité civile |
 | Date de naissance | Âge calculé automatiquement |
 | Sexe | Homme / Femme |
@@ -89,7 +93,7 @@ Un patient peut être déplacé vers n'importe quel autre board depuis sa fiche.
 | Pathologies (CIM-10) | Diagnostics multiples — sélecteur multi-codes CIM-10 par code ou libellé |
 | Psychiatre | Sélection parmi la liste configurée dans les Paramètres |
 | Médecin de famille | Sélection parmi la liste configurée dans les Paramètres |
-| Agressivité | Niveau de 0 à 3 avec badge visuel coloré (vert → rouge) |
+| Agressivité | Niveau de 0 à 3 (ou « Pas connu » par défaut) avec badge visuel coloré |
 
 Chaque code CIM-10 sélectionné est affiché dans la fiche avec son libellé, sa description (si disponible) et sa ligne de **risques cliniques** — toujours visible, en rouge lorsque des risques sont renseignés.
 
@@ -100,15 +104,16 @@ Chaque code CIM-10 sélectionné est affiché dans la fiche avec son libellé, s
 | Case Manager secondaire | Intervenant de soutien |
 | Article légal | Base juridique applicable |
 | Curatelle / Tutelle | Type de mesure de protection |
-| Date premier contact | Première prise en charge |
+| Date premier contact | Première prise en charge (jamais auto-remplie) |
 | Date d'admission | Auto-renseignée à l'entrée en FactBoard, éditable manuellement |
 | Date de fin de suivi | Auto-renseignée à la clôture du dossier, éditable manuellement |
 | Date de sortie | Clôture administrative du dossier |
+| Dépôt à refaire | Date à laquelle un dépôt administratif doit être renouvelé |
 
 ### FactBoard — champs spécifiques
 | Champ | Description |
 |-------|-------------|
-| Phase de traitement | 6 phases disponibles (Prévention de Crise → Nouveau Client) |
+| Phase de traitement | 9 phases disponibles (Prévention de Crise → Nouveau Client) |
 | Passages hebdomadaires | Cases à cocher par jour (Lun–Ven) + rendez-vous spéciaux |
 
 ### RecoveryBoard — champs spécifiques
@@ -118,15 +123,27 @@ Chaque code CIM-10 sélectionné est affiché dans la fiche avec son libellé, s
 | Étape en cours | Étape actuelle du plan de rétablissement |
 | Action planifiée | Prochaine action à entreprendre |
 
+### PréAdmission — champ spécifique
+| Champ | Description |
+|-------|-------------|
+| Infos récoltées | Informations préliminaires collectées avant admission |
+
+### Irrecevable — champ spécifique
+| Champ | Description |
+|-------|-------------|
+| Motif d'irrecevabilité | Raison du rejet du dossier |
+
+> En board **Clôturé**, l'ensemble des sections spécifiques (phase, recovery, infos, motif) reste visible pour conserver une trace complète du parcours.
+
 ---
 
 ## Outils cliniques
 
 ### Passages hebdomadaires (FactBoard)
-Grille de suivi des passages par semaine. Pour chaque semaine, cochez les jours de présence (Lundi à Vendredi) et/ou indiquez un rendez-vous spécifique. L'historique des passages est conservé.
+Grille de suivi des passages par semaine. Pour chaque semaine, cochez les jours de présence (Lundi à Vendredi) et/ou indiquez un rendez-vous spécifique. L'historique des passages est conservé dans une colonne `jsonb`.
 
 ### Phases de traitement (FactBoard)
-Six phases cliniques ordonnées, sélectionnables depuis un menu déroulant :
+Phases cliniques ordonnées, sélectionnables depuis un menu déroulant :
 1. Prévention de Crise
 2. Traitement intensif court terme
 3. Traitement intensif long terme
@@ -146,6 +163,8 @@ Indicateur de risque à 4 niveaux (0–3) affiché sous forme de badge coloré d
 | 1 | Agressivité faible | Vert |
 | 2 | Agressivité modérée | Orange |
 | 3 | Agressivité élevée | Rouge |
+
+La valeur par défaut est `-1` (« Pas connu ») pour distinguer une donnée absente d'un score « 0 » saisi.
 
 ---
 
@@ -171,11 +190,11 @@ Indicateur de risque à 4 niveaux (0–3) affiché sous forme de badge coloré d
 | Symptômes | Q7–Q9 | Rose |
 | Social | Q10–Q12 | Cyan |
 
-Les résultats sont enregistrés avec date, horodatage et auteur. Un champ de notes libres est disponible par évaluation et par question.
+Les résultats sont enregistrés avec date, horodatage et auteur (`created_by_username`). Un champ de notes libres est disponible par évaluation, ainsi qu'un champ `question_notes` (jsonb) pour annoter individuellement chaque question.
 
 ### Indicateurs KPI par patient
 Depuis la fiche patient, un tableau de bord analytique affiche :
-- **Temps passé par board** : durée cumulée dans chaque board (stabilité parcours)
+- **Temps passé par board** : durée cumulée dans chaque board, calculée à partir de l'historique complet et ajustable manuellement via `board_days_offset`
 - **Alertes de régression** : détection des retours de RecoveryBoard vers FactBoard
 - **Diagrammes radar** : scores I•ROC et HoNOS sous forme de toile d'araignée — chaque axe est coloré selon son domaine clinique, avec superposition d'une évaluation de comparaison sélectionnable et un historique des scores totaux
 
@@ -195,15 +214,15 @@ Les notes de réunion sont associées à chaque patient :
 ## Régions ACT
 
 Module dédié à la gestion des régions ACT (Assertive Community Treatment) :
-- Affichage des patients par région ACT
-- Notes de réunion propres à chaque région
-- Suivi des interventions en milieu communautaire
+- Création / édition / suppression de régions ACT (table `act_regions`)
+- Notes de réunion propres à chaque région (table `act_notes`, FK avec `ON DELETE CASCADE`)
+- Comptage des visites par lieu inclus dans les statistiques globales (`visitsByLieu`)
 
 ---
 
 ## Statistiques
 
-Tableau de bord analytique global accessible depuis le menu principal. Un filtre de période (1 mois / 6 mois / 12 mois / tout) est disponible sur toutes les métriques.
+Tableau de bord analytique global accessible depuis le menu principal. Un filtre de période (1 mois / 6 mois / 12 mois / tout) est disponible sur toutes les métriques (paramètre `?since=YYYY-MM-DD`).
 
 | Indicateur | Description |
 |------------|-------------|
@@ -233,6 +252,8 @@ Les listes utilisées dans les formulaires patients sont gérables depuis les Pa
 | Articles légaux | Bases juridiques applicables |
 | Curatelles / Tutelles | Types de mesures de protection |
 
+Toutes les listes sont stockées dans la table `settings` (clé/valeur, `value` au format JSON).
+
 ### Codes CIM-10
 La base contient **381 codes CIM-10** (chapitre F, troubles mentaux) pré-chargés avec pour chacun :
 - **Code** et **libellé** officiel
@@ -240,20 +261,68 @@ La base contient **381 codes CIM-10** (chapitre F, troubles mentaux) pré-charg�
 - **Risques cliniques** : synthèse concise en français des risques associés au diagnostic — affichés dans la fiche patient et dans les paramètres
 - **Favori** (★) : marquage pour accès rapide dans le formulaire de création/modification d'un patient
 
-Depuis les Paramètres il est possible d'**ajouter**, **modifier** ou **supprimer** tout code, et de gérer les favoris.
+Depuis les Paramètres il est possible d'**ajouter**, **modifier** ou **supprimer** tout code, et de gérer les favoris. La séeding est réalisée par `seedIcd10Codes()` (`api-server/src/lib/seed.ts`) au premier démarrage.
 
 ### Gestion des utilisateurs _(admin uniquement)_
 - **Création** de comptes utilisateur avec rôle (Admin / Utilisateur)
-- **Modification** : nom, mot de passe, rôle
+- **Modification** : nom, mot de passe, rôle, email
 - **Suppression** de comptes
-- **Forçage de changement de mot de passe** : un utilisateur nouvellement créé ou réinitialisé doit définir son mot de passe dès le premier login (sans avoir à fournir l'ancien)
+- **Réinitialisation de mot de passe** : route dédiée `POST /api/users/:id/reset-password`
+- **Forçage de changement de mot de passe** : un utilisateur nouvellement créé ou réinitialisé doit définir son mot de passe dès le premier login (`must_change_password = true`), sans avoir à fournir l'ancien
 
 ### Corbeille
-Restauration des patients supprimés (suppression douce) vers leur dernier board connu.
+Restauration des patients supprimés (suppression douce) vers leur dernier board connu. Accessible uniquement aux administrateurs (`GET /api/patients/deleted` + `POST /api/patients/:id/restore`).
 
-### Sauvegarde & Restauration
-- **Export JSON** : téléchargement de l'intégralité des données (patients, historiques, évaluations I•ROC/HoNOS, notes, codes CIM-10, paramètres)
-- **Import JSON** : restauration complète du système depuis un fichier de sauvegarde
+---
+
+## Sauvegarde & Restauration
+
+Module accessible aux administrateurs depuis les Paramètres.
+
+### Export (`GET /api/backup/export`)
+Téléchargement d'un fichier JSON unique contenant l'intégralité des données du système :
+
+| Section | Contenu |
+|---------|---------|
+| `version` | Version du format de backup (actuellement `2`) |
+| `exportedAt` | Horodatage ISO de l'export |
+| `patients` | Tous les patients (y compris supprimés) avec toutes leurs colonnes |
+| `meetingNotes` | Toutes les notes de réunion |
+| `historyEntries` | Tout l'historique des transitions de boards |
+| `irockEvaluations` | Toutes les évaluations I•ROC |
+| `honosEvaluations` | Toutes les évaluations HoNOS |
+| `actRegions` | Toutes les régions ACT |
+| `actNotes` | Toutes les notes ACT |
+| `users` | Tous les comptes utilisateur (avec hashes bcrypt et rôles) |
+| `settings` | Toutes les listes configurables |
+| `icd10Codes` | Tous les codes CIM-10 (avec favoris et risques) |
+
+### Restauration (`POST /api/backup/restore`)
+Importation d'un fichier JSON exporté. La restauration est **transactionnelle** et **destructive** :
+1. Toutes les tables ciblées sont vidées (TRUNCATE CASCADE)
+2. Les enregistrements sont réinsérés avec leur `id` original (les séquences `serial` sont resynchronisées)
+3. Les sections inconnues ou manquantes sont ignorées sans erreur (rétro-compatible avec les exports v1)
+
+Tous les champs « collection » sont validés via `Array.isArray()` avant insertion pour empêcher tout import malformé.
+
+---
+
+## Sécurité & Authentification
+
+| Aspect | Détail |
+|--------|--------|
+| Hash de mot de passe | `bcrypt` (coût 12) |
+| Session | Token Bearer aléatoire (48 octets hex) stocké dans la table `sessions` |
+| Expiration | 30 jours par défaut, prolongée à chaque requête authentifiée |
+| Stockage côté client | `localStorage["auth-token"]` |
+| En-tête HTTP | `Authorization: Bearer <token>` |
+| Configuration initiale | Premier démarrage : `GET /auth/setup-needed` → `POST /auth/setup` (création du premier admin) |
+| Forçage changement mot de passe | Drapeau `must_change_password` sur la table `users` |
+| Rôles | `admin` (full access) / `user` (lecture & édition patients, pas de gestion utilisateurs / paramètres / backup) |
+| Routes protégées | Middleware `requireAuth` (toutes les routes sauf `/health` et `/auth/*`) et `requireAdmin` (paramètres, utilisateurs, backup, codes CIM-10, corbeille) |
+| Variables sensibles | `SESSION_SECRET` (à régénérer en prod), `POSTGRES_PASSWORD` |
+
+Un fichier de modèle de menaces est disponible dans `threat_model.md`.
 
 ---
 
@@ -261,15 +330,23 @@ Restauration des patients supprimés (suppression douce) vers leur dernier board
 
 | Couche | Technologie |
 |--------|-------------|
-| Backend | Express 5 (TypeScript) |
-| Base de données | PostgreSQL + Drizzle ORM |
-| Frontend | React + Vite + Tailwind CSS 4 |
+| Backend | Express 5 (TypeScript, ESM) |
+| Base de données | PostgreSQL 16 + Drizzle ORM |
+| Logs serveur | `pino` + `pino-http` |
+| Frontend | React 18 + Vite + Tailwind CSS 4 |
 | Composants UI | Radix UI / shadcn/ui |
-| État / données | TanStack Query |
-| Graphiques | Recharts (RadarChart) |
+| État serveur | TanStack Query |
+| Forms | React Hook Form + Zod (`@hookform/resolvers`) |
+| Routage | Wouter |
+| Graphiques | Recharts (RadarChart, LineChart) |
+| Date | `date-fns` |
 | Auth | Tokens Bearer (bcrypt) |
-| Spécification API | OpenAPI / Swagger |
-| Déploiement | Docker + Docker Compose |
+| Validation | Zod (schémas partagés via `@workspace/api-zod`) |
+| Spécification API | OpenAPI 3 (`@workspace/api-spec`) |
+| Codegen | Orval (OpenAPI → React Query hooks dans `@workspace/api-client-react`) |
+| Bundler API | esbuild (avec `esbuild-plugin-pino`) |
+| Bundler frontend | Vite (avec `@vitejs/plugin-react`) |
+| Déploiement | Docker multi-stage + Docker Compose |
 
 ---
 
@@ -278,20 +355,19 @@ Restauration des patients supprimés (suppression douce) vers leur dernier board
 ### Développement (pnpm)
 
 ```bash
-# Prérequis : Node.js 20+, pnpm, PostgreSQL
+# Prérequis : Node.js 22+, pnpm, PostgreSQL 14+
 
-# Installer les dépendances
+# 1. Installer les dépendances
 pnpm install
 
-# Configurer les variables d'environnement
+# 2. Configurer les variables d'environnement
 cp .env.example .env
 # Modifier DATABASE_URL et SESSION_SECRET dans .env
 
-# Lancer l'API et le frontend en parallèle
+# 3. Lancer l'API et le frontend en parallèle
 pnpm --filter @workspace/api-server run dev &
 pnpm --filter @workspace/factboard run dev
 ```
-
 
 > Au premier démarrage, les migrations sont appliquées automatiquement et la base de données est initialisée avec les 381 codes CIM-10.
 
@@ -315,6 +391,7 @@ cp .env.example .env
 | `POSTGRES_PASSWORD` | Mot de passe PostgreSQL | `digiboard_secret` |
 | `SESSION_SECRET` | Clé secrète Bearer/session — **changer obligatoirement** | _(valeur faible)_ |
 | `APP_PORT` | Port exposé sur l'hôte | `80` |
+| `DATABASE_URL` | URL complète Postgres (ignorée si Compose génère depuis `POSTGRES_PASSWORD`) | _(auto)_ |
 
 Générer un `SESSION_SECRET` robuste :
 ```bash
@@ -337,7 +414,7 @@ docker compose logs -f app
 
 L'application est accessible sur `http://localhost` (ou le port défini par `APP_PORT`).
 
-> Au premier démarrage, les migrations sont appliquées automatiquement et la base est initialisée avec le compte administrateur par défaut et les 381 codes CIM-10 avec leurs risques cliniques.
+> Au premier démarrage, les migrations sont appliquées automatiquement et la base est initialisée avec les 381 codes CIM-10 et leurs risques cliniques. Un compte administrateur est créé via l'écran de configuration initiale (`/setup`).
 
 **Mise à jour :**
 ```bash
@@ -352,8 +429,15 @@ docker compose down          # conserve les données PostgreSQL
 docker compose down -v       # supprime aussi le volume (⚠️ perte de données)
 ```
 
-L'image est construite en multi-stage : dépendances → build TypeScript/Vite → image finale légère.  
-L'API et le frontend React sont servis par le même container Express sur le port 80.
+L'image est construite en multi-stage (Node 22 Alpine) : install deps → build TypeScript/Vite → image runtime légère. L'API et le frontend React sont servis par le même container Express sur le port 80. Les fichiers SQL de migration sont copiés dans `dist/drizzle` pour être disponibles en runtime.
+
+#### Binaires natifs Alpine (musl)
+
+Les binaires musl-spécifiques requis pour fonctionner sous Alpine sont épinglés explicitement dans `artifacts/factboard/package.json` → `optionalDependencies` :
+
+- `@rollup/rollup-linux-x64-musl` — bundler Vite
+- `@tailwindcss/oxide-linux-x64-musl` — moteur Rust de Tailwind 4
+- `lightningcss-linux-x64-musl` — compilateur CSS
 
 ---
 
@@ -362,26 +446,44 @@ L'API et le frontend React sont servis par le même container Express sur le por
 ```
 workspace/
 ├── artifacts/
-│   ├── api-server/          # API Express 5 (port 8080)
-│   │   └── src/routes/      # patients, notes, auth, settings, users, stats, icd10, evaluations, act, backup
-│   └── factboard/           # Frontend React + Vite (port 18576)
-│       └── src/
-│           ├── components/  # PatientList, PatientDetail, PatientModal, PatientKpiView, StatsView…
-│           └── pages/       # board.tsx, settings.tsx, statistics.tsx
+│   ├── api-server/          # API Express 5 (port 8080 en dev, 80 en prod)
+│   │   └── src/
+│   │       ├── routes/      # 12 routeurs : act, auth, backup, evaluations, health,
+│   │       │                #               history, icd10, notes, patients, settings,
+│   │       │                #               stats, users
+│   │       ├── lib/         # logger (pino), seed (icd10 + risks)
+│   │       └── middlewares/ # requireAuth, requireAdmin
+│   ├── factboard/           # Frontend React + Vite (port 18576 en dev)
+│   │   └── src/
+│   │       ├── components/  # PatientList, PatientDetail, PatientModal, PatientKpiView,
+│   │       │                # PatientMedicationView, EvaluationModal, MoveBoardModal,
+│   │       │                # AggBadge, BoardBadge, ActView, StatsView,
+│   │       │                # ChangePasswordModal, ui/ (shadcn)
+│   │       ├── pages/       # board, login, settings, setup, change-password, not-found
+│   │       ├── hooks/       # use-auth, use-evaluations, use-form-options, use-icd10,
+│   │       │                # use-local-storage, use-mobile, use-patient-photo,
+│   │       │                # use-stats, use-toast
+│   │       ├── lib/         # utils (cn, etc.)
+│   │       └── data/        # cim10.ts (référence statique, non importée)
+│   └── mockup-sandbox/      # Sandbox Vite pour prototyper des composants
 ├── lib/
-│   ├── db/                  # Schéma Drizzle ORM + migrations (0000–0009)
-│   ├── api-client-react/    # Hooks React Query générés (Orval)
-│   └── api-spec/            # Spécification OpenAPI
+│   ├── db/                  # Schéma Drizzle ORM + migrations (0000–0010)
+│   ├── api-spec/            # Spécification OpenAPI 3
+│   ├── api-zod/             # Schémas Zod générés depuis OpenAPI
+│   └── api-client-react/    # Hooks React Query générés (Orval)
+├── scripts/                 # Scripts utilitaires (pnpm workspace)
 ├── Dockerfile               # Build multi-stage (builder → runner)
-└── docker-compose.yml       # Stack complète avec PostgreSQL
+├── docker-compose.yml       # Stack complète avec PostgreSQL
+├── pnpm-workspace.yaml      # Discovery + catalog dependencies
+└── tsconfig.base.json       # Config TS strict partagée
 ```
 
 ### Schéma de base de données
 
 | Table | Description |
 |-------|-------------|
-| `users` | Comptes utilisateurs (id, username, password_hash, role, must_change_password) |
-| `sessions` | Tokens Bearer actifs (user_id FK, token, expires_at) |
+| `users` | Comptes utilisateurs (id, username, email, password_hash, role, must_change_password) |
+| `sessions` | Tokens Bearer actifs (user_id FK, token unique, expires_at) |
 | `patients` | Dossiers patients complets — voir colonnes ci-dessous |
 | `meeting_notes` | Notes de réunion par patient (patient_id FK, date, texte) |
 | `history_entries` | Historique des transitions de board (patient_id FK, date, action, board_to, created_by_username) |
@@ -392,24 +494,46 @@ workspace/
 | `settings` | Listes configurables clé/valeur |
 | `icd10_codes` | 381 codes CIM-10 (code PK, title, description, risks, is_favorite) |
 
-#### Colonnes notables de `patients`
+Toutes les FK utilisent `ON DELETE CASCADE` sauf `patients` (suppression douce via `deleted_at`).
+
+#### Colonnes de `patients`
 
 | Colonne | Type | Description |
 |---------|------|-------------|
+| `id` | serial PK | Identifiant interne |
 | `client_num` | text | Identifiant `FACT-XXXX` auto-généré |
+| `nom` / `prenom` | text | Identité civile (NOT NULL) |
+| `dob` | text | Date de naissance |
+| `adresse`, `tel`, `sexe` | text | Coordonnées |
+| `medecin_famille`, `psy` | text | Référents médicaux |
 | `patho` | text | Diagnostic principal (compatibilité historique) |
 | `pathos` | jsonb | Liste de codes CIM-10 multiples (source de vérité) |
-| `board` | text | Board actuel (PréAdmission / FactBoard / RecoveryBoard / Irrecevable / Clôturé) |
+| `responsable`, `casemanager2` | text | Case managers principal & secondaire |
+| `demande` | text | Motif initial de la demande |
+| `date_premier_contact` | text | Date du premier contact (jamais auto-remplie) |
+| `date_entree` | text | Date d'entrée dans le système |
+| `date_admission` | text | Date d'admission FactBoard (auto à la transition) |
+| `date_sortie` | text | Date de sortie administrative |
+| `date_fin_suivi` | text | Date de fin de suivi (auto à la clôture) |
+| `agressivite` | int | -1 (Pas connu) à 3 |
+| `article`, `curatelle` | text | Cadre légal |
+| `remarques` | text | Notes libres |
+| `board` | text | Board actuel (default `PréAdmission`) |
+| `phase` | text | Phase de traitement (FactBoard) |
 | `board_entry_date` | text | Date d'entrée dans le board actuel |
 | `board_days_offset` | jsonb | Ajustement manuel des durées par board (en jours) |
-| `date_admission` | text | Date d'admission en FactBoard (auto ou manuelle) |
-| `date_fin_suivi` | text | Date de fin de suivi à la clôture (auto ou manuelle) |
-| `passages` | jsonb | Grille des passages hebdomadaires |
-| `deleted_at` | timestamp | Suppression douce — null = actif |
+| `passages` | jsonb | Grille `{ "YYYY-MM-DD": "M\|A\|RDV" }` des passages |
+| `recovery_objectifs`, `recovery_etape`, `recovery_action` | text | Champs RecoveryBoard |
+| `infos_recoltees` | text | Champ PréAdmission |
+| `motif_irrecevable` | text | Champ Irrecevable |
+| `depot_a_refaire` | text | Date de prochain dépôt administratif |
+| `photo` | text | Photo base64 |
+| `created_at` / `updated_at` | timestamptz | Audit |
+| `deleted_at` | timestamptz | Suppression douce — null = actif |
 
 ### Migrations
 
-Les migrations sont appliquées automatiquement au démarrage du serveur via Drizzle ORM.
+Les migrations SQL sont stockées dans `lib/db/drizzle/` et appliquées automatiquement au démarrage du serveur (`runMigrations()` dans `api-server/src/index.ts`).
 
 | Migration | Description |
 |-----------|-------------|
@@ -421,18 +545,28 @@ Les migrations sont appliquées automatiquement au démarrage du serveur via Dri
 | `0005` | Colonnes `notes` et `question_notes` sur irock/honos |
 | `0006` | Colonne `pathos` (jsonb) sur patients + migration des données depuis `patho` |
 | `0007` | Colonnes `date_admission` et `date_fin_suivi` sur patients |
-| `0008` | Valeur par défaut `Pas connu` pour la colonne `agressivite` |
+| `0008` | Valeur par défaut `Pas connu` (-1) pour la colonne `agressivite` |
 | `0009` | Risques cliniques renseignés sur les 381 codes CIM-10 (chapitre F00–F99) |
+| `0010` | Colonne `depot_a_refaire` (text) sur patients |
 
 ### Endpoints API
+
+Toutes les routes sont préfixées par `/api`. Sauf mention contraire, elles requièrent un en-tête `Authorization: Bearer <token>`.
+
+#### Santé
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| `GET` | `/api/healthz` | Healthcheck (utilisé par Docker) |
 
 #### Authentification
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| `POST` | `/api/auth/login` | Connexion (retourne un token Bearer) |
+| `GET` | `/api/auth/setup-needed` | Vérifie si la configuration initiale est requise (aucun admin en DB) |
+| `POST` | `/api/auth/setup` | Création du premier compte administrateur (uniquement si setup requis) |
+| `POST` | `/api/auth/login` | Connexion (retourne un token Bearer + profil) |
+| `POST` | `/api/auth/logout` | Révocation du token courant |
 | `GET` | `/api/auth/me` | Profil de l'utilisateur connecté |
-| `GET` | `/api/auth/setup-needed` | Vérifie si la configuration initiale est requise |
-| `POST` | `/api/auth/change-password` | Changement de mot de passe (ne requiert pas l'ancien mot de passe si `mustChangePassword=true`) |
+| `POST` | `/api/auth/change-password` | Changement de mot de passe (l'ancien n'est pas requis si `mustChangePassword=true`) |
 
 #### Patients
 | Méthode | Route | Description |
@@ -441,39 +575,50 @@ Les migrations sont appliquées automatiquement au démarrage du serveur via Dri
 | `GET` | `/api/patients?board=X` | Filtre par board |
 | `GET` | `/api/patients?search=X` | Recherche textuelle |
 | `GET` | `/api/patients/:id` | Fiche complète d'un patient |
-| `POST` | `/api/patients` | Création (ID FACT- auto-généré) |
-| `PATCH` | `/api/patients/:id` | Mise à jour des informations |
+| `POST` | `/api/patients` | Création (ID FACT- auto-généré, `board_entry_date` par défaut = aujourd'hui) |
+| `PUT` / `PATCH` | `/api/patients/:id` | Mise à jour des informations |
 | `DELETE` | `/api/patients/:id` | Suppression douce |
-| `GET` | `/api/patients/deleted` | Liste des patients supprimés |
-| `POST` | `/api/patients/:id/restore` | Restauration d'un patient supprimé |
-| `PATCH` | `/api/patients/:id/board` | Changement de board (positionne automatiquement date_admission / date_fin_suivi) |
-| `PATCH` | `/api/patients/:id/phase` | Mise à jour de la phase (FactBoard) |
-| `PATCH` | `/api/patients/:id/passages` | Mise à jour des passages hebdomadaires |
-| `GET` | `/api/patients/:id/history` | Historique des transitions de board |
-| `GET` | `/api/patients-selector` | Liste allégée pour les sélecteurs |
+| `GET` | `/api/patients/deleted` | _(admin)_ Liste des patients supprimés |
+| `POST` | `/api/patients/:id/restore` | _(admin)_ Restauration d'un patient supprimé |
+| `PATCH` | `/api/patients/:id/board` | Changement de board (positionne `date_admission` / `date_fin_suivi`, ajoute une entrée d'historique) |
+| `PATCH` | `/api/patients/:id/move-board` | Alias de la route précédente |
+| `PUT` / `PATCH` | `/api/patients/:id/phase` | Mise à jour de la phase (FactBoard) |
+| `PUT` / `PATCH` | `/api/patients/:id/passages` | Mise à jour des passages hebdomadaires |
+| `PUT` / `PATCH` | `/api/patients/:id/recovery` | Mise à jour des champs RecoveryBoard |
+| `PUT` / `PATCH` | `/api/patients/:id/infos-recoltees` | Mise à jour des infos de pré-admission |
+| `PUT` / `PATCH` | `/api/patients/:id/motif-irrecevable` | Mise à jour du motif d'irrecevabilité |
+| `PATCH` | `/api/patients/:id/photo` | Upload / mise à jour de la photo (base64) |
+| `GET` | `/api/patients-selector` | Liste allégée pour les sélecteurs (id, prenom, nom, board) |
+
+#### Historique
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| `GET` | `/api/patients/:id/history` | Historique des transitions de board d'un patient |
+| `PUT` / `PATCH` | `/api/patients/:id/history/:historyId` | Modification d'une entrée d'historique |
+| `DELETE` | `/api/patients/:id/history/:historyId` | Suppression d'une entrée d'historique |
 
 #### Notes de réunion
 | Méthode | Route | Description |
 |---------|-------|-------------|
 | `GET` | `/api/patients/:id/notes` | Liste des notes d'un patient |
 | `POST` | `/api/patients/:id/notes` | Ajout d'une note |
-| `PATCH` | `/api/patients/:id/notes/:noteId` | Modification d'une note |
-| `DELETE` | `/api/patients/:id/notes/:noteId` | Suppression d'une note |
+| `PUT` / `PATCH` | `/api/patients/:patientId/notes/:noteId` | Modification d'une note |
+| `DELETE` | `/api/patients/:patientId/notes/:noteId` | Suppression d'une note |
 
 #### Évaluations
 | Méthode | Route | Description |
 |---------|-------|-------------|
 | `GET` | `/api/patients/:id/irock` | Historique des évaluations I•ROC |
 | `POST` | `/api/patients/:id/irock` | Enregistrement d'une évaluation I•ROC |
-| `PATCH` | `/api/patients/:id/irock/:eid` | Mise à jour d'une évaluation I•ROC |
-| `DELETE` | `/api/patients/:id/irock/:eid` | Suppression d'une évaluation I•ROC |
+| `PUT` | `/api/patients/:patientId/irock/:evalId` | Mise à jour d'une évaluation I•ROC |
+| `DELETE` | `/api/patients/:patientId/irock/:evalId` | Suppression d'une évaluation I•ROC |
 | `GET` | `/api/patients/:id/honos` | Historique des évaluations HoNOS |
 | `POST` | `/api/patients/:id/honos` | Enregistrement d'une évaluation HoNOS |
-| `PATCH` | `/api/patients/:id/honos/:eid` | Mise à jour d'une évaluation HoNOS |
-| `DELETE` | `/api/patients/:id/honos/:eid` | Suppression d'une évaluation HoNOS |
+| `PUT` | `/api/patients/:patientId/honos/:evalId` | Mise à jour d'une évaluation HoNOS |
+| `DELETE` | `/api/patients/:patientId/honos/:evalId` | Suppression d'une évaluation HoNOS |
 | `GET` | `/api/patients/:id/kpi` | KPI de stabilité parcours (durées par board, régressions) |
 
-#### Codes CIM-10
+#### Codes CIM-10 _(admin uniquement)_
 | Méthode | Route | Description |
 |---------|-------|-------------|
 | `GET` | `/api/icd10` | Liste de tous les codes (code, title, description, risks, isFavorite) |
@@ -486,25 +631,27 @@ Les migrations sont appliquées automatiquement au démarrage du serveur via Dri
 |---------|-------|-------------|
 | `GET` | `/api/act/regions` | Liste des régions ACT |
 | `POST` | `/api/act/regions` | Création d'une région |
-| `PATCH` | `/api/act/regions/:id` | Modification d'une région |
-| `DELETE` | `/api/act/regions/:id` | Suppression d'une région |
+| `PUT` | `/api/act/regions/:id` | Modification d'une région |
+| `DELETE` | `/api/act/regions/:id` | Suppression d'une région (cascade sur les notes) |
 | `GET` | `/api/act/regions/:id/notes` | Notes d'une région |
 | `POST` | `/api/act/regions/:id/notes` | Ajout d'une note à une région |
-| `PATCH` | `/api/act/regions/:regionId/notes/:noteId` | Modification d'une note ACT |
+| `PUT` | `/api/act/regions/:regionId/notes/:noteId` | Modification d'une note ACT |
 | `DELETE` | `/api/act/regions/:regionId/notes/:noteId` | Suppression d'une note ACT |
 
 #### Paramètres
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| `GET` | `/api/settings` | Lecture de toutes les listes configurables |
-| `PATCH` | `/api/settings` | Mise à jour d'une ou plusieurs listes |
+| `GET` | `/api/settings` | _(admin)_ Lecture brute de toutes les listes configurables |
+| `GET` | `/api/form-options` | Lecture des listes formatées pour les formulaires (tout utilisateur connecté) |
+| `PUT` | `/api/settings/:key` | _(admin)_ Mise à jour d'une liste |
 
 #### Utilisateurs _(admin uniquement)_
 | Méthode | Route | Description |
 |---------|-------|-------------|
 | `GET` | `/api/users` | Liste des utilisateurs |
-| `POST` | `/api/users` | Création d'un utilisateur |
-| `PATCH` | `/api/users/:id` | Modification d'un utilisateur |
+| `POST` | `/api/users` | Création d'un utilisateur (force `must_change_password=true`) |
+| `PUT` | `/api/users/:id` | Modification d'un utilisateur (username, email, role, password) |
+| `POST` | `/api/users/:id/reset-password` | Réinitialisation du mot de passe |
 | `DELETE` | `/api/users/:id` | Suppression d'un utilisateur |
 
 #### Statistiques
@@ -514,11 +661,53 @@ Les migrations sont appliquées automatiquement au démarrage du serveur via Dri
 
 Réponse : `total`, `active`, `boardCounts`, `sexeCounts`, `pathoCounts`, `aggCounts`, `avgDurations`, `ageCounts`, `irockCount`, `honosCount`, `visitsByLieu`.
 
-#### Sauvegarde
+#### Sauvegarde _(admin uniquement)_
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| `GET` | `/api/backup` | Export JSON complet de la base de données |
-| `POST` | `/api/backup/restore` | Restauration depuis un fichier JSON |
+| `GET` | `/api/backup/export` | Export JSON complet (v2 — 11 sections) |
+| `POST` | `/api/backup/restore` | Restauration transactionnelle depuis JSON (v1 et v2 supportés) |
+
+---
+
+## Développement
+
+### Commandes utiles
+
+| Commande | Description |
+|----------|-------------|
+| `pnpm install` | Installation des dépendances du monorepo |
+| `pnpm --filter @workspace/api-server run dev` | Lancement du serveur API en mode dev |
+| `pnpm --filter @workspace/factboard run dev` | Lancement du frontend Vite |
+| `pnpm --filter @workspace/api-server run build` | Build production de l'API (esbuild → `dist/index.mjs`) |
+| `pnpm --filter @workspace/factboard run build` | Build production du frontend (Vite) |
+| `pnpm --filter @workspace/db run push` | Push manuel du schéma Drizzle (rarement utile : les migrations sont auto-appliquées) |
+| `pnpm --filter @workspace/api-spec run codegen` | Régénère les schémas Zod et hooks React Query depuis l'OpenAPI |
+| `pnpm run typecheck` | Typecheck complet du monorepo (libs + leaves) |
+| `pnpm run typecheck:libs` | Typecheck uniquement des libs composites |
+| `docker compose up --build` | Build + démarrage de la stack complète |
+
+### Workflow OpenAPI / Codegen
+
+Le contrat est défini dans `lib/api-spec/openapi.yaml`. Après modification :
+1. Lancer `pnpm --filter @workspace/api-spec run codegen`
+2. Les schémas Zod sont régénérés dans `lib/api-zod/src/generated/`
+3. Les hooks React Query sont régénérés dans `lib/api-client-react/src/generated/`
+4. Le serveur consomme les schémas Zod via `import { ... } from "@workspace/api-zod"`
+5. Le frontend consomme les hooks via `import { ... } from "@workspace/api-client-react"`
+
+> ⚠️ Après codegen : vérifier que `lib/api-zod/src/index.ts` ne contient que `export * from "./generated/api";` (Orval écrase parfois ce fichier).
+
+### Conventions
+
+- **Logs serveur** : utiliser `req.log` dans les handlers et le singleton `logger` ailleurs. **Jamais `console.log`** côté serveur.
+- **Mises à jour patient** : toutes les sous-routes acceptent à la fois `PUT` et `PATCH` (le client généré utilise `PATCH`).
+- **Suppression** : toujours douce (`deleted_at`) pour les patients, dure pour les autres entités.
+- **TypeScript** : strict mode partout, libs composites avec `tsc --build`, leaves vérifiées avec `tsc --noEmit`.
+- **Format de date** : ISO court (`YYYY-MM-DD`) pour les dates métier (`date_premier_contact`, etc.), ISO complet (`timestamptz`) pour les colonnes d'audit.
+
+### Structure du monorepo pnpm
+
+Voir `.local/skills/pnpm-workspace/SKILL.md` pour les conventions complètes (alias `@workspace/*`, catalog dependencies, project references TS, routing du proxy).
 
 ---
 
