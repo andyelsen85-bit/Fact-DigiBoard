@@ -23,7 +23,7 @@ const STORAGE_KEY = "app-language";
 
 function readCachedLang(): Lang {
   const v = localStorage.getItem(STORAGE_KEY);
-  return SUPPORTED_LANGS.includes(v as Lang) ? (v as Lang) : "fr";
+  return SUPPORTED_LANGS.includes(v as Lang) ? (v as Lang) : "en";
 }
 
 interface LangContextValue {

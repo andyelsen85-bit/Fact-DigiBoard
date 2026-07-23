@@ -8,7 +8,7 @@ const router = Router();
 const SETTING_KEYS = ["psychiatrists", "casemanagers", "medecinsfamille", "articles", "curatelles", "icd10favorites"];
 const SETTING_SCALAR_DEFAULTS: Record<string, string> = {
   defaultStatsPeriod: "6m",
-  language: "fr",
+  language: "en",
 };
 
 const SUPPORTED_LANGUAGES = ["fr", "en", "de", "nl"];
@@ -35,8 +35,8 @@ async function ensureDefaults() {
 // Public: the login page needs the language before authentication.
 router.get("/language", async (_req, res) => {
   const rows = await db.select().from(settingsTable).where(eq(settingsTable.key, "language")).limit(1);
-  const raw = rows[0]?.value ?? "fr";
-  const language = SUPPORTED_LANGUAGES.includes(raw) ? raw : "fr";
+  const raw = rows[0]?.value ?? "en";
+  const language = SUPPORTED_LANGUAGES.includes(raw) ? raw : "en";
   res.json({ language });
 });
 
