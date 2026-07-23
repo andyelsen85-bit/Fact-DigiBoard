@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BOARDS, BoardBadge } from "./BoardBadge";
+import { useT } from "@/i18n";
+import "@/i18n/dict/board";
 
 interface MoveBoardModalProps {
   open: boolean;
@@ -16,6 +18,7 @@ interface MoveBoardModalProps {
 }
 
 export function MoveBoardModal({ open, onClose, currentBoard, onMove, isPending }: MoveBoardModalProps) {
+  const t = useT();
   const [selectedBoard, setSelectedBoard] = useState(currentBoard);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
 
@@ -29,11 +32,11 @@ export function MoveBoardModal({ open, onClose, currentBoard, onMove, isPending 
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Changer de board</DialogTitle>
+          <DialogTitle>{t("board.changeBoard")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label>Nouveau board</Label>
+            <Label>{t("board.newBoard")}</Label>
             <div className="grid grid-cols-1 gap-2">
               {BOARDS.map((b) => (
                 <button
@@ -49,14 +52,14 @@ export function MoveBoardModal({ open, onClose, currentBoard, onMove, isPending 
                 >
                   <BoardBadge board={b} />
                   {b === currentBoard && (
-                    <span className="text-xs text-muted-foreground">(actuel)</span>
+                    <span className="text-xs text-muted-foreground">{t("board.current")}</span>
                   )}
                 </button>
               ))}
             </div>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="move-date">Date du mouvement</Label>
+            <Label htmlFor="move-date">{t("board.moveDate")}</Label>
             <Input
               id="move-date"
               type="date"
@@ -67,13 +70,13 @@ export function MoveBoardModal({ open, onClose, currentBoard, onMove, isPending 
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} data-testid="button-cancel-move">Annuler</Button>
+          <Button variant="outline" onClick={onClose} data-testid="button-cancel-move">{t("common.cancel")}</Button>
           <Button
             onClick={handleMove}
             disabled={isPending || selectedBoard === currentBoard}
             data-testid="button-confirm-move"
           >
-            {isPending ? "Déplacement..." : "Déplacer"}
+            {isPending ? t("board.moving") : t("board.move")}
           </Button>
         </DialogFooter>
       </DialogContent>

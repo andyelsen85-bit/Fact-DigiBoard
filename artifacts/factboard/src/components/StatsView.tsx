@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useGetSettings, getGetSettingsQueryKey } from "@workspace/api-client-react";
 import { useStats, type StatsPeriod } from "@/hooks/use-stats";
+import { useT } from "@/i18n";
+import "@/i18n/dict/views";
 
 const BOARD_COLORS: Record<string, string> = {
   FactBoard: "#2d5a2d",
@@ -18,24 +20,25 @@ const AGG_COLORS: Record<string, string> = {
   "3": "#d03030",
 };
 
-const AGG_LABELS: Record<string, string> = {
-  "-1": "Pas Connu",
-  "0": "😄 Calme",
-  "1": "😐 Niveau 1",
-  "2": "😤 Niveau 2",
-  "3": "😡 Niveau 3",
+const AGG_LABEL_KEYS: Record<string, string> = {
+  "-1": "views.stats.agg.unknown",
+  "0": "views.stats.agg.calm",
+  "1": "views.stats.agg.level1",
+  "2": "views.stats.agg.level2",
+  "3": "views.stats.agg.level3",
 };
 
-const PERIOD_OPTIONS: { value: StatsPeriod; label: string }[] = [
-  { value: "1m", label: "1 mois" },
-  { value: "6m", label: "6 mois" },
-  { value: "12m", label: "12 mois" },
-  { value: "all", label: "Tout le temps" },
+const PERIOD_OPTIONS: { value: StatsPeriod; labelKey: string }[] = [
+  { value: "1m", labelKey: "views.stats.period.1m" },
+  { value: "6m", labelKey: "views.stats.period.6m" },
+  { value: "12m", labelKey: "views.stats.period.12m" },
+  { value: "all", labelKey: "views.stats.period.all" },
 ];
 
 const AGE_ORDER = ["0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70+"];
 
 export function StatsView() {
+  const t = useT();
   const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
   const defaultPeriod = ((settings as any)?.defaultStatsPeriod as StatsPeriod) ?? "6m";
 
@@ -78,7 +81,7 @@ export function StatsView() {
   return (
     <div className="space-y-6 p-6 max-w-4xl mx-auto" data-testid="stats-view">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Statistiques</h2>
+        <h2 className="text-xl font-semibold">{t("views.stats.title")}</h2>
         <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
           {PERIOD_OPTIONS.map((opt) => (
             <button
@@ -90,7 +93,7 @@ export function StatsView() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {opt.label}
+              {t(opt.labelKey)}
             </button>
           ))}
         </div>
@@ -99,11 +102,11 @@ export function StatsView() {
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-card border rounded-lg p-4">
           <div className="text-3xl font-light font-mono">{stats.total ?? 0}</div>
-          <div className="text-sm text-muted-foreground mt-1">Total clients</div>
+          <div className="text-sm text-muted-foreground mt-1">{t("views.stats.totalClients")}</div>
         </div>
         <div className="bg-card border rounded-lg p-4">
           <div className="text-3xl font-light font-mono">{stats.active ?? 0}</div>
-          <div className="text-sm text-muted-foreground mt-1">Clients actifs</div>
+          <div className="text-sm text-muted-foreground mt-1">{t("views.stats.activeClients")}</div>
         </div>
         <div className="bg-card border rounded-lg p-4">
           <div className="flex gap-2 flex-wrap">
@@ -114,7 +117,7 @@ export function StatsView() {
               </div>
             ))}
           </div>
-          <div className="text-sm text-muted-foreground mt-1">Répartition par sexe</div>
+          <div className="text-sm text-muted-foreground mt-1">{t("views.stats.bySexe")}</div>
         </div>
       </div>
 
@@ -122,14 +125,14 @@ export function StatsView() {
         <div className="bg-card border rounded-lg p-4 flex items-center gap-4">
           <div className="flex-1">
             <div className="text-3xl font-light font-mono text-blue-700">{stats.irockCount ?? 0}</div>
-            <div className="text-sm text-muted-foreground mt-1">Évaluations I•ROC</div>
+            <div className="text-sm text-muted-foreground mt-1">{t("views.stats.irockEvals")}</div>
           </div>
           <span className="text-2xl font-semibold text-blue-200">I•ROC</span>
         </div>
         <div className="bg-card border rounded-lg p-4 flex items-center gap-4">
           <div className="flex-1">
             <div className="text-3xl font-light font-mono text-red-700">{stats.honosCount ?? 0}</div>
-            <div className="text-sm text-muted-foreground mt-1">Évaluations HoNOS</div>
+            <div className="text-sm text-muted-foreground mt-1">{t("views.stats.honosEvals")}</div>
           </div>
           <span className="text-2xl font-semibold text-red-200">HoNOS</span>
         </div>
@@ -137,7 +140,7 @@ export function StatsView() {
 
       {visitsByLieu.length > 0 && (
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium mb-3">Visites par lieu (ACT)</h3>
+          <h3 className="text-sm font-medium mb-3">{t("views.stats.visitsByLieu")}</h3>
           <div className="space-y-2">
             {visitsByLieu.map((item) => (
               <div key={item.lieu} className="flex items-center gap-2">
@@ -156,11 +159,11 @@ export function StatsView() {
       )}
 
       <div className="bg-card border rounded-lg p-4">
-        <h3 className="text-sm font-medium mb-3">Clients par board</h3>
+        <h3 className="text-sm font-medium mb-3">{t("views.stats.clientsByBoard")}</h3>
         <div className="space-y-2">
           {Object.entries(boardCounts).map(([board, count]) => (
             <div key={board} className="flex items-center gap-2">
-              <div className="w-28 text-xs text-right text-muted-foreground shrink-0">{board}</div>
+              <div className="w-28 text-xs text-right text-muted-foreground shrink-0">{t("common.board." + board)}</div>
               <div className="flex-1 bg-muted rounded-full h-4 relative">
                 <div
                   className="h-4 rounded-full transition-all"
@@ -178,7 +181,7 @@ export function StatsView() {
 
       {sortedAges.length > 0 && (
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium mb-3">Répartition par âge</h3>
+          <h3 className="text-sm font-medium mb-3">{t("views.stats.byAge")}</h3>
           <div className="space-y-2">
             {sortedAges.map((group) => {
               const count = ageCounts[group] ?? 0;
@@ -201,26 +204,26 @@ export function StatsView() {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium mb-3">Durée moyenne par board (jours)</h3>
+          <h3 className="text-sm font-medium mb-3">{t("views.stats.avgDuration")}</h3>
           <div className="space-y-2">
             {Object.entries(avgDurations).map(([board, days]) => (
               <div key={board} className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{board}</span>
-                <span className="font-mono font-medium">{days} j</span>
+                <span className="text-muted-foreground">{t("common.board." + board)}</span>
+                <span className="font-mono font-medium">{t("views.stats.days", { count: days as number })}</span>
               </div>
             ))}
             {Object.keys(avgDurations).length === 0 && (
-              <p className="text-xs text-muted-foreground">Aucune donnée</p>
+              <p className="text-xs text-muted-foreground">{t("views.stats.noData")}</p>
             )}
           </div>
         </div>
 
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium mb-3">Niveaux d'agressivité</h3>
+          <h3 className="text-sm font-medium mb-3">{t("views.stats.aggLevels")}</h3>
           <div className="space-y-2">
             {Object.entries(aggCounts).map(([level, count]) => (
               <div key={level} className="flex items-center gap-2">
-                <div className="w-16 text-xs text-muted-foreground">{AGG_LABELS[level] ?? level}</div>
+                <div className="w-16 text-xs text-muted-foreground">{AGG_LABEL_KEYS[level] ? t(AGG_LABEL_KEYS[level]) : level}</div>
                 <div className="flex-1 bg-muted rounded-full h-3">
                   <div
                     className="h-3 rounded-full"
@@ -239,7 +242,7 @@ export function StatsView() {
 
       {pathoCounts.length > 0 && (
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium mb-3">Pathologies les plus fréquentes</h3>
+          <h3 className="text-sm font-medium mb-3">{t("views.stats.topPathologies")}</h3>
           <div className="space-y-2">
             {pathoCounts.slice(0, 10).map((p) => (
               <div key={p.patho} className="flex items-center gap-2">

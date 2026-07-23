@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { APP_VERSION } from "@/version";
 import { useLocation } from "wouter";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import {
@@ -14,6 +15,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useIcd10Codes, useCreateIcd10Code, useUpdateIcd10Code, useDeleteIcd10Code, type Icd10Code } from "@/hooks/use-icd10";
+import { useT, useLang, LANG_LABELS, SUPPORTED_LANGS, type Lang } from "@/i18n";
+import { icdText } from "@/i18n/icd";
+import "@/i18n/dict/settingsPage";
 
 interface Icd10ModalProps {
   open: boolean;
@@ -25,6 +29,7 @@ interface Icd10ModalProps {
 }
 
 function ICD10EntryModal({ open, initial, isNew, onClose, onSave, isPending }: Icd10ModalProps) {
+  const t = useT();
   const [code, setCode] = useState(initial?.code ?? "");
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -45,58 +50,58 @@ function ICD10EntryModal({ open, initial, isNew, onClose, onSave, isPending }: I
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{isNew ? "Ajouter un code ICD-10" : "Modifier le code ICD-10"}</DialogTitle>
+          <DialogTitle>{isNew ? t("settingsPage.icdAddModalTitle") : t("settingsPage.icdEditModalTitle")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 py-2">
           <div className="space-y-1">
-            <Label>Code <span className="text-destructive">*</span></Label>
+            <Label>{t("settingsPage.icdFieldCode")} <span className="text-destructive">*</span></Label>
             <Input
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="ex: F20, Z99, CUSTOM-01"
+              placeholder={t("settingsPage.icdCodePlaceholder")}
               readOnly={!isNew}
               className={!isNew ? "bg-muted text-muted-foreground" : ""}
               data-testid="input-icd10-code"
             />
           </div>
           <div className="space-y-1">
-            <Label>Libellé <span className="text-destructive">*</span></Label>
+            <Label>{t("settingsPage.icdFieldLabel")} <span className="text-destructive">*</span></Label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Intitulé du diagnostic"
+              placeholder={t("settingsPage.icdLabelPlaceholder")}
               data-testid="input-icd10-label"
             />
           </div>
           <div className="space-y-1">
-            <Label className="flex items-center gap-1">Description <span className="text-xs text-muted-foreground font-normal">(optionnel)</span></Label>
+            <Label className="flex items-center gap-1">{t("settingsPage.icdFieldDescription")} <span className="text-xs text-muted-foreground font-normal">{t("settingsPage.icdOptional")}</span></Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description clinique..."
+              placeholder={t("settingsPage.icdDescriptionPlaceholder")}
               rows={2}
               data-testid="input-icd10-description"
             />
           </div>
           <div className="space-y-1">
-            <Label className="flex items-center gap-1">Risques <span className="text-xs text-muted-foreground font-normal">(optionnel)</span></Label>
+            <Label className="flex items-center gap-1">{t("settingsPage.icdFieldRisks")} <span className="text-xs text-muted-foreground font-normal">{t("settingsPage.icdOptional")}</span></Label>
             <Textarea
               value={risks}
               onChange={(e) => setRisks(e.target.value)}
-              placeholder="Risques associés..."
+              placeholder={t("settingsPage.icdRisksPlaceholder")}
               rows={2}
               data-testid="input-icd10-risks"
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Annuler</Button>
+          <Button variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
           <Button
             disabled={!canSave || isPending}
             onClick={() => onSave({ code: code.trim(), title: title.trim(), description: description.trim(), risks: risks.trim() })}
             data-testid="button-save-icd10"
           >
-            {isPending ? "Enregistrement..." : "Enregistrer"}
+            {isPending ? t("settingsPage.icdSaving") : t("common.save")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -106,6 +111,8 @@ function ICD10EntryModal({ open, initial, isNew, onClose, onSave, isPending }: I
 
 function ICD10ManagementTable() {
   const { toast } = useToast();
+  const t = useT();
+  const { lang } = useLang();
   const [search, setSearch] = useState("");
   const [editingCode, setEditingCode] = useState<Icd10Code | null>(null);
   const [creatingNew, setCreatingNew] = useState(false);
@@ -126,7 +133,7 @@ function ICD10ManagementTable() {
   function handleToggleFavorite(entry: Icd10Code) {
     updateCode.mutate(
       { code: entry.code, isFavorite: !entry.isFavorite },
-      { onError: () => toast({ title: "Erreur", description: "Impossible de mettre à jour", variant: "destructive" }) }
+      { onError: () => toast({ title: t("common.error"), description: t("settingsPage.errorIcdUpdate"), variant: "destructive" }) }
     );
   }
 
@@ -135,7 +142,7 @@ function ICD10ManagementTable() {
       { code: data.code, title: data.title, description: data.description, risks: data.risks },
       {
         onSuccess: () => setEditingCode(null),
-        onError: () => toast({ title: "Erreur", description: "Impossible de sauvegarder", variant: "destructive" }),
+        onError: () => toast({ title: t("common.error"), description: t("settingsPage.errorIcdSave"), variant: "destructive" }),
       }
     );
   }
@@ -146,8 +153,8 @@ function ICD10ManagementTable() {
       {
         onSuccess: () => setCreatingNew(false),
         onError: (err: any) => {
-          const msg = err?.message?.includes("409") ? `Le code ${data.code} existe déjà.` : "Impossible de créer le code.";
-          toast({ title: "Erreur", description: msg, variant: "destructive" });
+          const msg = err?.message?.includes("409") ? t("settingsPage.errorIcdCreateExists", { code: data.code }) : t("settingsPage.errorIcdCreate");
+          toast({ title: t("common.error"), description: msg, variant: "destructive" });
         },
       }
     );
@@ -155,46 +162,46 @@ function ICD10ManagementTable() {
 
   function handleDelete(code: string) {
     deleteCode.mutate(code, {
-      onError: () => toast({ title: "Erreur", description: "Impossible de supprimer", variant: "destructive" }),
+      onError: () => toast({ title: t("common.error"), description: t("settingsPage.errorIcdDelete"), variant: "destructive" }),
     });
   }
 
   return (
     <div className="bg-card border rounded-lg p-4">
       <div className="flex items-center justify-between mb-1">
-        <h3 className="text-sm font-medium">Codes ICD-10</h3>
+        <h3 className="text-sm font-medium">{t("settingsPage.icdTitle")}</h3>
         <Button size="sm" variant="outline" onClick={() => setCreatingNew(true)} data-testid="button-add-custom-icd10">
-          + Ajouter un code
+          {t("settingsPage.icdAddCode")}
         </Button>
       </div>
       <p className="text-xs text-muted-foreground mb-3">
-        Liste des pathologies disponibles dans le formulaire client. Les codes marqués ⭐ apparaissent en premiers dans le sélecteur.
+        {t("settingsPage.icdDesc")}
       </p>
       <Input
-        placeholder="Rechercher par code ou libellé..."
+        placeholder={t("settingsPage.icdSearchPlaceholder")}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className="text-sm mb-3"
         data-testid="input-new-icd10"
       />
       {isLoading ? (
-        <p className="text-xs text-muted-foreground py-2">Chargement...</p>
+        <p className="text-xs text-muted-foreground py-2">{t("settingsPage.icdLoading")}</p>
       ) : filtered.length === 0 ? (
-        <p className="text-xs text-muted-foreground py-2">Aucun code trouvé</p>
+        <p className="text-xs text-muted-foreground py-2">{t("settingsPage.icdNoneFound")}</p>
       ) : (
         <>
-          <p className="text-xs text-muted-foreground mb-2">{filtered.length} code{filtered.length > 1 ? "s" : ""} trouvé{filtered.length > 1 ? "s" : ""}</p>
+          <p className="text-xs text-muted-foreground mb-2">{filtered.length > 1 ? t("settingsPage.icdCountMany", { count: filtered.length }) : t("settingsPage.icdCountOne", { count: filtered.length })}</p>
           <div className="space-y-1.5 overflow-y-auto max-h-[720px] pr-1">
           {filtered.map((entry) => (
             <div key={entry.code} className="px-3 py-2 rounded bg-muted/40 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex gap-2 items-baseline min-w-0">
                   <span className="font-mono text-xs font-medium shrink-0 text-muted-foreground">{entry.code}</span>
-                  <span className="truncate font-medium">{entry.title}</span>
+                  <span className="truncate font-medium">{icdText(entry as unknown as Record<string, unknown>, "title", lang) ?? entry.title}</span>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <button
-                    title={entry.isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                    title={entry.isFavorite ? t("settingsPage.icdRemoveFromFavorites") : t("settingsPage.icdAddToFavorites")}
                     className={`text-sm transition-colors ${entry.isFavorite ? "text-yellow-500" : "text-muted-foreground/40 hover:text-yellow-400"}`}
                     onClick={() => handleToggleFavorite(entry)}
                     data-testid={`button-fav-icd10-${entry.code}`}
@@ -206,20 +213,20 @@ function ICD10ManagementTable() {
                     data-testid={`button-edit-icd10-${entry.code}`}
                     onClick={() => setEditingCode(entry)}
                   >
-                    Modifier
+                    {t("common.edit")}
                   </button>
                   <button
                     className="text-xs text-destructive hover:text-destructive/80"
                     data-testid={`button-remove-icd10-${entry.code}`}
                     onClick={() => handleDelete(entry.code)}
                   >
-                    Supprimer
+                    {t("common.delete")}
                   </button>
                 </div>
               </div>
-              {entry.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{entry.description}</p>}
+              {icdText(entry as unknown as Record<string, unknown>, "description", lang) && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{icdText(entry as unknown as Record<string, unknown>, "description", lang)}</p>}
               <p className={`text-xs mt-1 line-clamp-2 ${entry.risks ? "text-[#7a0000]" : "text-muted-foreground italic"}`}>
-                {entry.risks ? `Risques : ${entry.risks}` : "Aucun risque clinique identifié"}
+                {entry.risks ? t("settingsPage.icdRisksPrefix", { risks: icdText(entry as unknown as Record<string, unknown>, "risks", lang) ?? entry.risks }) : t("settingsPage.icdNoRisk")}
               </p>
             </div>
           ))}
@@ -252,6 +259,7 @@ function getAuthHeaders(): HeadersInit {
 
 function BackupSection() {
   const { toast } = useToast();
+  const t = useT();
   const [importing, setImporting] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -271,9 +279,9 @@ function BackupSection() {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      toast({ title: "Sauvegarde téléchargée" });
+      toast({ title: t("settingsPage.backupDownloaded") });
     } catch {
-      toast({ title: "Erreur", description: "Impossible d'exporter la sauvegarde", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("settingsPage.errorExport"), variant: "destructive" });
     }
   }
 
@@ -285,7 +293,7 @@ function BackupSection() {
       const text = await file.text();
       const payload = JSON.parse(text);
       if (!confirm(
-        `⚠️ ATTENTION — Restaurer cette sauvegarde va effacer TOUTES les données actuelles (clients, historiques, évaluations) et les remplacer par celles de la sauvegarde datée du ${payload.exportedAt?.slice(0, 10) ?? "?"} .\n\nContinuer ?`
+        t("settingsPage.restoreConfirm", { date: payload.exportedAt?.slice(0, 10) ?? "?" })
       )) return;
       setRestoring(true);
       const res = await fetch("/api/backup/restore", {
@@ -297,9 +305,9 @@ function BackupSection() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error ?? "Restore failed");
       }
-      toast({ title: "Restauration réussie", description: "Les données ont été restaurées. Rechargez la page." });
+      toast({ title: t("settingsPage.restoreSuccessTitle"), description: t("settingsPage.restoreSuccessDesc") });
     } catch (err: any) {
-      toast({ title: "Erreur de restauration", description: err.message ?? "Fichier invalide", variant: "destructive" });
+      toast({ title: t("settingsPage.restoreErrorTitle"), description: err.message ?? t("settingsPage.restoreErrorDesc"), variant: "destructive" });
     } finally {
       setImporting(false);
       setRestoring(false);
@@ -309,14 +317,13 @@ function BackupSection() {
 
   return (
     <div className="bg-card border rounded-lg p-4">
-      <h3 className="text-sm font-medium mb-1">Sauvegarde et restauration</h3>
+      <h3 className="text-sm font-medium mb-1">{t("settingsPage.backupTitle")}</h3>
       <p className="text-xs text-muted-foreground mb-4">
-        Exportez toutes les données (clients, historiques, évaluations I•ROC/HoNOS, notes, codes ICD-10, paramètres) en un fichier JSON.
-        La restauration remplace l'intégralité des données — les comptes utilisateurs ne sont pas touchés.
+        {t("settingsPage.backupDesc")}
       </p>
       <div className="flex items-center gap-3">
         <Button size="sm" variant="outline" onClick={handleExport} data-testid="button-backup-export">
-          ⬇ Télécharger la sauvegarde
+          {t("settingsPage.backupDownload")}
         </Button>
         <div>
           <input
@@ -335,7 +342,7 @@ function BackupSection() {
             onClick={() => fileRef.current?.click()}
             data-testid="button-backup-restore"
           >
-            {restoring ? "Restauration en cours..." : "⬆ Restaurer depuis un fichier"}
+            {restoring ? t("settingsPage.backupRestoring") : t("settingsPage.backupRestore")}
           </Button>
         </div>
       </div>
@@ -354,6 +361,8 @@ interface DeletedPatient {
 
 function DeletedPatientsSection() {
   const { toast } = useToast();
+  const t = useT();
+  const { lang } = useLang();
   const [patients, setPatients] = useState<DeletedPatient[]>([]);
   const [loading, setLoading] = useState(true);
   const [restoring, setRestoring] = useState<number | null>(null);
@@ -378,10 +387,10 @@ function DeletedPatientsSection() {
         headers: getAuthHeaders(),
       });
       if (res.ok) {
-        toast({ title: "Client restauré", description: `${patient.prenom} ${patient.nom} a été remis sur le board ${patient.board}.` });
+        toast({ title: t("settingsPage.clientRestoredTitle"), description: t("settingsPage.clientRestoredDesc", { name: `${patient.prenom} ${patient.nom}`, board: t("common.board." + patient.board) }) });
         fetchDeleted();
       } else {
-        toast({ title: "Erreur", description: "Impossible de restaurer le client", variant: "destructive" });
+        toast({ title: t("common.error"), description: t("settingsPage.errorRestoreClient"), variant: "destructive" });
       }
     } finally {
       setRestoring(null);
@@ -390,20 +399,20 @@ function DeletedPatientsSection() {
 
   return (
     <div className="bg-card border rounded-lg p-4">
-      <h3 className="text-sm font-medium mb-3">Clients supprimés (Corbeille)</h3>
+      <h3 className="text-sm font-medium mb-3">{t("settingsPage.trashTitle")}</h3>
       {loading ? (
-        <p className="text-xs text-muted-foreground py-2">Chargement...</p>
+        <p className="text-xs text-muted-foreground py-2">{t("settingsPage.icdLoading")}</p>
       ) : patients.length === 0 ? (
-        <p className="text-xs text-muted-foreground py-2">Aucun client supprimé</p>
+        <p className="text-xs text-muted-foreground py-2">{t("settingsPage.trashEmpty")}</p>
       ) : (
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-muted-foreground text-xs">
-              <th className="text-left pb-2 font-medium">N° Client</th>
-              <th className="text-left pb-2 font-medium">Nom</th>
-              <th className="text-left pb-2 font-medium">Dernier board</th>
-              <th className="text-left pb-2 font-medium">Supprimé le</th>
-              <th className="text-left pb-2 font-medium">Actions</th>
+              <th className="text-left pb-2 font-medium">{t("settingsPage.colClientNum")}</th>
+              <th className="text-left pb-2 font-medium">{t("settingsPage.colName")}</th>
+              <th className="text-left pb-2 font-medium">{t("settingsPage.colLastBoard")}</th>
+              <th className="text-left pb-2 font-medium">{t("settingsPage.colDeletedAt")}</th>
+              <th className="text-left pb-2 font-medium">{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -411,9 +420,9 @@ function DeletedPatientsSection() {
               <tr key={p.id} className="border-b last:border-0" data-testid={`deleted-patient-${p.id}`}>
                 <td className="py-2 font-mono text-xs">{p.clientNum}</td>
                 <td className="py-2 font-medium">{p.nom} {p.prenom}</td>
-                <td className="py-2 text-muted-foreground">{p.board}</td>
+                <td className="py-2 text-muted-foreground">{t("common.board." + p.board)}</td>
                 <td className="py-2 text-muted-foreground text-xs">
-                  {new Date(p.deletedAt).toLocaleDateString("fr-LU")}
+                  {new Date(p.deletedAt).toLocaleDateString(lang)}
                 </td>
                 <td className="py-2">
                   <button
@@ -422,7 +431,7 @@ function DeletedPatientsSection() {
                     data-testid={`button-restore-${p.id}`}
                     onClick={() => handleRestore(p)}
                   >
-                    {restoring === p.id ? "..." : "Restaurer"}
+                    {restoring === p.id ? "..." : t("settingsPage.restore")}
                   </button>
                 </td>
               </tr>
@@ -437,6 +446,7 @@ function DeletedPatientsSection() {
 function SettingsList({ settingKey, label }: { settingKey: string; label: string }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const t = useT();
   const [newItem, setNewItem] = useState("");
   const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
   const updateSetting = useUpdateSetting();
@@ -453,7 +463,7 @@ function SettingsList({ settingKey, label }: { settingKey: string; label: string
           setNewItem("");
           queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey() });
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible d'ajouter l'élément", variant: "destructive" }),
+        onError: () => toast({ title: t("common.error"), description: t("settingsPage.errorAddItem"), variant: "destructive" }),
       }
     );
   }
@@ -464,7 +474,7 @@ function SettingsList({ settingKey, label }: { settingKey: string; label: string
       { key: settingKey, data: { value: JSON.stringify(updated) } },
       {
         onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey() }),
-        onError: () => toast({ title: "Erreur", description: "Impossible de supprimer l'élément", variant: "destructive" }),
+        onError: () => toast({ title: t("common.error"), description: t("settingsPage.errorRemoveItem"), variant: "destructive" }),
       }
     );
   }
@@ -481,17 +491,17 @@ function SettingsList({ settingKey, label }: { settingKey: string; label: string
               data-testid={`button-remove-${settingKey}-${item}`}
               onClick={() => handleRemove(item)}
             >
-              Supprimer
+              {t("common.delete")}
             </button>
           </div>
         ))}
         {items.length === 0 && (
-          <p className="text-xs text-muted-foreground py-2">Aucun élément</p>
+          <p className="text-xs text-muted-foreground py-2">{t("settingsPage.listEmpty")}</p>
         )}
       </div>
       <div className="flex gap-2">
         <Input
-          placeholder="Ajouter..."
+          placeholder={t("settingsPage.listAddPlaceholder")}
           value={newItem}
           onChange={(e) => setNewItem(e.target.value)}
           className="text-sm"
@@ -499,7 +509,7 @@ function SettingsList({ settingKey, label }: { settingKey: string; label: string
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
         />
         <Button size="sm" onClick={handleAdd} disabled={updateSetting.isPending} data-testid={`button-add-${settingKey}`}>
-          Ajouter
+          {t("common.add")}
         </Button>
       </div>
     </div>
@@ -523,6 +533,7 @@ function UserModal({
   title: string;
   showPassword?: boolean;
 }) {
+  const t = useT();
   const [username, setUsername] = useState(initial?.username ?? "");
   const [email, setEmail] = useState(initial?.email ?? "");
   const [role, setRole] = useState(initial?.role ?? "user");
@@ -538,46 +549,46 @@ function UserModal({
         </DialogHeader>
         <div className="space-y-3 py-2">
           <div className="space-y-1">
-            <Label>Nom d'utilisateur</Label>
+            <Label>{t("settingsPage.fieldUsername")}</Label>
             <Input value={username} onChange={(e) => setUsername(e.target.value)} data-testid="input-user-username" />
           </div>
           <div className="space-y-1">
-            <Label>Email</Label>
+            <Label>{t("settingsPage.fieldEmail")}</Label>
             <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" data-testid="input-user-email" />
           </div>
           <div className="space-y-1">
-            <Label>Rôle</Label>
+            <Label>{t("settingsPage.fieldRole")}</Label>
             <Select value={role} onValueChange={setRole}>
               <SelectTrigger data-testid="select-user-role">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="user">Utilisateur</SelectItem>
-                <SelectItem value="admin">Administrateur</SelectItem>
+                <SelectItem value="user">{t("settingsPage.roleOptionUser")}</SelectItem>
+                <SelectItem value="admin">{t("settingsPage.roleOptionAdmin")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           {showPassword && (
             <div className="space-y-1">
-              <Label>Mot de passe initial <span className="text-muted-foreground font-normal">(min. 6 caractères)</span></Label>
+              <Label>{t("settingsPage.fieldInitialPassword")} <span className="text-muted-foreground font-normal">{t("settingsPage.passwordMinHint")}</span></Label>
               <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="L'utilisateur devra le changer à la connexion"
+                placeholder={t("settingsPage.initialPasswordPlaceholder")}
                 data-testid="input-user-password"
               />
             </div>
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Annuler</Button>
+          <Button variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
           <Button
             onClick={() => onSave({ username, email, role, ...(showPassword ? { password } : {}) })}
             disabled={isPending || !canSave}
             data-testid="button-save-user"
           >
-            {isPending ? "Enregistrement..." : "Enregistrer"}
+            {isPending ? t("settingsPage.saving") : t("common.save")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -589,6 +600,7 @@ function ResetPasswordModal({
   open, onClose, user: targetUser,
 }: { open: boolean; onClose: () => void; user: { id: number; username: string } | null }) {
   const { toast } = useToast();
+  const t = useT();
   const queryClient = useQueryClient();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -608,10 +620,10 @@ function ResetPasswordModal({
     },
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
-      toast({ title: "Mot de passe réinitialisé", description: `${targetUser?.username} devra le changer à la prochaine connexion.` });
+      toast({ title: t("settingsPage.passwordResetTitle"), description: t("settingsPage.passwordResetDesc", { username: targetUser?.username ?? "" }) });
       onClose();
     },
-    onError: (e: any) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: t("common.error"), description: e.message, variant: "destructive" }),
   });
 
   const canSave = password.length >= 6 && password === confirm;
@@ -622,41 +634,41 @@ function ResetPasswordModal({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Réinitialiser le mot de passe</DialogTitle>
+          <DialogTitle>{t("settingsPage.resetPasswordTitle")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 py-2">
           <p className="text-sm text-muted-foreground">
-            Nouveau mot de passe pour <strong>{targetUser.username}</strong>. L'utilisateur devra le modifier à la prochaine connexion.
+            {t("settingsPage.resetPasswordIntro", { username: targetUser.username })}
           </p>
           <div className="space-y-1">
-            <Label>Nouveau mot de passe <span className="text-muted-foreground font-normal">(min. 6 caractères)</span></Label>
+            <Label>{t("settingsPage.fieldNewPassword")} <span className="text-muted-foreground font-normal">{t("settingsPage.passwordMinHint")}</span></Label>
             <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Nouveau mot de passe"
+              placeholder={t("settingsPage.newPasswordPlaceholder")}
             />
           </div>
           <div className="space-y-1">
-            <Label>Confirmer le mot de passe</Label>
+            <Label>{t("settingsPage.fieldConfirmPassword")}</Label>
             <Input
               type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Répéter le mot de passe"
+              placeholder={t("settingsPage.confirmPasswordPlaceholder")}
             />
             {confirm && password !== confirm && (
-              <p className="text-xs text-destructive">Les mots de passe ne correspondent pas</p>
+              <p className="text-xs text-destructive">{t("settingsPage.passwordsMismatch")}</p>
             )}
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Annuler</Button>
+          <Button variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
           <Button
             onClick={() => reset.mutate({ id: targetUser.id, password })}
             disabled={!canSave || reset.isPending}
           >
-            {reset.isPending ? "Enregistrement…" : "Réinitialiser"}
+            {reset.isPending ? t("settingsPage.savingShort") : t("settingsPage.resetAction")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -666,16 +678,17 @@ function ResetPasswordModal({
 
 function DefaultPeriodSection() {
   const { toast } = useToast();
+  const t = useT();
   const queryClient = useQueryClient();
   const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
   const updateSetting = useUpdateSetting();
   const current = ((settings as any)?.defaultStatsPeriod as string) ?? "6m";
 
   const PERIOD_OPTIONS = [
-    { value: "1m", label: "1 mois" },
-    { value: "6m", label: "6 mois" },
-    { value: "12m", label: "12 mois" },
-    { value: "all", label: "Tout le temps" },
+    { value: "1m", label: t("settingsPage.period1m") },
+    { value: "6m", label: t("settingsPage.period6m") },
+    { value: "12m", label: t("settingsPage.period12m") },
+    { value: "all", label: t("settingsPage.periodAll") },
   ];
 
   function handleChange(value: string) {
@@ -684,9 +697,9 @@ function DefaultPeriodSection() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey() });
-          toast({ title: "Période par défaut mise à jour" });
+          toast({ title: t("settingsPage.periodUpdated") });
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible de sauvegarder", variant: "destructive" }),
+        onError: () => toast({ title: t("common.error"), description: t("settingsPage.errorSavePeriod"), variant: "destructive" }),
       }
     );
   }
@@ -694,9 +707,9 @@ function DefaultPeriodSection() {
   return (
     <div className="bg-card border rounded-lg p-4">
       <div className="mb-3">
-        <p className="text-sm font-medium">Période par défaut des statistiques et KPI</p>
+        <p className="text-sm font-medium">{t("settingsPage.periodTitle")}</p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Période appliquée par défaut à l'ouverture des vues Statistiques et Client KPI.
+          {t("settingsPage.periodDesc")}
         </p>
       </div>
       <div className="flex gap-2">
@@ -718,8 +731,61 @@ function DefaultPeriodSection() {
   );
 }
 
+function LanguageSection() {
+  const { toast } = useToast();
+  const t = useT();
+  const { lang, setLang } = useLang();
+  const queryClient = useQueryClient();
+  const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
+  const updateSetting = useUpdateSetting();
+  const current = (((settings as any)?.language as string) ?? lang) as Lang;
+
+  function handleChange(value: Lang) {
+    updateSetting.mutate(
+      { key: "language", data: { value } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey() });
+          setLang(value);
+          toast({ title: t("settingsPage.languageUpdated") });
+        },
+        onError: () => toast({ title: t("common.error"), description: t("settingsPage.errorSaveLanguage"), variant: "destructive" }),
+      }
+    );
+  }
+
+  return (
+    <div className="bg-card border rounded-lg p-4">
+      <div className="mb-3">
+        <p className="text-sm font-medium">{t("settingsPage.languageCardTitle")}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {t("settingsPage.languageCardDesc")}
+        </p>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {SUPPORTED_LANGS.map((l) => (
+          <button
+            key={l}
+            onClick={() => handleChange(l)}
+            disabled={updateSetting.isPending}
+            data-testid={`button-language-${l}`}
+            className={`px-4 py-1.5 rounded border text-sm font-medium transition-colors ${
+              current === l
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card text-foreground border-border hover:bg-muted"
+            }`}
+          >
+            {LANG_LABELS[l]}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { user, logout } = useAuth();
+  const t = useT();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -740,9 +806,9 @@ export default function SettingsPage() {
         onSuccess: () => {
           setShowCreateUser(false);
           queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
-          toast({ title: "Utilisateur créé", description: "L'utilisateur devra changer son mot de passe à la première connexion." });
+          toast({ title: t("settingsPage.userCreatedTitle"), description: t("settingsPage.userCreatedDesc") });
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible de créer l'utilisateur", variant: "destructive" }),
+        onError: () => toast({ title: t("common.error"), description: t("settingsPage.errorCreateUser"), variant: "destructive" }),
       }
     );
   }
@@ -755,21 +821,21 @@ export default function SettingsPage() {
         onSuccess: () => {
           setEditingUser(null);
           queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
-          toast({ title: "Utilisateur mis à jour" });
+          toast({ title: t("settingsPage.userUpdated") });
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible de modifier l'utilisateur", variant: "destructive" }),
+        onError: () => toast({ title: t("common.error"), description: t("settingsPage.errorUpdateUser"), variant: "destructive" }),
       }
     );
   }
 
   function handleDeleteUser(id: number, username: string) {
-    if (!confirm(`Supprimer l'utilisateur ${username} ?`)) return;
+    if (!confirm(t("settingsPage.deleteUserConfirm", { username }))) return;
     deleteUser.mutate(
       { id },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
-          toast({ title: "Utilisateur supprimé" });
+          toast({ title: t("settingsPage.userDeleted") });
         },
       }
     );
@@ -786,57 +852,63 @@ export default function SettingsPage() {
           >
             Digi<span className="font-light">Board</span>
           </h1>
+          <span className="text-[10px] text-muted-foreground/60 font-mono" data-testid="text-version-settings">v{APP_VERSION}</span>
           <span className="text-muted-foreground text-xs">/</span>
-          <span className="text-sm font-medium">Paramètres</span>
+          <span className="text-sm font-medium">{t("settingsPage.pageTitle")}</span>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-muted-foreground">{user?.username}</span>
           <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setLocation("/board")} data-testid="button-back-board">
-            Retour au board
+            {t("settingsPage.backToBoard")}
           </button>
           <button className="text-xs text-muted-foreground hover:text-foreground" onClick={logout} data-testid="button-logout-settings">
-            Déconnexion
+            {t("common.logout")}
           </button>
         </div>
       </header>
 
       <main className="flex-1 overflow-y-auto p-6">
         <div className="max-w-4xl mx-auto space-y-6">
-          <h2 className="text-xl font-semibold">Paramètres</h2>
+          <h2 className="text-xl font-semibold">{t("settingsPage.pageTitle")}</h2>
 
           <div>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Listes des intervenants</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("settingsPage.sectionProviders")}</h3>
             <div className="grid grid-cols-3 gap-4">
-              <SettingsList settingKey="casemanagers" label="Case Manager" />
-              <SettingsList settingKey="psychiatrists" label="Psychiatre" />
-              <SettingsList settingKey="medecinsfamille" label="Médecin de famille" />
+              <SettingsList settingKey="casemanagers" label={t("settingsPage.labelCasemanagers")} />
+              <SettingsList settingKey="psychiatrists" label={t("settingsPage.labelPsychiatrists")} />
+              <SettingsList settingKey="medecinsfamille" label={t("settingsPage.labelMedecinsfamille")} />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              La liste <strong>Case Manager 2</strong> utilise les mêmes entrées que <strong>Case Manager</strong>.
-            </p>
+            <p className="text-xs text-muted-foreground mt-2"
+               dangerouslySetInnerHTML={{ __html: t("settingsPage.providersNote", { cm2: `<strong>${t("settingsPage.providersNoteCm2")}</strong>`, cm: `<strong>${t("settingsPage.providersNoteCm")}</strong>` }) }}
+            />
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Autres listes</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("settingsPage.sectionOtherLists")}</h3>
             <div className="grid grid-cols-2 gap-4">
-              <SettingsList settingKey="articles" label="Articles légaux" />
-              <SettingsList settingKey="curatelles" label="Curatelle / Tutelle" />
+              <SettingsList settingKey="articles" label={t("settingsPage.labelArticles")} />
+              <SettingsList settingKey="curatelles" label={t("settingsPage.labelCuratelles")} />
             </div>
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Corbeille</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("settingsPage.sectionTrash")}</h3>
             <DeletedPatientsSection />
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Filtres par défaut</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("settingsPage.sectionDefaultFilters")}</h3>
             <DefaultPeriodSection />
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("settingsPage.sectionLanguage")}</h3>
+            <LanguageSection />
           </div>
 
           {user?.role === "admin" && (
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Sauvegarde</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("settingsPage.sectionBackup")}</h3>
               <BackupSection />
             </div>
           )}
@@ -844,19 +916,19 @@ export default function SettingsPage() {
           {user?.role === "admin" && (
             <div className="bg-card border rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium">Gestion des utilisateurs</h3>
+                <h3 className="text-sm font-medium">{t("settingsPage.usersTitle")}</h3>
                 <Button size="sm" onClick={() => setShowCreateUser(true)} data-testid="button-create-user">
-                  + Créer un utilisateur
+                  {t("settingsPage.createUser")}
                 </Button>
               </div>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-muted-foreground text-xs">
-                    <th className="text-left pb-2 font-medium">Nom d'utilisateur</th>
-                    <th className="text-left pb-2 font-medium">Email</th>
-                    <th className="text-left pb-2 font-medium">Rôle</th>
-                    <th className="text-left pb-2 font-medium">Statut</th>
-                    <th className="text-left pb-2 font-medium">Actions</th>
+                    <th className="text-left pb-2 font-medium">{t("settingsPage.colUsername")}</th>
+                    <th className="text-left pb-2 font-medium">{t("settingsPage.colEmail")}</th>
+                    <th className="text-left pb-2 font-medium">{t("settingsPage.colRole")}</th>
+                    <th className="text-left pb-2 font-medium">{t("settingsPage.colStatus")}</th>
+                    <th className="text-left pb-2 font-medium">{t("common.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -866,12 +938,12 @@ export default function SettingsPage() {
                       <td className="py-2 text-muted-foreground">{u.email ?? "-"}</td>
                       <td className="py-2">
                         <span className={`text-xs px-2 py-0.5 rounded border ${u.role === "admin" ? "bg-primary/10 text-primary border-primary/30" : "bg-muted text-muted-foreground border-border"}`}>
-                          {u.role === "admin" ? "Admin" : "Utilisateur"}
+                          {u.role === "admin" ? t("settingsPage.roleAdmin") : t("settingsPage.roleUser")}
                         </span>
                       </td>
                       <td className="py-2">
                         {u.mustChangePassword && (
-                          <span className="text-xs text-amber-600">Doit changer son MDP</span>
+                          <span className="text-xs text-amber-600">{t("settingsPage.mustChangePassword")}</span>
                         )}
                       </td>
                       <td className="py-2">
@@ -881,7 +953,7 @@ export default function SettingsPage() {
                             data-testid={`button-edit-user-${u.id}`}
                             onClick={() => setEditingUser(u)}
                           >
-                            Modifier
+                            {t("common.edit")}
                           </button>
                           {u.id !== user?.id && (
                             <button
@@ -889,7 +961,7 @@ export default function SettingsPage() {
                               data-testid={`button-reset-password-${u.id}`}
                               onClick={() => setResetPasswordUser({ id: u.id, username: u.username })}
                             >
-                              Réinitialiser MDP
+                              {t("settingsPage.resetPassword")}
                             </button>
                           )}
                           {u.id !== user?.id && (
@@ -898,7 +970,7 @@ export default function SettingsPage() {
                               data-testid={`button-delete-user-${u.id}`}
                               onClick={() => handleDeleteUser(u.id, u.username)}
                             >
-                              Supprimer
+                              {t("common.delete")}
                             </button>
                           )}
                         </div>
@@ -911,7 +983,7 @@ export default function SettingsPage() {
           )}
 
           <div>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Pathologies (ICD-10)</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("settingsPage.sectionPathologies")}</h3>
             <ICD10ManagementTable />
           </div>
         </div>
@@ -922,7 +994,7 @@ export default function SettingsPage() {
         onClose={() => setShowCreateUser(false)}
         onSave={handleCreateUser}
         isPending={createUser.isPending}
-        title="Créer un utilisateur"
+        title={t("settingsPage.createUserTitle")}
         showPassword
       />
 
@@ -932,7 +1004,7 @@ export default function SettingsPage() {
         onSave={handleUpdateUser}
         isPending={updateUser.isPending}
         initial={editingUser}
-        title="Modifier l'utilisateur"
+        title={t("settingsPage.editUserTitle")}
       />
 
       <ResetPasswordModal

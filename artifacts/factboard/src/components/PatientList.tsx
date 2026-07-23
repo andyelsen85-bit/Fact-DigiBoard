@@ -1,6 +1,8 @@
 import { useListPatients, getListPatientsQueryKey } from "@workspace/api-client-react";
 import { BoardBadge } from "./BoardBadge";
 import { AggBadge } from "./AggBadge";
+import { useT } from "@/i18n";
+import "@/i18n/dict/board";
 
 interface PatientListProps {
   board: string;
@@ -10,6 +12,7 @@ interface PatientListProps {
 }
 
 export function PatientList({ board, search, selectedId, onSelect }: PatientListProps) {
+  const t = useT();
   const params = board !== "Tous" ? { board, search: search || undefined } : { search: search || undefined };
   const { data: patients = [], isLoading } = useListPatients(
     params,
@@ -27,7 +30,7 @@ export function PatientList({ board, search, selectedId, onSelect }: PatientList
   if (patients.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
-        <p className="text-xs text-muted-foreground text-center">Aucun client</p>
+        <p className="text-xs text-muted-foreground text-center">{t("board.noPatient")}</p>
       </div>
     );
   }
@@ -114,13 +117,14 @@ function daysUntil(dateStr: string): number {
 }
 
 function DepotBadge({ date }: { date: string }) {
+  const t = useT();
   const days = daysUntil(date);
   const isUrgent = days <= 7;
   const label = days < 0
-    ? `Dépôt en retard (${Math.abs(days)} j)`
+    ? t("board.depotLate", { days: Math.abs(days) })
     : days === 0
-      ? "Dépôt aujourd'hui"
-      : `Dépôt dans ${days} j`;
+      ? t("board.depotToday")
+      : t("board.depotIn", { days });
   return (
     <span
       data-testid="badge-depot"
@@ -129,7 +133,7 @@ function DepotBadge({ date }: { date: string }) {
           ? "bg-destructive/10 text-destructive border-destructive/30"
           : "bg-muted text-muted-foreground border-border"
       }`}
-      title={`Dépôt à refaire le ${date}`}
+      title={t("board.depotTooltip", { date })}
     >
       <span aria-hidden>💊</span>
       <span>{label}</span>

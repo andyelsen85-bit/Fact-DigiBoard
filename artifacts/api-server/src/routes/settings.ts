@@ -8,7 +8,14 @@ const router = Router();
 const SETTING_KEYS = ["psychiatrists", "casemanagers", "medecinsfamille", "articles", "curatelles", "icd10favorites"];
 const SETTING_SCALAR_DEFAULTS: Record<string, string> = {
   defaultStatsPeriod: "6m",
+  language: "fr",
 };
+
+const SUPPORTED_LANGUAGES = ["fr", "en", "de", "nl"];
+
+function isValidLanguage(v: unknown): boolean {
+  return typeof v === "string" && SUPPORTED_LANGUAGES.includes(v);
+}
 
 async function ensureDefaults() {
   for (const key of SETTING_KEYS) {
@@ -24,6 +31,14 @@ async function ensureDefaults() {
     }
   }
 }
+
+// Public: the login page needs the language before authentication.
+router.get("/language", async (_req, res) => {
+  const rows = await db.select().from(settingsTable).where(eq(settingsTable.key, "language")).limit(1);
+  const raw = rows[0]?.value ?? "fr";
+  const language = SUPPORTED_LANGUAGES.includes(raw) ? raw : "fr";
+  res.json({ language });
+});
 
 router.get("/settings", requireAuth, requireAdmin, async (_req, res) => {
   await ensureDefaults();
@@ -58,6 +73,10 @@ router.get("/form-options", requireAuth, async (_req, res) => {
 router.put("/settings/:key", requireAuth, requireAdmin, async (req, res) => {
   const key = String(req.params["key"]);
   const { value } = req.body as { value: unknown };
+
+  if (key === "language" && !isValidLanguage(value)) {
+    return res.status(400).json({ error: "Invalid language. Supported: fr, en, de, nl" });
+  }
 
   const serialized = typeof value === "string" ? value : JSON.stringify(value);
 

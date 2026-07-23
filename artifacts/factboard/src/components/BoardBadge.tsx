@@ -1,3 +1,5 @@
+import { useT } from "@/i18n";
+
 interface BoardBadgeProps {
   board: string;
   className?: string;
@@ -12,10 +14,11 @@ const BOARD_STYLES: Record<string, string> = {
 };
 
 export function BoardBadge({ board, className = "" }: BoardBadgeProps) {
+  const t = useT();
   const style = BOARD_STYLES[board] ?? "bg-gray-100 text-gray-600 border border-gray-200";
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${style} ${className}`}>
-      {board}
+      {t("common.board." + board)}
     </span>
   );
 }

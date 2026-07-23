@@ -9,49 +9,51 @@ import {
 } from "@/hooks/use-evaluations";
 import { useGetSettings, getGetSettingsQueryKey } from "@workspace/api-client-react";
 import { type StatsPeriod, periodToSince } from "@/hooks/use-stats";
+import { useT } from "@/i18n";
+import "@/i18n/dict/views";
 
-const IROCK_QUESTIONS = [
-  "Santé mentale",
-  "Compétence de vie",
-  "Sécurité et confort",
-  "Santé physique",
-  "Exercice et activité",
-  "Objectif et orientation",
-  "Entourage",
-  "Réseau social",
-  "Se valoriser",
-  "Participation et contrôle",
-  "Autogestion",
-  "Espoir d'avenir",
+const IROCK_QUESTION_KEYS = [
+  "views.kpi.irock.q1",
+  "views.kpi.irock.q2",
+  "views.kpi.irock.q3",
+  "views.kpi.irock.q4",
+  "views.kpi.irock.q5",
+  "views.kpi.irock.q6",
+  "views.kpi.irock.q7",
+  "views.kpi.irock.q8",
+  "views.kpi.irock.q9",
+  "views.kpi.irock.q10",
+  "views.kpi.irock.q11",
+  "views.kpi.irock.q12",
 ];
 
-const HONOS_QUESTIONS = [
-  "Comportement hyperactif/agressif",
-  "Auto-agressivité / passage à l'acte",
-  "Alcool ou drogues",
-  "Troubles cognitifs",
-  "Maladie physique ou handicap",
-  "Hallucinations et délires",
-  "Humeur dépressive",
-  "Autres troubles mentaux",
-  "Relations sociales",
-  "Activités vie quotidienne",
-  "Conditions de vie",
-  "Occupation et activités",
+const HONOS_QUESTION_KEYS = [
+  "views.kpi.honos.q1",
+  "views.kpi.honos.q2",
+  "views.kpi.honos.q3",
+  "views.kpi.honos.q4",
+  "views.kpi.honos.q5",
+  "views.kpi.honos.q6",
+  "views.kpi.honos.q7",
+  "views.kpi.honos.q8",
+  "views.kpi.honos.q9",
+  "views.kpi.honos.q10",
+  "views.kpi.honos.q11",
+  "views.kpi.honos.q12",
 ];
 
 const IROCK_DOMAINS = [
-  { label: "Domicile",       color: "#3b82f6" },
-  { label: "Opportunité",    color: "#22c55e" },
-  { label: "Personnes",      color: "#f97316" },
-  { label: "Autonomisation", color: "#a855f7" },
+  { labelKey: "views.kpi.irockDomain.home",        color: "#3b82f6" },
+  { labelKey: "views.kpi.irockDomain.opportunity", color: "#22c55e" },
+  { labelKey: "views.kpi.irockDomain.people",      color: "#f97316" },
+  { labelKey: "views.kpi.irockDomain.empowerment", color: "#a855f7" },
 ];
 
 const HONOS_DOMAINS = [
-  { label: "Comportement", color: "#ef4444" },
-  { label: "Déficiences",  color: "#f59e0b" },
-  { label: "Symptômes",    color: "#ec4899" },
-  { label: "Social",       color: "#06b6d4" },
+  { labelKey: "views.kpi.honosDomain.behaviour",   color: "#ef4444" },
+  { labelKey: "views.kpi.honosDomain.impairment",  color: "#f59e0b" },
+  { labelKey: "views.kpi.honosDomain.symptoms",    color: "#ec4899" },
+  { labelKey: "views.kpi.honosDomain.social",      color: "#06b6d4" },
 ];
 
 const CLINICAL_BOARDS = ["PréAdmission", "FactBoard", "RecoveryBoard"];
@@ -65,27 +67,28 @@ const BOARD_COLORS: Record<string, string> = {
 const IROCK_COLOR = "#2563eb";
 const HONOS_COLOR = "#dc2626";
 
-interface Domain { label: string; color: string; }
+interface Domain { labelKey: string; color: string; }
 
 interface SpiderPanelProps {
   title: string;
   subtitle: string;
   data: Array<{ date: string; total: number; [key: string]: any }>;
-  questions: string[];
+  questionKeys: string[];
   domains: Domain[];
   color: string;
   yMax: number;
   qCount: number;
 }
 
-function SpiderPanel({ title, subtitle, data, questions, domains, color, yMax, qCount }: SpiderPanelProps) {
+function SpiderPanel({ title, subtitle, data, questionKeys, domains, color, yMax, qCount }: SpiderPanelProps) {
+  const t = useT();
   const [compareIdx, setCompareIdx] = useState<number | null>(null);
 
   if (data.length === 0) {
     return (
       <div className="bg-card border rounded-lg p-4">
         <h4 className="text-sm font-medium mb-2">{title}</h4>
-        <p className="text-xs text-muted-foreground">Aucune évaluation enregistrée</p>
+        <p className="text-xs text-muted-foreground">{t("views.kpi.noEval")}</p>
       </div>
     );
   }
@@ -94,7 +97,8 @@ function SpiderPanel({ title, subtitle, data, questions, domains, color, yMax, q
   const compareEntry = compareIdx !== null ? data[compareIdx] : null;
   const totalMax = yMax * qCount;
 
-  const radarData = questions.map((label, i) => {
+  const radarData = questionKeys.map((qKey, i) => {
+    const label = t(qKey);
     const key = `q${i + 1}`;
     const row: Record<string, any> = {
       label: label.length > 20 ? label.slice(0, 19) + "…" : label,
@@ -116,7 +120,7 @@ function SpiderPanel({ title, subtitle, data, questions, domains, color, yMax, q
         <div className="flex items-center gap-2 flex-wrap">
           {data.length > 1 && (
             <div className="flex items-center gap-1.5">
-              <span className="text-xs text-muted-foreground">Comparer avec :</span>
+              <span className="text-xs text-muted-foreground">{t("views.kpi.compareWith")}</span>
               <select
                 className="text-xs border rounded px-1.5 py-0.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
                 value={compareIdx ?? ""}
@@ -170,7 +174,7 @@ function SpiderPanel({ title, subtitle, data, questions, domains, color, yMax, q
             contentStyle={{ fontSize: 11 }}
             formatter={(val: any, name: string) => [
               `${val} / ${yMax}`,
-              name === "current" ? `Actuel (${latest.date})` : compareEntry?.date ?? name,
+              name === "current" ? t("views.kpi.current", { date: latest.date }) : compareEntry?.date ?? name,
             ]}
           />
           <Radar
@@ -200,8 +204,8 @@ function SpiderPanel({ title, subtitle, data, questions, domains, color, yMax, q
               wrapperStyle={{ fontSize: 11, paddingTop: 4 }}
               formatter={(value) =>
                 value === "current"
-                  ? `Actuel (${latest.date})`
-                  : `Comparaison (${compareEntry.date})`
+                  ? t("views.kpi.current", { date: latest.date })
+                  : t("views.kpi.compare", { date: compareEntry.date })
               }
             />
           )}
@@ -214,7 +218,7 @@ function SpiderPanel({ title, subtitle, data, questions, domains, color, yMax, q
           <div key={i} className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
             <span className="text-xs text-muted-foreground">
-              {d.label} <span className="font-mono text-[10px]">(Q{i * 3 + 1}–Q{i * 3 + 3})</span>
+              {t(d.labelKey)} <span className="font-mono text-[10px]">(Q{i * 3 + 1}–Q{i * 3 + 3})</span>
             </span>
           </div>
         ))}
@@ -223,7 +227,7 @@ function SpiderPanel({ title, subtitle, data, questions, domains, color, yMax, q
       {/* Past evaluations mini-list */}
       {data.length > 1 && (
         <div className="pt-1 border-t">
-          <p className="text-xs text-muted-foreground mb-1.5">Historique des scores totaux</p>
+          <p className="text-xs text-muted-foreground mb-1.5">{t("views.kpi.scoreHistory")}</p>
           <div className="flex flex-wrap gap-1.5">
             {data.map((d, i) => {
               const isLatest = i === data.length - 1;
@@ -241,7 +245,7 @@ function SpiderPanel({ title, subtitle, data, questions, domains, color, yMax, q
                       : "border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground"
                   }`}
                   style={isLatest ? { borderColor: color, color, background: `${color}12` } : undefined}
-                  title={isLatest ? "Évaluation actuelle" : "Cliquer pour comparer"}
+                  title={isLatest ? t("views.kpi.currentEval") : t("views.kpi.clickToCompare")}
                 >
                   {d.date} · {d.total}/{totalMax}
                 </button>
@@ -255,6 +259,7 @@ function SpiderPanel({ title, subtitle, data, questions, domains, color, yMax, q
 }
 
 function KpiContent({ patientId, period }: { patientId: number; period: StatsPeriod }) {
+  const t = useT();
   const { data: irockRaw = [], isLoading: irockLoading } = useListIrock(patientId);
   const { data: honosRaw = [], isLoading: honosLoading } = useListHonos(patientId);
   const { data: kpi, isLoading: kpiLoading } = usePatientKpi(patientId);
@@ -301,29 +306,29 @@ function KpiContent({ patientId, period }: { patientId: number; period: StatsPer
       {/* Board stability */}
       <div className="bg-card border rounded-lg p-4">
         <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground mb-4">
-          Stabilité par board
+          {t("views.kpi.boardStability")}
         </h3>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground mb-2">Jours par board</p>
+            <p className="text-xs text-muted-foreground mb-2">{t("views.kpi.daysPerBoard")}</p>
             {CLINICAL_BOARDS.map((board) => (
               <div key={board} className="flex items-center gap-2">
                 <span
                   className="w-3 h-3 rounded-full shrink-0"
                   style={{ backgroundColor: BOARD_COLORS[board] }}
                 />
-                <span className="text-xs text-muted-foreground w-32 shrink-0">{board}</span>
-                <span className="font-mono text-sm font-medium">{daysPerBoard[board] ?? 0} j</span>
+                <span className="text-xs text-muted-foreground w-32 shrink-0">{t("common.board." + board)}</span>
+                <span className="font-mono text-sm font-medium">{t("views.stats.days", { count: daysPerBoard[board] ?? 0 })}</span>
               </div>
             ))}
           </div>
           <div className="flex flex-col items-center justify-center bg-muted/30 rounded-lg p-4">
             <div className="text-4xl font-light font-mono text-destructive">{regressions}</div>
             <div className="text-xs text-muted-foreground mt-1 text-center">
-              Retours de RecoveryBoard → FactBoard
+              {t("views.kpi.regressionsLabel")}
             </div>
             <div className="text-xs text-muted-foreground mt-1 text-center italic">
-              (indicateur d'instabilité)
+              {t("views.kpi.regressionsHint")}
             </div>
           </div>
         </div>
@@ -332,13 +337,13 @@ function KpiContent({ patientId, period }: { patientId: number; period: StatsPer
       {/* I•ROC spider */}
       <div>
         <h3 className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
-          I•ROC — Évaluations ({irockData.length})
+          {t("views.kpi.irockTitle", { count: irockData.length })}
         </h3>
         <SpiderPanel
-          title="I•ROC · Diagramme en araignée"
-          subtitle="Modèle HOPE · Score 1–6 par indicateur (1 = Jamais · 6 = Tout le temps)"
+          title={t("views.kpi.irockPanelTitle")}
+          subtitle={t("views.kpi.irockPanelSubtitle")}
           data={irockChartData}
-          questions={IROCK_QUESTIONS}
+          questionKeys={IROCK_QUESTION_KEYS}
           domains={IROCK_DOMAINS}
           color={IROCK_COLOR}
           yMax={6}
@@ -349,13 +354,13 @@ function KpiContent({ patientId, period }: { patientId: number; period: StatsPer
       {/* HoNOS spider */}
       <div>
         <h3 className="text-sm font-semibold text-destructive uppercase tracking-wider mb-3">
-          HoNOS — Évaluations ({honosData.length})
+          {t("views.kpi.honosTitle", { count: honosData.length })}
         </h3>
         <SpiderPanel
-          title="HoNOS · Diagramme en araignée"
-          subtitle="Score 0–4 par échelle (0 = Aucun problème · 4 = Problème grave)"
+          title={t("views.kpi.honosPanelTitle")}
+          subtitle={t("views.kpi.honosPanelSubtitle")}
           data={honosChartData}
-          questions={HONOS_QUESTIONS}
+          questionKeys={HONOS_QUESTION_KEYS}
           domains={HONOS_DOMAINS}
           color={HONOS_COLOR}
           yMax={4}
@@ -368,14 +373,15 @@ function KpiContent({ patientId, period }: { patientId: number; period: StatsPer
 
 const HIDDEN_BOARDS = ["Clôturé", "Irrecevable"];
 
-const PERIOD_OPTIONS: { value: StatsPeriod; label: string }[] = [
-  { value: "1m", label: "1 mois" },
-  { value: "6m", label: "6 mois" },
-  { value: "12m", label: "12 mois" },
-  { value: "all", label: "Tout" },
+const PERIOD_OPTIONS: { value: StatsPeriod; labelKey: string }[] = [
+  { value: "1m", labelKey: "views.kpi.period.1m" },
+  { value: "6m", labelKey: "views.kpi.period.6m" },
+  { value: "12m", labelKey: "views.kpi.period.12m" },
+  { value: "all", labelKey: "views.kpi.period.all" },
 ];
 
 export function PatientKpiView() {
+  const t = useT();
   const { data: patients = [], isLoading } = usePatientSelector();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
@@ -425,7 +431,7 @@ export function PatientKpiView() {
       {/* Sidebar — patient picker */}
       <aside className="border-r bg-card flex flex-col shrink-0" style={{ width: sidebarWidth }}>
         <div className="p-3 border-b space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Client KPI</p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("views.kpi.title")}</p>
           <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
             {PERIOD_OPTIONS.map((opt) => (
               <button
@@ -437,13 +443,13 @@ export function PatientKpiView() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {opt.label}
+                {t(opt.labelKey)}
               </button>
             ))}
           </div>
           <input
             type="search"
-            placeholder="Rechercher un client…"
+            placeholder={t("views.kpi.searchPlaceholder")}
             className="w-full px-2.5 py-1.5 border rounded bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -456,7 +462,7 @@ export function PatientKpiView() {
             }`}
             onClick={() => setShowHidden((v) => !v)}
           >
-            <span>{showHidden ? "Masquer les archivés" : "Afficher les archivés"}</span>
+            <span>{showHidden ? t("views.kpi.hideArchived") : t("views.kpi.showArchived")}</span>
             {hiddenCount > 0 && (
               <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-muted-foreground/15">
                 {hiddenCount}
@@ -490,7 +496,7 @@ export function PatientKpiView() {
                     <div className="font-medium text-xs truncate">{p.nom} {p.prenom}</div>
                     <div className="text-xs text-muted-foreground font-mono">{p.clientNum}</div>
                     <div className={`text-xs truncate ${isArchived ? "text-muted-foreground/60 italic" : "text-muted-foreground"}`}>
-                      {p.board}
+                      {t("common.board." + p.board)}
                     </div>
                   </div>
                 </button>
@@ -512,7 +518,7 @@ export function PatientKpiView() {
           <KpiContent patientId={selectedId} period={activePeriod} />
         ) : (
           <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-            Sélectionnez un client pour afficher ses KPI
+            {t("views.kpi.selectClient")}
           </div>
         )}
       </main>

@@ -9,22 +9,34 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
+import { useT } from "@/i18n";
+import "@/i18n/dict/auth";
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
 
-const setupSchema = z.object({
-  username: z.string().min(2, "Minimum 2 caractères"),
-  password: z.string().min(6, "Minimum 6 caractères"),
-  confirm: z.string().min(6, "Minimum 6 caractères"),
-}).refine((d) => d.password === d.confirm, {
-  message: "Les mots de passe ne correspondent pas",
-  path: ["confirm"],
-});
-
-type SetupFormValues = z.infer<typeof setupSchema>;
+type SetupFormValues = {
+  username: string;
+  password: string;
+  confirm: string;
+};
 
 export default function SetupPage() {
+  const t = useT();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  const setupSchema = useMemo(
+    () =>
+      z.object({
+        username: z.string().min(2, t("auth.min2Chars")),
+        password: z.string().min(6, t("auth.min6Chars")),
+        confirm: z.string().min(6, t("auth.min6Chars")),
+      }).refine((d) => d.password === d.confirm, {
+        message: t("auth.passwordsMismatch"),
+        path: ["confirm"],
+      }),
+    [t]
+  );
 
   const form = useForm<SetupFormValues>({
     resolver: zodResolver(setupSchema),
@@ -40,13 +52,13 @@ export default function SetupPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast({ title: "Erreur", description: data.error, variant: "destructive" });
+        toast({ title: t("common.error"), description: data.error, variant: "destructive" });
         return;
       }
-      toast({ title: "Compte créé", description: "Vous pouvez maintenant vous connecter." });
+      toast({ title: t("auth.accountCreated"), description: t("auth.accountCreatedDesc") });
       setLocation("/login");
     } catch {
-      toast({ title: "Erreur réseau", description: "Impossible de contacter le serveur.", variant: "destructive" });
+      toast({ title: t("auth.networkError"), description: t("auth.networkErrorDesc"), variant: "destructive" });
     }
   }
 
@@ -58,7 +70,7 @@ export default function SetupPage() {
             Digi<span className="font-light">Board</span>
           </CardTitle>
           <CardDescription>
-            Première utilisation — créez votre compte administrateur
+            {t("auth.setupTagline")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -69,9 +81,9 @@ export default function SetupPage() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nom d'utilisateur</FormLabel>
+                    <FormLabel>{t("auth.username")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="ex: admin" {...field} data-testid="input-username" />
+                      <Input placeholder={t("auth.usernameSetupPlaceholder")} {...field} data-testid="input-username" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -82,9 +94,9 @@ export default function SetupPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mot de passe</FormLabel>
+                    <FormLabel>{t("auth.password")}</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Minimum 6 caractères" {...field} data-testid="input-password" />
+                      <Input type="password" placeholder={t("auth.passwordMinPlaceholder")} {...field} data-testid="input-password" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -95,9 +107,9 @@ export default function SetupPage() {
                 name="confirm"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirmer le mot de passe</FormLabel>
+                    <FormLabel>{t("auth.confirmPassword")}</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Répétez le mot de passe" {...field} data-testid="input-confirm" />
+                      <Input type="password" placeholder={t("auth.confirmPasswordPlaceholder")} {...field} data-testid="input-confirm" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -109,7 +121,7 @@ export default function SetupPage() {
                 disabled={form.formState.isSubmitting}
                 data-testid="button-setup"
               >
-                {form.formState.isSubmitting ? "Création..." : "Créer le compte administrateur"}
+                {form.formState.isSubmitting ? t("auth.creating") : t("auth.createAdmin")}
               </Button>
             </form>
           </Form>

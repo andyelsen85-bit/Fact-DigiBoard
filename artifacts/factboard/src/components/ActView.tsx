@@ -10,8 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useT } from "@/i18n";
+import "@/i18n/dict/views";
 
 function ActNotes({ regionId }: { regionId: number }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: notes = [] } = useListActRegionNotes(regionId, { query: { queryKey: getListActRegionNotesQueryKey(regionId) } });
@@ -29,7 +32,7 @@ function ActNotes({ regionId }: { regionId: number }) {
           setNewTexte("");
           queryClient.invalidateQueries({ queryKey: getListActRegionNotesQueryKey(regionId) });
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible d'ajouter la note", variant: "destructive" }),
+        onError: () => toast({ title: t("common.error"), description: t("views.act.errorAddNote"), variant: "destructive" }),
       }
     );
   }
@@ -47,7 +50,7 @@ function ActNotes({ regionId }: { regionId: number }) {
           data-testid="input-act-note-date"
         />
         <Textarea
-          placeholder="Nouvelle note..."
+          placeholder={t("views.act.newNotePlaceholder")}
           value={newTexte}
           onChange={(e) => setNewTexte(e.target.value)}
           rows={2}
@@ -55,7 +58,7 @@ function ActNotes({ regionId }: { regionId: number }) {
           data-testid="textarea-act-note"
         />
         <Button size="sm" onClick={handleAdd} disabled={createNote.isPending} data-testid="button-add-act-note">
-          Ajouter
+          {t("common.add")}
         </Button>
       </div>
       <div className="space-y-2">
@@ -96,7 +99,7 @@ function ActNotes({ regionId }: { regionId: number }) {
                 );
               }}
             >
-              Supprimer
+              {t("common.delete")}
             </button>
           </div>
         ))}
@@ -106,6 +109,7 @@ function ActNotes({ regionId }: { regionId: number }) {
 }
 
 export function ActView() {
+  const t = useT();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
@@ -129,13 +133,13 @@ export function ActView() {
           queryClient.invalidateQueries({ queryKey: getListActRegionsQueryKey() });
           setSelectedRegionId(region.id);
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible de créer la région", variant: "destructive" }),
+        onError: () => toast({ title: t("common.error"), description: t("views.act.errorCreateRegion"), variant: "destructive" }),
       }
     );
   }
 
   function handleDeleteRegion(id: number) {
-    if (!confirm("Supprimer cette région ACT et toutes ses notes ?")) return;
+    if (!confirm(t("views.act.confirmDeleteRegion"))) return;
     deleteRegion.mutate(
       { id },
       {
@@ -152,13 +156,13 @@ export function ActView() {
       <aside className="w-56 border-r flex flex-col">
         <div className="p-3 border-b">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-muted-foreground">RÉGIONS ACT</span>
+            <span className="text-xs font-medium text-muted-foreground">{t("views.act.regions")}</span>
             <button
               className="text-xs text-primary hover:underline"
               data-testid="button-new-act-region"
               onClick={() => setShowNewRegion(true)}
             >
-              + Nouveau
+              {t("views.act.new")}
             </button>
           </div>
           {showNewRegion && (
@@ -166,12 +170,12 @@ export function ActView() {
               <Input
                 value={newRegionName}
                 onChange={(e) => setNewRegionName(e.target.value)}
-                placeholder="Nom de la région"
+                placeholder={t("views.act.regionNamePlaceholder")}
                 className="h-7 text-xs"
                 data-testid="input-act-region-name"
                 onKeyDown={(e) => e.key === "Enter" && handleCreateRegion()}
               />
-              <Button size="sm" className="h-7 text-xs" onClick={handleCreateRegion} data-testid="button-create-region">OK</Button>
+              <Button size="sm" className="h-7 text-xs" onClick={handleCreateRegion} data-testid="button-create-region">{t("views.act.ok")}</Button>
             </div>
           )}
         </div>
@@ -196,7 +200,7 @@ export function ActView() {
             </div>
           ))}
           {regions.length === 0 && (
-            <p className="px-3 py-4 text-xs text-muted-foreground">Aucune région</p>
+            <p className="px-3 py-4 text-xs text-muted-foreground">{t("views.act.noRegion")}</p>
           )}
         </div>
       </aside>
@@ -208,7 +212,7 @@ export function ActView() {
           </div>
         ) : (
           <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">
-            Sélectionnez une région ACT
+            {t("views.act.selectRegion")}
           </div>
         )}
       </main>

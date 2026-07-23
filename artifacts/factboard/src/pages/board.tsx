@@ -13,24 +13,27 @@ import { ActView } from "@/components/ActView";
 import { PatientKpiView } from "@/components/PatientKpiView";
 import { PatientMedicationView } from "@/components/PatientMedicationView";
 import { useToast } from "@/hooks/use-toast";
+import { useT } from "@/i18n";
+import "@/i18n/dict/board";
 
 const BOARD_NAV = [
-  { label: "Tous", value: "Tous" },
-  { label: "Pré-Admission", value: "PréAdmission" },
-  { label: "FactBoard", value: "FactBoard" },
-  { label: "RecoveryBoard", value: "RecoveryBoard" },
-  { label: "Irrecevable", value: "Irrecevable" },
-  { label: "Clôturé", value: "Clôturé" },
+  { value: "Tous" },
+  { value: "PréAdmission" },
+  { value: "FactBoard" },
+  { value: "RecoveryBoard" },
+  { value: "Irrecevable" },
+  { value: "Clôturé" },
 ];
 
 const TOOL_NAV = [
-  { label: "ACT", value: "ACT" },
-  { label: "Statistiques", value: "Statistiques" },
-  { label: "Client KPI", value: "PatientKPI" },
-  { label: "Client Médication", value: "PatientMedication" },
+  { key: "toolAct", value: "ACT" },
+  { key: "toolStats", value: "Statistiques" },
+  { key: "toolPatientKpi", value: "PatientKPI" },
+  { key: "toolPatientMedication", value: "PatientMedication" },
 ];
 
 export default function BoardPage() {
+  const t = useT();
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -74,9 +77,9 @@ export default function BoardPage() {
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
           setShowNewPatientModal(false);
           setSelectedPatientId(patient.id);
-          toast({ title: "Client créé" });
+          toast({ title: t("board.patientCreated") });
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible de créer le client", variant: "destructive" }),
+        onError: () => toast({ title: t("common.error"), description: t("board.createPatientError"), variant: "destructive" }),
       }
     );
   }
@@ -104,7 +107,11 @@ export default function BoardPage() {
                 }`}
                 onClick={() => { setActiveBoard(item.value); setSelectedPatientId(null); }}
               >
-                {item.label}
+                {item.value === "Tous"
+                  ? t("board.navAll")
+                  : item.value === "PréAdmission"
+                    ? t("board.navPreAdmission")
+                    : t("common.board." + item.value)}
               </button>
             ))}
             <div className="w-px h-4 bg-border mx-1 shrink-0" />
@@ -119,7 +126,7 @@ export default function BoardPage() {
                 }`}
                 onClick={() => setActiveBoard(item.value)}
               >
-                {item.label}
+                {t("board." + item.key)}
               </button>
             ))}
           </nav>
@@ -130,12 +137,12 @@ export default function BoardPage() {
             onClick={() => setShowNewPatientModal(true)}
             data-testid="button-new-patient"
           >
-            + Nouveau client
+            {t("board.newPatient")}
           </button>
           <button
             className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors"
             onClick={() => setShowChangePassword(true)}
-            title="Changer le mot de passe"
+            title={t("board.changePassword")}
           >
             {user?.username}
           </button>
@@ -145,7 +152,7 @@ export default function BoardPage() {
               onClick={() => setLocation("/settings")}
               data-testid="button-settings"
             >
-              Paramètres
+              {t("common.settings")}
             </button>
           )}
           <button
@@ -153,7 +160,7 @@ export default function BoardPage() {
             onClick={logout}
             data-testid="button-logout"
           >
-            Déconnexion
+            {t("common.logout")}
           </button>
         </div>
       </header>
@@ -182,7 +189,7 @@ export default function BoardPage() {
                 <div className="p-3 border-b flex items-center gap-2">
                   <input
                     type="search"
-                    placeholder="Rechercher..."
+                    placeholder={t("common.search") + "..."}
                     className="flex-1 min-w-0 px-2.5 py-1.5 border rounded bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -191,7 +198,7 @@ export default function BoardPage() {
                   <button
                     onClick={() => setSidebarVisible(false)}
                     className="shrink-0 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                    title="Masquer la liste"
+                    title={t("board.hideList")}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
@@ -213,7 +220,7 @@ export default function BoardPage() {
                 <button
                   onClick={() => setSidebarVisible(true)}
                   className="p-2 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  title="Afficher la liste"
+                  title={t("board.showList")}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M6 5l7 7-7 7" />
@@ -235,7 +242,7 @@ export default function BoardPage() {
                 />
               ) : (
                 <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-                  Sélectionnez un client dans la liste
+                  {t("board.selectPatient")}
                 </div>
               )}
             </main>
@@ -248,7 +255,7 @@ export default function BoardPage() {
         onClose={() => setShowNewPatientModal(false)}
         onSave={handleCreatePatient}
         isPending={createPatient.isPending}
-        title="Nouveau client"
+        title={t("board.newPatientTitle")}
       />
       <ChangePasswordModal
         open={showChangePassword}

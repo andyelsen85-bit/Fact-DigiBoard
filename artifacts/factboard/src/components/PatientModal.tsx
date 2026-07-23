@@ -17,6 +17,9 @@ import {
 } from "@/components/ui/select";
 import { useFormOptions } from "@/hooks/use-form-options";
 import { BOARDS } from "./BoardBadge";
+import { useLang } from "@/i18n";
+import { icdText } from "@/i18n/icd";
+import "@/i18n/dict/patients";
 
 const patientSchema = z.object({
   nom: z.string().min(1, "Nom requis"),
@@ -82,9 +85,17 @@ function buildDefaults(initialValues?: Partial<PatientFormValues & { clientNum?:
   };
 }
 
-export function PatientModal({ open, onClose, onSave, isPending, initialValues, title = "Nouveau client", isEdit = false }: PatientModalProps) {
+export function PatientModal({ open, onClose, onSave, isPending, initialValues, title, isEdit = false }: PatientModalProps) {
+  const { t, lang } = useLang();
+  const resolvedTitle = title ?? t("patients.newClient");
   const [pathoSearch, setPathoSearch] = useState("");
   const [pathoDropdownOpen, setPathoDropdownOpen] = useState(false);
+
+  const localizedSchema = z.object({
+    ...patientSchema.shape,
+    nom: z.string().min(1, t("patients.nomRequired")),
+    prenom: z.string().min(1, t("patients.prenomRequired")),
+  });
 
   const { data: formOptions } = useFormOptions();
   const psychiatrists: string[] = formOptions?.psychiatrists ?? [];
@@ -96,7 +107,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
   const favoriteCim10 = icd10Codes.filter((c) => c.isFavorite);
 
   const form = useForm<PatientFormValues>({
-    resolver: zodResolver(patientSchema),
+    resolver: zodResolver(localizedSchema),
     defaultValues: buildDefaults(initialValues),
   });
 
@@ -115,7 +126,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
         (d) =>
           !pathosValue.includes(d.code) && (
             d.code.toLowerCase().includes(pathoSearch.toLowerCase()) ||
-            d.title.toLowerCase().includes(pathoSearch.toLowerCase())
+            (icdText(d, "title", lang) ?? "").toLowerCase().includes(pathoSearch.toLowerCase())
           )
       ).slice(0, 8)
     : [];
@@ -147,14 +158,14 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{resolvedTitle}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
             {isEdit && initialValues?.clientNum && (
               <div className="space-y-1">
-                <Label>N° Client (auto-généré)</Label>
+                <Label>{t("patients.clientNumLabel")}</Label>
                 <Input value={initialValues.clientNum} readOnly className="bg-muted text-muted-foreground" />
               </div>
             )}
@@ -162,14 +173,14 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
             <div className="grid grid-cols-2 gap-3">
               <FormField control={form.control} name="nom" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nom</FormLabel>
+                  <FormLabel>{t("patients.nom")}</FormLabel>
                   <FormControl><Input data-testid="input-nom" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="prenom" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Prénom</FormLabel>
+                  <FormLabel>{t("patients.prenom")}</FormLabel>
                   <FormControl><Input data-testid="input-prenom" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
@@ -179,24 +190,24 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
             <div className="grid grid-cols-3 gap-3">
               <FormField control={form.control} name="dob" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date de naissance</FormLabel>
+                  <FormLabel>{t("patients.dob")}</FormLabel>
                   <FormControl><Input type="date" data-testid="input-dob" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="sexe" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sexe</FormLabel>
+                  <FormLabel>{t("patients.sexe")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-sexe">
-                        <SelectValue placeholder="Choisir..." />
+                        <SelectValue placeholder={t("patients.choose")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="M">Masculin</SelectItem>
-                      <SelectItem value="F">Féminin</SelectItem>
-                      <SelectItem value="Divers">Divers</SelectItem>
+                      <SelectItem value="M">{t("patients.sexeM")}</SelectItem>
+                      <SelectItem value="F">{t("patients.sexeF")}</SelectItem>
+                      <SelectItem value="Divers">{t("patients.sexeDivers")}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -204,7 +215,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
               )} />
               <FormField control={form.control} name="agressivite" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Agressivité</FormLabel>
+                  <FormLabel>{t("patients.agressivite")}</FormLabel>
                   <Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value)}>
                     <FormControl>
                       <SelectTrigger data-testid="select-agressivite">
@@ -212,11 +223,11 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="-1">Pas Connu</SelectItem>
-                      <SelectItem value="0">😄 Calme</SelectItem>
-                      <SelectItem value="1">😐 Niveau 1 — légère vigilance</SelectItem>
-                      <SelectItem value="2">😤 Niveau 2 — vigilance modérée</SelectItem>
-                      <SelectItem value="3">😡 Niveau 3 — risque élevé</SelectItem>
+                      <SelectItem value="-1">{t("patients.aggUnknown")}</SelectItem>
+                      <SelectItem value="0">{t("patients.agg0")}</SelectItem>
+                      <SelectItem value="1">{t("patients.agg1")}</SelectItem>
+                      <SelectItem value="2">{t("patients.agg2")}</SelectItem>
+                      <SelectItem value="3">{t("patients.agg3")}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -227,13 +238,13 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
             <div className="grid grid-cols-2 gap-3">
               <FormField control={form.control} name="tel" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Téléphone</FormLabel>
+                  <FormLabel>{t("patients.tel")}</FormLabel>
                   <FormControl><Input data-testid="input-tel" {...field} /></FormControl>
                 </FormItem>
               )} />
               <FormField control={form.control} name="adresse" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Adresse</FormLabel>
+                  <FormLabel>{t("patients.adresse")}</FormLabel>
                   <FormControl><Input data-testid="input-adresse" {...field} /></FormControl>
                 </FormItem>
               )} />
@@ -242,12 +253,12 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
             <div className="grid grid-cols-2 gap-3">
               <FormField control={form.control} name="psy" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Psychiatre</FormLabel>
+                  <FormLabel>{t("patients.psy")}</FormLabel>
                   {psychiatrists.length > 0 ? (
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-psy">
-                          <SelectValue placeholder="Choisir..." />
+                          <SelectValue placeholder={t("patients.choose")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -263,12 +274,12 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
               )} />
               <FormField control={form.control} name="responsable" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Case Manager</FormLabel>
+                  <FormLabel>{t("patients.caseManager")}</FormLabel>
                   {casemanagers.length > 0 ? (
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-responsable">
-                          <SelectValue placeholder="Choisir..." />
+                          <SelectValue placeholder={t("patients.choose")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -287,12 +298,12 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
             <div className="grid grid-cols-2 gap-3">
               <FormField control={form.control} name="medecinFamille" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Médecin de famille</FormLabel>
+                  <FormLabel>{t("patients.medecinFamille")}</FormLabel>
                   {medecinsfamille.length > 0 ? (
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-medecin">
-                          <SelectValue placeholder="Choisir..." />
+                          <SelectValue placeholder={t("patients.choose")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -308,12 +319,12 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
               )} />
               <FormField control={form.control} name="casemanager2" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Case Manager 2</FormLabel>
+                  <FormLabel>{t("patients.caseManager2")}</FormLabel>
                   {casemanagers.length > 0 ? (
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-cm2">
-                          <SelectValue placeholder="Choisir..." />
+                          <SelectValue placeholder={t("patients.choose")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -332,12 +343,12 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
             <div className="grid grid-cols-2 gap-3">
               <FormField control={form.control} name="article" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Article légal</FormLabel>
+                  <FormLabel>{t("patients.articleLegal")}</FormLabel>
                   {articles.length > 0 ? (
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-article">
-                          <SelectValue placeholder="Choisir..." />
+                          <SelectValue placeholder={t("patients.choose")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -353,12 +364,12 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
               )} />
               <FormField control={form.control} name="curatelle" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Curatelle / Tutelle</FormLabel>
+                  <FormLabel>{t("patients.curatelle")}</FormLabel>
                   {curatelles.length > 0 ? (
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-curatelle">
-                          <SelectValue placeholder="Choisir..." />
+                          <SelectValue placeholder={t("patients.choose")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -375,7 +386,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
             </div>
 
             <div className="space-y-1">
-              <Label>Diagnostic(s) CIM-10</Label>
+              <Label>{t("patients.diagnosticsCim10")}</Label>
               {pathosValue.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {pathosValue.map((code) => {
@@ -386,12 +397,12 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20"
                       >
                         <span className="font-mono">{code}</span>
-                        {info && <span className="text-foreground/70">{info.title}</span>}
+                        {info && <span className="text-foreground/70">{icdText(info, "title", lang)}</span>}
                         <button
                           type="button"
                           className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
                           onMouseDown={() => handlePathoRemove(code)}
-                          aria-label={`Supprimer ${code}`}
+                          aria-label={t("patients.removeCode", { code })}
                         >
                           ×
                         </button>
@@ -403,7 +414,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
               <div className="relative">
                 <Input
                   data-testid="input-patho-search"
-                  placeholder="Rechercher et ajouter un code CIM-10…"
+                  placeholder={t("patients.searchCim10")}
                   value={pathoSearch}
                   onChange={(e) => {
                     setPathoSearch(e.target.value);
@@ -417,7 +428,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                     {pathoSearch.length === 0 && (
                       <>
                         <div className="px-3 py-1 text-xs font-medium text-muted-foreground bg-muted/40 border-b">
-                          Pathologies favorites ★
+                          {t("patients.favoritePathologies")}
                         </div>
                         {favoriteCim10.filter((c) => !pathosValue.includes(c.code)).map((item) => (
                           <button
@@ -427,12 +438,12 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                             onMouseDown={() => handlePathoAdd(item.code)}
                           >
                             <span className="font-mono text-xs font-medium text-muted-foreground w-10 shrink-0">{item.code}</span>
-                            <span className="truncate">{item.title}</span>
+                            <span className="truncate">{icdText(item, "title", lang)}</span>
                           </button>
                         ))}
                         {favoriteCim10.filter((c) => !pathosValue.includes(c.code)).length > 0 && (
                           <div className="px-3 py-1 text-xs text-muted-foreground bg-muted/20 border-t italic">
-                            Tapez pour rechercher dans tous les codes CIM-10…
+                            {t("patients.typeToSearchCim10")}
                           </div>
                         )}
                       </>
@@ -445,7 +456,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                         onMouseDown={() => handlePathoAdd(item.code)}
                       >
                         <span className="font-mono text-xs font-medium text-muted-foreground w-10 shrink-0">{item.code}</span>
-                        <span className="truncate">{item.title}</span>
+                        <span className="truncate">{icdText(item, "title", lang)}</span>
                       </button>
                     ))}
                   </div>
@@ -456,13 +467,13 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
             <div className="grid grid-cols-3 gap-3">
               <FormField control={form.control} name="datePremierContact" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>1er contact</FormLabel>
+                  <FormLabel>{t("patients.premierContact")}</FormLabel>
                   <FormControl><Input type="date" data-testid="input-premier-contact" {...field} /></FormControl>
                 </FormItem>
               )} />
               <FormField control={form.control} name="board" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Board</FormLabel>
+                  <FormLabel>{t("patients.board")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-board">
@@ -471,7 +482,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                     </FormControl>
                     <SelectContent>
                       {BOARDS.map((b) => (
-                        <SelectItem key={b} value={b}>{b}</SelectItem>
+                        <SelectItem key={b} value={b}>{t("common.board." + b)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -479,7 +490,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
               )} />
               <FormField control={form.control} name="depotARefaire" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Dépôt à refaire</FormLabel>
+                  <FormLabel>{t("patients.depotARefaire")}</FormLabel>
                   <FormControl>
                     <Input
                       type="date"
@@ -497,7 +508,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
 
             <FormField control={form.control} name="demande" render={({ field }) => (
               <FormItem>
-                <FormLabel>Motif de demande</FormLabel>
+                <FormLabel>{t("patients.motifDemande")}</FormLabel>
                 <FormControl>
                   <Textarea data-testid="textarea-demande" rows={2} {...field} />
                 </FormControl>
@@ -506,7 +517,7 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
 
             <FormField control={form.control} name="remarques" render={({ field }) => (
               <FormItem>
-                <FormLabel>Remarques</FormLabel>
+                <FormLabel>{t("patients.remarques")}</FormLabel>
                 <FormControl>
                   <Textarea data-testid="textarea-remarques" rows={2} {...field} />
                 </FormControl>
@@ -514,9 +525,9 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
             )} />
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose} data-testid="button-cancel">Annuler</Button>
+              <Button type="button" variant="outline" onClick={onClose} data-testid="button-cancel">{t("common.cancel")}</Button>
               <Button type="submit" disabled={isPending} data-testid="button-save">
-                {isPending ? "Enregistrement..." : "Enregistrer"}
+                {isPending ? t("patients.saving") : t("common.save")}
               </Button>
             </DialogFooter>
           </form>

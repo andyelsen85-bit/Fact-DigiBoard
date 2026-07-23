@@ -78,6 +78,13 @@
       "when": 1777180000000,
       "tag": "0010_add_depot_a_refaire",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777190000000,
+      "tag": "0011_icd10_translations",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,9 @@
 import { useMemo, useState } from "react";
 import { useListPatients, getListPatientsQueryKey, type Patient } from "@workspace/api-client-react";
+import { useLang } from "@/i18n";
+import "@/i18n/dict/patients";
+
+const LOCALES: Record<string, string> = { fr: "fr-FR", en: "en-GB", de: "de-DE", nl: "nl-NL" };
 
 function daysUntil(dateStr: string): number {
   const target = new Date(dateStr + "T00:00:00");
@@ -9,21 +13,25 @@ function daysUntil(dateStr: string): number {
   return Math.ceil(ms / (1000 * 60 * 60 * 24));
 }
 
-function formatFrenchDate(dateStr: string): string {
+function formatDate(dateStr: string, lang: string): string {
   const d = new Date(dateStr + "T00:00:00");
   if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
-}
-
-function daysLabel(days: number): string {
-  if (days < 0) return `En retard de ${Math.abs(days)} jour${Math.abs(days) > 1 ? "s" : ""}`;
-  if (days === 0) return "Aujourd'hui";
-  if (days === 1) return "Demain (1 jour)";
-  return `Dans ${days} jours`;
+  return d.toLocaleDateString(LOCALES[lang] ?? "fr-FR", { day: "2-digit", month: "long", year: "numeric" });
 }
 
 export function PatientMedicationView() {
+  const { t, lang } = useLang();
   const [search, setSearch] = useState("");
+
+  function daysLabel(days: number): string {
+    if (days < 0) {
+      const n = Math.abs(days);
+      return t(n > 1 ? "patients.overdueByPlural" : "patients.overdueBy", { count: n });
+    }
+    if (days === 0) return t("patients.today");
+    if (days === 1) return t("patients.tomorrow");
+    return t("patients.inDays", { count: days });
+  }
 
   const { data: activePatients = [], isLoading: loadingActive } = useListPatients(
     {},
@@ -69,15 +77,14 @@ export function PatientMedicationView() {
       <div className="max-w-5xl mx-auto space-y-4">
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <div>
-            <h2 className="text-lg font-semibold">Client Médication — Dépôts à refaire</h2>
+            <h2 className="text-lg font-semibold">{t("patients.medicationTitle")}</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Liste des clients ayant une date de dépôt à refaire, triés par échéance la plus proche.
-              Les échéances dans 7 jours ou moins sont mises en évidence en rouge.
+              {t("patients.medicationSubtitle")}
             </p>
           </div>
           <input
             type="search"
-            placeholder="Rechercher un client…"
+            placeholder={t("patients.searchClient")}
             className="w-full sm:w-64 px-2.5 py-1.5 border rounded bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -91,18 +98,18 @@ export function PatientMedicationView() {
           </div>
         ) : rows.length === 0 ? (
           <div className="bg-card border rounded-lg p-8 text-center text-sm text-muted-foreground">
-            Aucun client n'a de dépôt à refaire enregistré.
+            {t("patients.noDepotClient")}
           </div>
         ) : (
           <div className="bg-card border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="text-left px-3 py-2 font-medium">Client</th>
-                  <th className="text-left px-3 py-2 font-medium">N° Client</th>
-                  <th className="text-left px-3 py-2 font-medium">Tableau</th>
-                  <th className="text-left px-3 py-2 font-medium">Date du dépôt</th>
-                  <th className="text-right px-3 py-2 font-medium">Jours restants</th>
+                  <th className="text-left px-3 py-2 font-medium">{t("patients.colClient")}</th>
+                  <th className="text-left px-3 py-2 font-medium">{t("patients.colClientNum")}</th>
+                  <th className="text-left px-3 py-2 font-medium">{t("patients.colBoard")}</th>
+                  <th className="text-left px-3 py-2 font-medium">{t("patients.colDepotDate")}</th>
+                  <th className="text-right px-3 py-2 font-medium">{t("patients.colDaysLeft")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -118,8 +125,8 @@ export function PatientMedicationView() {
                         {patient.nom} {patient.prenom}
                       </td>
                       <td className="px-3 py-2 font-mono text-xs">{patient.clientNum}</td>
-                      <td className="px-3 py-2 text-xs">{patient.board}</td>
-                      <td className="px-3 py-2">{formatFrenchDate(patient.depotARefaire as string)}</td>
+                      <td className="px-3 py-2 text-xs">{t("common.board." + patient.board)}</td>
+                      <td className="px-3 py-2">{formatDate(patient.depotARefaire as string, lang)}</td>
                       <td className="px-3 py-2 text-right font-mono">
                         <span className={urgent ? "font-semibold" : ""}>{daysLabel(days)}</span>
                       </td>

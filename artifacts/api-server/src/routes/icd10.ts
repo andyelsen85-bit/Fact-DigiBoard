@@ -14,12 +14,36 @@ router.get("/icd10", requireAuth, requireAdmin, async (req, res) => {
 });
 
 router.post("/icd10", requireAuth, requireAdmin, async (req, res) => {
-  const { code, title, description, risks, isFavorite } = req.body as {
+  const {
+    code,
+    title,
+    description,
+    risks,
+    isFavorite,
+    titleEn,
+    titleDe,
+    titleNl,
+    descriptionEn,
+    descriptionDe,
+    descriptionNl,
+    risksEn,
+    risksDe,
+    risksNl,
+  } = req.body as {
     code: string;
     title: string;
     description?: string;
     risks?: string;
     isFavorite?: boolean;
+    titleEn?: string;
+    titleDe?: string;
+    titleNl?: string;
+    descriptionEn?: string;
+    descriptionDe?: string;
+    descriptionNl?: string;
+    risksEn?: string;
+    risksDe?: string;
+    risksNl?: string;
   };
 
   if (!code || !title) {
@@ -38,7 +62,22 @@ router.post("/icd10", requireAuth, requireAdmin, async (req, res) => {
 
   const [row] = await db
     .insert(icd10CodesTable)
-    .values({ code, title, description, risks, isFavorite: isFavorite ?? false })
+    .values({
+      code,
+      title,
+      description,
+      risks,
+      isFavorite: isFavorite ?? false,
+      titleEn,
+      titleDe,
+      titleNl,
+      descriptionEn,
+      descriptionDe,
+      descriptionNl,
+      risksEn,
+      risksDe,
+      risksNl,
+    })
     .returning();
 
   res.status(201).json(row);
@@ -46,11 +85,34 @@ router.post("/icd10", requireAuth, requireAdmin, async (req, res) => {
 
 router.patch("/icd10/:code", requireAuth, requireAdmin, async (req, res) => {
   const { code } = req.params;
-  const { title, description, risks, isFavorite } = req.body as {
+  const {
+    title,
+    description,
+    risks,
+    isFavorite,
+    titleEn,
+    titleDe,
+    titleNl,
+    descriptionEn,
+    descriptionDe,
+    descriptionNl,
+    risksEn,
+    risksDe,
+    risksNl,
+  } = req.body as {
     title?: string;
     description?: string;
     risks?: string;
     isFavorite?: boolean;
+    titleEn?: string;
+    titleDe?: string;
+    titleNl?: string;
+    descriptionEn?: string;
+    descriptionDe?: string;
+    descriptionNl?: string;
+    risksEn?: string;
+    risksDe?: string;
+    risksNl?: string;
   };
 
   const updates: Partial<typeof icd10CodesTable.$inferInsert> = {};
@@ -58,6 +120,15 @@ router.patch("/icd10/:code", requireAuth, requireAdmin, async (req, res) => {
   if (description !== undefined) updates.description = description;
   if (risks !== undefined) updates.risks = risks;
   if (isFavorite !== undefined) updates.isFavorite = isFavorite;
+  if (titleEn !== undefined) updates.titleEn = titleEn;
+  if (titleDe !== undefined) updates.titleDe = titleDe;
+  if (titleNl !== undefined) updates.titleNl = titleNl;
+  if (descriptionEn !== undefined) updates.descriptionEn = descriptionEn;
+  if (descriptionDe !== undefined) updates.descriptionDe = descriptionDe;
+  if (descriptionNl !== undefined) updates.descriptionNl = descriptionNl;
+  if (risksEn !== undefined) updates.risksEn = risksEn;
+  if (risksDe !== undefined) updates.risksDe = risksDe;
+  if (risksNl !== undefined) updates.risksNl = risksNl;
 
   const [row] = await db
     .update(icd10CodesTable)

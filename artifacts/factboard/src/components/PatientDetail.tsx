@@ -30,7 +30,11 @@ import { usePatientPhotoUpload } from "@/hooks/use-patient-photo";
 import { MoveBoardModal } from "./MoveBoardModal";
 import { PatientModal } from "./PatientModal";
 import { useToast } from "@/hooks/use-toast";
+import { useLang } from "@/i18n";
+import { icdText } from "@/i18n/icd";
+import "@/i18n/dict/patients";
 
+// PHASES values are stored in the DB (French); phaseKey maps them to a translation key.
 const PHASES = [
   "1. Prévention de Crise",
   "2. Traitement intensif court terme",
@@ -42,20 +46,31 @@ const PHASES = [
   "6. Nouveau Client",
 ];
 
+const PHASE_KEY: Record<string, string> = {
+  "1. Prévention de Crise": "phase.1",
+  "2. Traitement intensif court terme": "phase.2",
+  "3. Traitement intensif long terme": "phase.3",
+  "4a. Évitement de traitement": "phase.4a",
+  "4b. Évitement à haut risque": "phase.4b",
+  "5a. Admission Prison": "phase.5a",
+  "5b. Admission Psychiatrie": "phase.5b",
+  "6. Nouveau Client": "phase.6",
+};
+
 const DAYS = [
-  { key: "lundi", label: "Lundi" },
-  { key: "mardi", label: "Mardi" },
-  { key: "mercredi", label: "Mercredi" },
-  { key: "jeudi", label: "Jeudi" },
-  { key: "vendredi", label: "Vendredi" },
+  { key: "lundi", labelKey: "lundi" },
+  { key: "mardi", labelKey: "mardi" },
+  { key: "mercredi", labelKey: "mercredi" },
+  { key: "jeudi", labelKey: "jeudi" },
+  { key: "vendredi", labelKey: "vendredi" },
 ];
 
 const DAYS_RDVSPEC = [
-  { key: "lundi_rdv", label: "Lundi" },
-  { key: "mardi_rdv", label: "Mardi" },
-  { key: "mercredi_rdv", label: "Mercredi" },
-  { key: "jeudi_rdv", label: "Jeudi" },
-  { key: "vendredi_rdv", label: "Vendredi" },
+  { key: "lundi_rdv", labelKey: "lundi" },
+  { key: "mardi_rdv", labelKey: "mardi" },
+  { key: "mercredi_rdv", labelKey: "mercredi" },
+  { key: "jeudi_rdv", labelKey: "jeudi" },
+  { key: "vendredi_rdv", labelKey: "vendredi" },
 ];
 
 function daysBetween(d1: string, d2?: string): number {
@@ -72,6 +87,7 @@ interface PatientDetailProps {
 export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t, lang } = useLang();
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
@@ -158,16 +174,16 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
   const sortedHistory = [...history].sort((a, b) => a.date.localeCompare(b.date));
 
   function handleDelete() {
-    if (!confirm(`Supprimer le client ${patient!.prenom} ${patient!.nom} ?`)) return;
+    if (!confirm(t("patients.confirmDeleteClient", { name: `${patient!.prenom} ${patient!.nom}` }))) return;
     deletePatient.mutate(
       { id: patientId },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
           onDeleted();
-          toast({ title: "Client supprimé" });
+          toast({ title: t("patients.clientDeleted") });
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible de supprimer le client", variant: "destructive" }),
+        onError: () => toast({ title: t("common.error"), description: t("patients.cannotDeleteClient"), variant: "destructive" }),
       }
     );
   }
@@ -180,9 +196,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
           setShowMoveModal(false);
           invalidatePatient();
           invalidateHistory();
-          toast({ title: `Déplacé vers ${board}` });
+          toast({ title: t("patients.movedTo", { board: t("common.board." + board) }) });
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible de déplacer le client", variant: "destructive" }),
+        onError: () => toast({ title: t("common.error"), description: t("patients.cannotMoveClient"), variant: "destructive" }),
       }
     );
   }
@@ -194,9 +210,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
         onSuccess: () => {
           setShowEditModal(false);
           invalidatePatient();
-          toast({ title: "Client mis à jour" });
+          toast({ title: t("patients.clientUpdated") });
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible de modifier le client", variant: "destructive" }),
+        onError: () => toast({ title: t("common.error"), description: t("patients.cannotUpdateClient"), variant: "destructive" }),
       }
     );
   }
@@ -215,9 +231,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
       {
         onSuccess: () => {
           invalidatePatient();
-          toast({ title: "Phase mise à jour" });
+          toast({ title: t("patients.phaseUpdated") });
         },
-        onError: () => toast({ title: "Erreur", description: "Impossible de mettre à jour la phase", variant: "destructive" }),
+        onError: () => toast({ title: t("common.error"), description: t("patients.cannotUpdatePhase"), variant: "destructive" }),
       }
     );
   }
@@ -235,9 +251,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
     setPhotoUploading(true);
     try {
       await uploadPhoto(file);
-      toast({ title: "Photo mise à jour" });
+      toast({ title: t("patients.photoUpdated") });
     } catch {
-      toast({ title: "Erreur", description: "Impossible d'enregistrer la photo", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("patients.cannotSavePhoto"), variant: "destructive" });
     } finally {
       setPhotoUploading(false);
       if (photoInputRef.current) photoInputRef.current.value = "";
@@ -250,22 +266,22 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
       if (evalModal.edit) {
         updateIrock.mutate(
           { evalId: evalModal.edit.id, data },
-          { onSuccess: () => { setEvalModal(null); toast({ title: "I•ROC mis à jour" }); } }
+          { onSuccess: () => { setEvalModal(null); toast({ title: t("patients.irockUpdated") }); } }
         );
       } else {
         createIrock.mutate(data, {
-          onSuccess: () => { setEvalModal(null); toast({ title: "I•ROC enregistré" }); },
+          onSuccess: () => { setEvalModal(null); toast({ title: t("patients.irockSaved") }); },
         });
       }
     } else {
       if (evalModal.edit) {
         updateHonos.mutate(
           { evalId: evalModal.edit.id, data },
-          { onSuccess: () => { setEvalModal(null); toast({ title: "HoNOS mis à jour" }); } }
+          { onSuccess: () => { setEvalModal(null); toast({ title: t("patients.honosUpdated") }); } }
         );
       } else {
         createHonos.mutate(data, {
-          onSuccess: () => { setEvalModal(null); toast({ title: "HoNOS enregistré" }); },
+          onSuccess: () => { setEvalModal(null); toast({ title: t("patients.honosSaved") }); },
         });
       }
     }
@@ -298,11 +314,11 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                 onMouseEnter={() => patient.photo && setShowPhotoOverlay(true)}
                 onMouseLeave={() => setShowPhotoOverlay(false)}
                 className="w-16 h-16 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary relative"
-                title="Changer la photo"
+                title={t("patients.changePhoto")}
                 disabled={photoUploading}
               >
                 {patient.photo ? (
-                  <img src={patient.photo} alt="Photo" className="w-full h-full object-cover" />
+                  <img src={patient.photo} alt={t("patients.photoAlt")} className="w-full h-full object-cover" />
                 ) : (
                   <svg className="w-8 h-8 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
@@ -323,7 +339,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                 <div className="absolute left-20 top-0 z-50 pointer-events-none">
                   <img
                     src={patient.photo}
-                    alt="Photo agrandie"
+                    alt={t("patients.photoZoomAlt")}
                     className="max-w-[320px] max-h-[320px] w-auto h-auto rounded-lg shadow-2xl border border-border object-contain bg-black/80"
                   />
                 </div>
@@ -339,7 +355,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                 <AggBadge level={patient.agressivite ?? -1} />
                 {patient.boardEntryDate && (
                   <span className="text-xs text-muted-foreground">
-                    depuis le {patient.boardEntryDate}
+                    {t("patients.since", { date: patient.boardEntryDate })}
                   </span>
                 )}
               </div>
@@ -347,13 +363,13 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
           </div>
           <div className="flex gap-2 flex-wrap justify-end">
             <Button size="sm" variant="outline" onClick={() => setShowMoveModal(true)} data-testid="button-move-board">
-              Changer de board
+              {t("patients.changeBoard")}
             </Button>
             <Button size="sm" variant="outline" onClick={() => setShowEditModal(true)} data-testid="button-edit-patient">
-              Modifier
+              {t("common.edit")}
             </Button>
             <Button size="sm" variant="destructive" onClick={handleDelete} data-testid="button-delete-patient">
-              Supprimer
+              {t("common.delete")}
             </Button>
             <Button
               size="sm"
@@ -378,28 +394,28 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
       </div>
 
       <div className="bg-card border rounded-lg p-4">
-        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Informations générales</h3>
+        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">{t("patients.infosGenerales")}</h3>
         <div className="grid grid-cols-3 gap-x-6 gap-y-2 text-sm">
-          {patient.dob && <InfoRow label="Date de naissance" value={patient.dob} />}
-          {patient.sexe && <InfoRow label="Sexe" value={patient.sexe} />}
-          {patient.tel && <InfoRow label="Téléphone" value={patient.tel} />}
-          {patient.adresse && <InfoRow label="Adresse" value={patient.adresse} col3 />}
-          {patient.medecinFamille && <InfoRow label="Médecin de famille" value={patient.medecinFamille} />}
-          {patient.psy && <InfoRow label="Psychiatre" value={patient.psy} />}
-          {patient.responsable && <InfoRow label="Case Manager" value={patient.responsable} />}
-          {patient.casemanager2 && <InfoRow label="Case Manager 2" value={patient.casemanager2} />}
-          {patient.article && <InfoRow label="Article légal" value={patient.article} />}
-          {patient.curatelle && <InfoRow label="Curatelle / Tutelle" value={patient.curatelle} />}
-          {patient.datePremierContact && <InfoRow label="1er contact" value={patient.datePremierContact} />}
-          {patient.dateEntree && <InfoRow label="Date d'entrée" value={patient.dateEntree} />}
-          {patient.dateSortie && <InfoRow label="Date de sortie" value={patient.dateSortie} />}
-          {(patient as any).dateFinSuivi && <InfoRow label="Date fin de suivi" value={(patient as any).dateFinSuivi} />}
-          {patient.demande && <InfoRow label="Motif de demande" value={patient.demande} col3 />}
-          {patient.remarques && <InfoRow label="Remarques" value={patient.remarques} col3 />}
+          {patient.dob && <InfoRow label={t("patients.dob")} value={patient.dob} />}
+          {patient.sexe && <InfoRow label={t("patients.sexe")} value={patient.sexe} />}
+          {patient.tel && <InfoRow label={t("patients.tel")} value={patient.tel} />}
+          {patient.adresse && <InfoRow label={t("patients.adresse")} value={patient.adresse} col3 />}
+          {patient.medecinFamille && <InfoRow label={t("patients.medecinFamille")} value={patient.medecinFamille} />}
+          {patient.psy && <InfoRow label={t("patients.psy")} value={patient.psy} />}
+          {patient.responsable && <InfoRow label={t("patients.caseManager")} value={patient.responsable} />}
+          {patient.casemanager2 && <InfoRow label={t("patients.caseManager2")} value={patient.casemanager2} />}
+          {patient.article && <InfoRow label={t("patients.articleLegal")} value={patient.article} />}
+          {patient.curatelle && <InfoRow label={t("patients.curatelle")} value={patient.curatelle} />}
+          {patient.datePremierContact && <InfoRow label={t("patients.premierContact")} value={patient.datePremierContact} />}
+          {patient.dateEntree && <InfoRow label={t("patients.dateEntree")} value={patient.dateEntree} />}
+          {patient.dateSortie && <InfoRow label={t("patients.dateSortie")} value={patient.dateSortie} />}
+          {(patient as any).dateFinSuivi && <InfoRow label={t("patients.dateFinSuivi")} value={(patient as any).dateFinSuivi} />}
+          {patient.demande && <InfoRow label={t("patients.motifDemande")} value={patient.demande} col3 />}
+          {patient.remarques && <InfoRow label={t("patients.remarques")} value={patient.remarques} col3 />}
         </div>
         {activeCodes.length > 0 && (
           <div className="mt-3 pt-3 border-t space-y-2">
-            <span className="text-xs text-muted-foreground">Diagnostic(s) CIM-10</span>
+            <span className="text-xs text-muted-foreground">{t("patients.diagnosticsCim10")}</span>
             <div className="flex flex-col gap-2">
               {activeCodes.map((code) => {
                 const info = icd10Codes.find((d) => d.code === code);
@@ -407,15 +423,15 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                   <div key={code} className="rounded-md border bg-muted/20 px-3 py-2">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs font-semibold text-muted-foreground">{code}</span>
-                      {info && <span className="text-sm text-foreground">{info.title}</span>}
+                      {info && <span className="text-sm text-foreground">{icdText(info, "title", lang)}</span>}
                     </div>
                     {info && (
                       <div className="mt-1.5 space-y-1.5">
-                        {info.description && (
-                          <div className="p-2 bg-muted/40 rounded text-xs text-muted-foreground">{info.description}</div>
+                        {icdText(info, "description", lang) && (
+                          <div className="p-2 bg-muted/40 rounded text-xs text-muted-foreground">{icdText(info, "description", lang)}</div>
                         )}
                         <div className={`p-2 rounded text-xs ${info.risks ? "bg-[#fdeaea] text-[#7a0000]" : "bg-muted/40 text-muted-foreground italic"}`}>
-                          {info.risks ? `Risques : ${info.risks}` : "Aucun risque clinique identifié"}
+                          {info.risks ? t("patients.risksLabel", { risks: icdText(info, "risks", lang) ?? "" }) : t("patients.noClinicalRisk")}
                         </div>
                       </div>
                     )}
@@ -429,9 +445,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
 
       {(board === "FactBoard" || isCloture) && (
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Phase (FactBoard)</h3>
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">{t("patients.phaseFactboard")}</h3>
           <div className="mb-3">
-            <label className="text-xs text-muted-foreground block mb-1">Date d'admission</label>
+            <label className="text-xs text-muted-foreground block mb-1">{t("patients.dateAdmission")}</label>
             <input
               type="date"
               defaultValue={(patient as any).dateAdmission ?? ""}
@@ -452,12 +468,12 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
             onValueChange={handlePhaseChange}
           >
             <SelectTrigger data-testid="select-phase" className="w-full">
-              <SelectValue placeholder="Sélectionner une phase..." />
+              <SelectValue placeholder={t("patients.selectPhase")} />
             </SelectTrigger>
             <SelectContent>
               {PHASES.map((phase) => (
                 <SelectItem key={phase} value={phase} data-testid={`phase-option-${phase.slice(0, 2)}`}>
-                  {phase}
+                  {t("patients." + (PHASE_KEY[phase] ?? "")) }
                 </SelectItem>
               ))}
             </SelectContent>
@@ -467,10 +483,10 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
 
       {(board === "RecoveryBoard" || isCloture) && (
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Rétablissement (RecoveryBoard)</h3>
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">{t("patients.recoveryTitle")}</h3>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-muted-foreground">Objectifs</label>
+              <label className="text-xs text-muted-foreground">{t("patients.objectifs")}</label>
               <Textarea
                 data-testid="textarea-recovery-objectifs"
                 defaultValue={patient.recoveryObjectifs ?? ""}
@@ -483,7 +499,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground">Étape en cours</label>
+              <label className="text-xs text-muted-foreground">{t("patients.etapeEnCours")}</label>
               <Textarea
                 data-testid="textarea-recovery-etape"
                 defaultValue={patient.recoveryEtape ?? ""}
@@ -496,7 +512,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground">Action planifiée</label>
+              <label className="text-xs text-muted-foreground">{t("patients.actionPlanifiee")}</label>
               <Textarea
                 data-testid="textarea-recovery-action"
                 defaultValue={patient.recoveryAction ?? ""}
@@ -514,7 +530,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
 
       {(board === "PréAdmission" || isCloture) && (
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Informations recoltées (Pré-Admission)</h3>
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">{t("patients.infosRecoltees")}</h3>
           <Textarea
             data-testid="textarea-infos-recoltees"
             defaultValue={patient.infosRecoltees ?? ""}
@@ -530,7 +546,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
 
       {(board === "Irrecevable" || isCloture) && (
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Motif d'irrecevabilité (Irrecevable)</h3>
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">{t("patients.motifIrrecevable")}</h3>
           <Textarea
             data-testid="textarea-motif-irrecevable"
             defaultValue={patient.motifIrrecevable ?? ""}
@@ -546,13 +562,13 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
 
       {showPassages && (
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Passages hebdomadaires</h3>
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">{t("patients.passagesHebdo")}</h3>
           <div className="mb-3">
-            <p className="text-xs text-muted-foreground mb-2">Passages</p>
+            <p className="text-xs text-muted-foreground mb-2">{t("patients.passages")}</p>
             <div className="grid grid-cols-5 gap-2">
-              {DAYS.map(({ key, label }) => (
+              {DAYS.map(({ key, labelKey }) => (
                 <div key={key}>
-                  <label className="text-xs text-muted-foreground">{label}</label>
+                  <label className="text-xs text-muted-foreground">{t("patients." + labelKey)}</label>
                   <Textarea
                     data-testid={`passage-${key}`}
                     key={`${patientId}-${key}`}
@@ -566,11 +582,11 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
             </div>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground mb-2">Rendez-vous spécifiques</p>
+            <p className="text-xs text-muted-foreground mb-2">{t("patients.rdvSpecifiques")}</p>
             <div className="grid grid-cols-5 gap-2">
-              {DAYS_RDVSPEC.map(({ key, label }) => (
+              {DAYS_RDVSPEC.map(({ key, labelKey }) => (
                 <div key={key}>
-                  <label className="text-xs text-muted-foreground">{label}</label>
+                  <label className="text-xs text-muted-foreground">{t("patients." + labelKey)}</label>
                   <Textarea
                     data-testid={`passage-${key}`}
                     key={`${patientId}-${key}`}
@@ -588,9 +604,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
 
       <div className="bg-card border rounded-lg p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Notes de réunion</h3>
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t("patients.notesReunion")}</h3>
           <Button size="sm" variant="outline" onClick={handleAddNote} disabled={createNote.isPending} data-testid="button-add-note">
-            + Ajouter
+            {t("patients.addNote")}
           </Button>
         </div>
         {(() => {
@@ -635,12 +651,12 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                       data-testid={`button-delete-note-${note.id}`}
                       onClick={() => handleDeleteNote(note.id)}
                     >
-                      Supprimer
+                      {t("common.delete")}
                     </button>
                   </div>
                 ))}
                 {sortedNotes.length === 0 && (
-                  <p className="text-xs text-muted-foreground py-2">Aucune note</p>
+                  <p className="text-xs text-muted-foreground py-2">{t("patients.aucuneNote")}</p>
                 )}
               </div>
               {totalPages > 1 && (
@@ -650,18 +666,18 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                     onClick={() => setNotesPage((p) => Math.max(0, p - 1))}
                     disabled={safePage === 0}
                   >
-                    ← Précédent
+                    {t("patients.previous")}
                   </button>
                   <span className="text-xs text-muted-foreground">
-                    Page {safePage + 1} / {totalPages}
-                    <span className="ml-2 text-muted-foreground/60">({sortedNotes.length} notes)</span>
+                    {t("patients.pageOf", { page: safePage + 1, total: totalPages })}
+                    <span className="ml-2 text-muted-foreground/60">{t("patients.notesCount", { count: sortedNotes.length })}</span>
                   </span>
                   <button
                     className="text-xs px-3 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     onClick={() => setNotesPage((p) => Math.min(totalPages - 1, p + 1))}
                     disabled={safePage === totalPages - 1}
                   >
-                    Suivant →
+                    {t("patients.next")}
                   </button>
                 </div>
               )}
@@ -673,7 +689,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
       {/* Evaluations history */}
       {(irockEvals.length > 0 || honosEvals.length > 0) && (
         <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Évaluations</h3>
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">{t("patients.evaluations")}</h3>
           <div className="space-y-2">
             {[
               ...irockEvals.map((e) => ({ ...e, type: "I•ROC" as const })),
@@ -697,26 +713,26 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                       {e.type}
                     </span>
                     <span className="text-xs font-mono text-muted-foreground">{e.date}</span>
-                    <span className="text-xs text-muted-foreground">Score : <span className="font-mono font-medium text-foreground">{total}</span>/{isIroc ? 72 : 48}</span>
+                    <span className="text-xs text-muted-foreground">{t("patients.score")} <span className="font-mono font-medium text-foreground">{total}</span>/{isIroc ? 72 : 48}</span>
                     {(e as any).createdByUsername && (
-                      <span className="text-xs text-muted-foreground/70 italic">par {(e as any).createdByUsername}</span>
+                      <span className="text-xs text-muted-foreground/70 italic">{t("patients.by", { name: (e as any).createdByUsername })}</span>
                     )}
                     <div className="ml-auto flex gap-1">
                       <button
                         className="text-xs text-primary hover:underline px-1"
                         onClick={() => setEvalModal({ type: e.type, edit: e as any })}
                       >
-                        Modifier
+                        {t("common.edit")}
                       </button>
                       <button
                         className="text-xs text-destructive hover:underline px-1"
                         onClick={() => {
-                          if (!confirm(`Supprimer cette évaluation ${e.type} ?`)) return;
+                          if (!confirm(t("patients.confirmDeleteEval", { type: e.type }))) return;
                           if (isIroc) deleteIrock.mutate(e.id);
                           else deleteHonos.mutate(e.id);
                         }}
                       >
-                        Supprimer
+                        {t("common.delete")}
                       </button>
                     </div>
                   </div>
@@ -727,9 +743,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
       )}
 
       <div className="bg-card border rounded-lg p-4">
-        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Historique des mouvements</h3>
+        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">{t("patients.historiqueMouvements")}</h3>
         {sortedHistory.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Aucun historique</p>
+          <p className="text-xs text-muted-foreground">{t("patients.aucunHistorique")}</p>
         ) : (
           <div className="space-y-2">
             {sortedHistory.map((entry, idx) => {
@@ -756,9 +772,9 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                   <span className="flex-1 text-foreground">{entry.action}</span>
                   {entry.boardTo && <BoardBadge board={entry.boardTo} />}
                   {(entry as any).createdByUsername && (
-                    <span className="text-xs text-muted-foreground/70 italic">par {(entry as any).createdByUsername}</span>
+                    <span className="text-xs text-muted-foreground/70 italic">{t("patients.by", { name: (entry as any).createdByUsername })}</span>
                   )}
-                  <span className="font-mono text-xs text-muted-foreground">{duration} j</span>
+                  <span className="font-mono text-xs text-muted-foreground">{t("patients.daysShort", { days: duration })}</span>
                   {isConfirming ? (
                     <div className="flex items-center gap-1 shrink-0">
                       <button
@@ -771,26 +787,26 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
                               onSuccess: () => {
                                 setDeleteHistoryConfirmId(null);
                                 invalidateHistory();
-                                toast({ title: "Mouvement supprimé" });
+                                toast({ title: t("patients.movementDeleted") });
                               },
                             }
                           );
                         }}
                       >
-                        Confirmer
+                        {t("common.confirm")}
                       </button>
                       <span className="text-muted-foreground">·</span>
                       <button
                         className="text-xs text-muted-foreground hover:underline"
                         onClick={() => setDeleteHistoryConfirmId(null)}
                       >
-                        Annuler
+                        {t("common.cancel")}
                       </button>
                     </div>
                   ) : (
                     <button
                       className="shrink-0 text-muted-foreground/40 hover:text-red-500 transition-colors"
-                      title="Supprimer ce mouvement"
+                      title={t("patients.deleteMovement")}
                       onClick={() => setDeleteHistoryConfirmId(entry.id)}
                     >
                       <Trash2 size={14} />
@@ -830,7 +846,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
         onClose={() => setShowEditModal(false)}
         onSave={handleEdit}
         isPending={updatePatient.isPending}
-        title="Modifier le client"
+        title={t("patients.editClient")}
         initialValues={patient}
         isEdit
       />

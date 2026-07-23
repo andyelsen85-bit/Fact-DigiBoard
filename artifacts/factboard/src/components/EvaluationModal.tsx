@@ -1,146 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { IrockEval, HonosEval } from "@/hooks/use-evaluations";
-
-// ─── I•ROC ────────────────────────────────────────────────────────────────────
-
-const IROC_QUESTIONS: { domain: string; subdomain: string; label: string }[] = [
-  // DOMICILE
-  {
-    domain: "DOMICILE",
-    subdomain: "SANTÉ MENTALE",
-    label: "À quelle fréquence vous êtes-vous senti mentalement et émotionnellement en bonne santé, heureux et bien ?",
-  },
-  {
-    domain: "DOMICILE",
-    subdomain: "COMPÉTENCE DE VIE",
-    label: "À quelle fréquence avez-vous eu le sentiment d'avoir les compétences nécessaires pour prendre soin de vous ?",
-  },
-  {
-    domain: "DOMICILE",
-    subdomain: "SÉCURITÉ ET CONFORT",
-    label: "À quelle fréquence vous êtes-vous senti en sécurité et confortable chez vous et dans les alentours ?",
-  },
-  // OPPORTUNITÉ
-  {
-    domain: "OPPORTUNITÉ",
-    subdomain: "SANTÉ PHYSIQUE",
-    label: "À quelle fréquence vous êtes-vous en bonne santé physique ?",
-  },
-  {
-    domain: "OPPORTUNITÉ",
-    subdomain: "EXERCICE ET ACTIVITÉ",
-    label: "À quelle fréquence diriez-vous que vous avez été actif ou avez fait de l'exercice de façon régulière ?",
-  },
-  {
-    domain: "OPPORTUNITÉ",
-    subdomain: "OBJECTIF ET ORIENTATION",
-    label: "À quelle fréquence diriez-vous que vous vous êtes senti occupé de manière intentionnelle ?",
-  },
-  // PERSONNES
-  {
-    domain: "PERSONNES",
-    subdomain: "ENTOURAGE",
-    label: "À quelle fréquence avez-vous eu le sentiment d'avoir des personnes / amis / proches pouvant vous soutenir si vous en aviez besoin ?",
-  },
-  {
-    domain: "PERSONNES",
-    subdomain: "RÉSEAU SOCIAL",
-    label: "À quelle fréquence avez-vous participé à des activités communautaires / de groupe ?",
-  },
-  {
-    domain: "PERSONNES",
-    subdomain: "SE VALORISER",
-    label: "À quelle fréquence avez-vous eu le sentiment d'avoir été capable de vous valoriser et de vous respecter ?",
-  },
-  // AUTONOMISATION
-  {
-    domain: "AUTONOMISATION",
-    subdomain: "PARTICIPATION ET CONTRÔLE",
-    label: "À quelle fréquence vous êtes-vous senti impliqué dans les décisions qui affectent votre vie ?",
-  },
-  {
-    domain: "AUTONOMISATION",
-    subdomain: "AUTOGESTION",
-    label: "À quelle fréquence vous êtes-vous senti en contrôle et capable de gérer votre vie ?",
-  },
-  {
-    domain: "AUTONOMISATION",
-    subdomain: "ESPOIR D'AVENIR",
-    label: "À quelle fréquence avez-vous eu de l'espoir pour l'avenir ?",
-  },
-];
+import { useLang } from "@/i18n";
+import { IROC_QUESTIONS, IROC_LABELS, HONOS_QUESTIONS, HONOS_LABELS } from "@/i18n/dict/evaluations";
 
 const IROC_LEVELS = [1, 2, 3, 4, 5, 6];
-const IROC_LABELS = ["Jamais", "Presque jamais", "Parfois", "Souvent", "La plupart du temps", "Tout le temps"];
-
-// ─── HoNOS ───────────────────────────────────────────────────────────────────
-
-const HONOS_QUESTIONS: { label: string; include: string; exclude: string }[] = [
-  {
-    label: "Comportement hyperactif, agressif, perturbateur ou agité",
-    include: "Toute agression quelle qu'en soit la cause · Désinhibition sexuelle · Résistance active ou agressive",
-    exclude: "Comportement étrange (→ item 6)",
-  },
-  {
-    label: "Auto-agressivité / risque de passage à l'acte",
-    include: "Suicidalité · Lésions auto-infligées intentionnelles",
-    exclude: "Blessures accidentelles · Atteintes dues directement à alcool/drogues",
-  },
-  {
-    label: "Troubles liés à la consommation d'alcool ou de drogues",
-    include: "Consommation incontrôlée · Abus de médicaments",
-    exclude: "Prise de médicaments prescrits correctement · Agressivité liée (→ item 1)",
-  },
-  {
-    label: "Troubles cognitifs",
-    include: "Mémoire, orientation, pensée · Compréhension, langage, reconnaissance",
-    exclude: "Troubles mentaux sans atteinte cognitive",
-  },
-  {
-    label: "Maladie physique ou handicap",
-    include: "Maladie/handicap limitant l'activité · Douleur, effets secondaires",
-    exclude: "Troubles mentaux",
-  },
-  {
-    label: "Hallucinations et délires",
-    include: "Hallucinations, délires · Comportements bizarres associés",
-    exclude: "Agressivité (→ item 1)",
-  },
-  {
-    label: "Humeur dépressive",
-    include: "Humeur dépressive · Culpabilité, dévalorisation",
-    exclude: "Suicidalité (→ item 2) · Psychose (→ item 6)",
-  },
-  {
-    label: "Autres troubles mentaux (principal)",
-    include: "Trouble principal non couvert par les items 1–7",
-    exclude: "Plusieurs troubles simultanés",
-  },
-  {
-    label: "Relations sociales",
-    include: "Retrait social · Relations négatives ou destructrices",
-    exclude: "—",
-  },
-  {
-    label: "Activités de la vie quotidienne",
-    include: "Soins personnels · Tâches complexes",
-    exclude: "Limites environnementales seules",
-  },
-  {
-    label: "Conditions de vie (logement)",
-    include: "Qualité du logement",
-    exclude: "Handicap fonctionnel",
-  },
-  {
-    label: "Occupation et activités",
-    include: "Accès aux activités de jour",
-    exclude: "Capacités personnelles",
-  },
-];
-
 const HONOS_LEVELS = [0, 1, 2, 3, 4];
-const HONOS_LABELS = ["Aucun", "Minime", "Léger", "Modéré", "Grave"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -172,9 +37,13 @@ function makeInitial(type: EvalType, initial?: any) {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function EvaluationModal({ type, initial, onSave, onClose, isPending }: Props) {
+  const { lang, t } = useLang();
   const isIroc = type === "I•ROC";
+  const irocQuestions = IROC_QUESTIONS[lang];
+  const irocLabels = IROC_LABELS[lang];
+  const honosQuestions = HONOS_QUESTIONS[lang];
+  const honosLabels = HONOS_LABELS[lang];
   const levels = isIroc ? IROC_LEVELS : HONOS_LEVELS;
-  const labels = isIroc ? IROC_LABELS : HONOS_LABELS;
 
   const [form, setForm] = useState(() => makeInitial(type, initial));
 
@@ -209,7 +78,7 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b shrink-0">
-          <h2 className="text-base font-semibold">Évaluation {type}</h2>
+          <h2 className="text-base font-semibold">{t("evaluations.title", { type })}</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
         </div>
 
@@ -218,7 +87,7 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
 
           {/* Date */}
           <div>
-            <label className="text-xs text-muted-foreground">Date de l'évaluation</label>
+            <label className="text-xs text-muted-foreground">{t("evaluations.evalDate")}</label>
             <input
               type="date"
               className="mt-1 block w-48 border rounded px-2 py-1 text-sm bg-background"
@@ -233,7 +102,7 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
               {IROC_LEVELS.map((v) => (
                 <span key={v} className="flex-1 text-center">
                   <span className="font-mono font-semibold block">{v}</span>
-                  <span className="leading-tight block">{IROC_LABELS[v - 1]}</span>
+                  <span className="leading-tight block">{irocLabels[v - 1]}</span>
                 </span>
               ))}
             </div>
@@ -241,13 +110,13 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
 
           {/* Questions */}
           <div className="space-y-3">
-            {(isIroc ? IROC_QUESTIONS : HONOS_QUESTIONS).map((q, i) => {
+            {(isIroc ? irocQuestions : honosQuestions).map((q, i) => {
               const key = `q${i + 1}`;
               const val = (form as any)[key] ?? (isIroc ? 1 : 0);
               const qNote = form.questionNotes[key] ?? "";
 
               // Domain separator for I•ROC
-              const iroc = q as typeof IROC_QUESTIONS[0];
+              const iroc = q as (typeof irocQuestions)[0];
               let domainHeader: React.ReactNode = null;
               if (isIroc && iroc.domain !== lastDomain) {
                 lastDomain = iroc.domain;
@@ -276,7 +145,7 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
                             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                               {iroc.subdomain}
                             </p>
-                            <p className="text-[11px] text-muted-foreground italic">Au cours des 3 derniers mois…</p>
+                            <p className="text-[11px] text-muted-foreground italic">{t("evaluations.last3Months")}</p>
                             <p className="text-sm font-medium leading-snug">{iroc.label}</p>
                           </>
                         )}
@@ -285,15 +154,15 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
                         {!isIroc && (
                           <>
                             <p className="text-sm font-medium leading-snug">
-                              {(q as typeof HONOS_QUESTIONS[0]).label}
+                              {(q as (typeof honosQuestions)[0]).label}
                             </p>
                             <p className="text-xs text-green-700 dark:text-green-400 leading-snug">
-                              <span className="font-semibold">✓ Saisir :</span>{" "}
-                              {(q as typeof HONOS_QUESTIONS[0]).include}
+                              <span className="font-semibold">✓ {t("evaluations.include")}</span>{" "}
+                              {(q as (typeof honosQuestions)[0]).include}
                             </p>
                             <p className="text-xs text-red-600 dark:text-red-400 leading-snug">
-                              <span className="font-semibold">✗ Exclure :</span>{" "}
-                              {(q as typeof HONOS_QUESTIONS[0]).exclude}
+                              <span className="font-semibold">✗ {t("evaluations.exclude")}</span>{" "}
+                              {(q as (typeof honosQuestions)[0]).exclude}
                             </p>
                           </>
                         )}
@@ -303,7 +172,7 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
                     {/* Score buttons */}
                     <div className="flex gap-1 pl-7">
                       {levels.map((v) => {
-                        const labelText = isIroc ? IROC_LABELS[v - 1] : HONOS_LABELS[v];
+                        const labelText = isIroc ? irocLabels[v - 1] : honosLabels[v];
                         return (
                           <button
                             key={v}
@@ -326,7 +195,7 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
                     <div className="pl-7">
                       <textarea
                         rows={1}
-                        placeholder="Remarques…"
+                        placeholder={t("common.remarks")}
                         value={qNote}
                         onChange={(e) => setQNote(key, e.target.value)}
                         className="w-full text-xs border rounded px-2 py-1 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50 leading-relaxed"
@@ -345,10 +214,10 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
 
           {/* General notes */}
           <div>
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Notes générales</label>
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("evaluations.generalNotes")}</label>
             <textarea
               rows={3}
-              placeholder="Observations libres, contexte clinique, remarques…"
+              placeholder={t("common.remarks")}
               value={form.notes ?? ""}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               className="mt-1 w-full text-sm border rounded px-3 py-2 bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
@@ -359,13 +228,13 @@ export function EvaluationModal({ type, initial, onSave, onClose, isPending }: P
         {/* Footer */}
         <div className="px-5 py-3 border-t shrink-0 flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Score total : <span className="font-mono font-semibold text-foreground">{total}</span>
+            {t("evaluations.totalScore")} : <span className="font-mono font-semibold text-foreground">{total}</span>
             <span className="text-xs"> / {max}</span>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={onClose}>Annuler</Button>
+            <Button variant="outline" size="sm" onClick={onClose}>{t("common.cancel")}</Button>
             <Button size="sm" onClick={handleSave} disabled={isPending}>
-              {isPending ? "Enregistrement…" : "Enregistrer"}
+              {isPending ? t("common.loading") : t("common.save")}
             </Button>
           </div>
         </div>

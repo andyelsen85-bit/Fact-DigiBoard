@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useT } from "@/i18n";
+import "@/i18n/dict/auth";
 
 const BASE = import.meta.env.BASE_URL ?? "/";
 function getApiUrl(path: string) {
@@ -16,6 +18,7 @@ interface Props {
 }
 
 export function ChangePasswordModal({ open, onClose }: Props) {
+  const t = useT();
   const { toast } = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -38,7 +41,7 @@ export function ChangePasswordModal({ open, onClose }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (newPassword !== confirm) {
-      toast({ title: "Erreur", description: "Les mots de passe ne correspondent pas", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("auth.passwordsMismatch"), variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -50,10 +53,10 @@ export function ChangePasswordModal({ open, onClose }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast({ title: "Erreur", description: data.error ?? "Erreur inconnue", variant: "destructive" });
+        toast({ title: t("common.error"), description: data.error ?? t("auth.unknownError"), variant: "destructive" });
         return;
       }
-      toast({ title: "Mot de passe modifié avec succès" });
+      toast({ title: t("auth.passwordChangedSuccess") });
       handleClose();
     } finally {
       setLoading(false);
@@ -66,10 +69,10 @@ export function ChangePasswordModal({ open, onClose }: Props) {
         className="bg-card border rounded-lg shadow-xl w-full max-w-sm mx-4 p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-base font-semibold mb-4">Changer le mot de passe</h2>
+        <h2 className="text-base font-semibold mb-4">{t("auth.modalTitle")}</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">Mot de passe actuel</label>
+            <label className="block text-xs text-muted-foreground mb-1">{t("auth.currentPassword")}</label>
             <input
               type="password"
               autoFocus
@@ -80,7 +83,7 @@ export function ChangePasswordModal({ open, onClose }: Props) {
             />
           </div>
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">Nouveau mot de passe</label>
+            <label className="block text-xs text-muted-foreground mb-1">{t("auth.newPassword")}</label>
             <input
               type="password"
               required
@@ -91,7 +94,7 @@ export function ChangePasswordModal({ open, onClose }: Props) {
             />
           </div>
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">Confirmer le nouveau mot de passe</label>
+            <label className="block text-xs text-muted-foreground mb-1">{t("auth.confirmNewPassword")}</label>
             <input
               type="password"
               required
@@ -107,14 +110,14 @@ export function ChangePasswordModal({ open, onClose }: Props) {
               onClick={handleClose}
               className="px-3 py-1.5 rounded border text-sm hover:bg-muted transition-colors"
             >
-              Annuler
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="px-3 py-1.5 rounded bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {loading ? "En cours…" : "Enregistrer"}
+              {loading ? t("auth.inProgress") : t("common.save")}
             </button>
           </div>
         </form>

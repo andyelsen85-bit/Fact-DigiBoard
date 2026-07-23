@@ -1,10 +1,13 @@
 import { useLocation } from "wouter";
+import { APP_VERSION } from "@/version";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useT } from "@/i18n";
+import "@/i18n/dict/auth";
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
 
@@ -21,19 +24,27 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-const loginSchema = z.object({
-  username: z.string().min(1, "Nom d'utilisateur requis"),
-  password: z.string().min(1, "Mot de passe requis"),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
+type LoginFormValues = {
+  username: string;
+  password: string;
+};
 
 export default function LoginPage() {
+  const t = useT();
   const [, setLocation] = useLocation();
   const { user, isLoading, checkAuth } = useAuth();
   const { toast } = useToast();
   const loginMutation = useLogin();
   const [checkingSetup, setCheckingSetup] = useState(true);
+
+  const loginSchema = useMemo(
+    () =>
+      z.object({
+        username: z.string().min(1, t("auth.usernameRequired")),
+        password: z.string().min(1, t("auth.passwordRequired")),
+      }),
+    [t]
+  );
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -77,8 +88,8 @@ export default function LoginPage() {
         },
         onError: (error) => {
           toast({
-            title: "Erreur de connexion",
-            description: error.error || "Nom d'utilisateur ou mot de passe incorrect",
+            title: t("auth.loginError"),
+            description: error.error || t("auth.invalidCredentials"),
             variant: "destructive",
           });
         },
@@ -102,7 +113,7 @@ export default function LoginPage() {
             Digi<span className="font-light">Board</span>
           </CardTitle>
           <CardDescription>
-            Connectez-vous à votre espace clinique
+            {t("auth.tagline")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -113,9 +124,9 @@ export default function LoginPage() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nom d'utilisateur</FormLabel>
+                    <FormLabel>{t("auth.username")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Entrez votre nom d'utilisateur" {...field} data-testid="input-username" />
+                      <Input placeholder={t("auth.usernamePlaceholder")} {...field} data-testid="input-username" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -126,21 +137,24 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mot de passe</FormLabel>
+                    <FormLabel>{t("auth.password")}</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Entrez votre mot de passe" {...field} data-testid="input-password" />
+                      <Input type="password" placeholder={t("auth.passwordPlaceholder")} {...field} data-testid="input-password" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <Button type="submit" className="w-full" disabled={loginMutation.isPending} data-testid="button-login">
-                {loginMutation.isPending ? "Connexion..." : "Se connecter"}
+                {loginMutation.isPending ? t("auth.signingIn") : t("auth.signIn")}
               </Button>
             </form>
           </Form>
         </CardContent>
       </Card>
+      <p className="fixed bottom-3 right-4 text-xs text-muted-foreground/60" data-testid="text-version">
+        v{APP_VERSION}
+      </p>
     </div>
   );
 }
