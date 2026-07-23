@@ -92,6 +92,18 @@ The lock file is generated on glibc Linux (Replit), so musl-specific native bina
 
 If a future upgrade adds a new native dependency, add its musl variant here and re-run `pnpm install`.
 
+## Internationalization (i18n)
+
+- 4 languages: **en (default)**, fr, de, nl. Global admin setting `settings.language`; public endpoint `GET /api/language` (login/setup pages read it pre-auth); writes admin-only, validated.
+- Frontend: `artifacts/factboard/src/i18n/` — `LanguageProvider` + `useT()`/`useLang()`; dictionaries self-register via side-effect imports (`import "@/i18n/dict/<ns>"`). `common` built-in, `evaluations` registered in App.tsx.
+- Questionnaire wordings (I.ROC/HoNOS) live in `src/i18n/dict/evaluations.ts` (official EN/DE/NL HoNOS; I.ROC DE/NL are faithful translations).
+- ICD-10: per-language columns (`title_en/de/nl`, etc.), migration `0011_icd10_translations`, seeded for all 381 codes; frontend helper `icdText()` falls back to French.
+- Board names stay French in DB/API — translate display only via `t("common.board." + name)`.
+
+## App Version
+
+- `1.0.0` — defined in `artifacts/factboard/src/version.ts` (shown on login page + settings header).
+
 ## Orval Codegen Workaround
 
 After running orval: set `lib/api-zod/src/index.ts` to only `export * from "./generated/api";`

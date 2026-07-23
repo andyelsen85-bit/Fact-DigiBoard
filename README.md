@@ -1,5 +1,7 @@
 # DigiBoard
 
+**Version 1.0.0**
+
 Application web de gestion de patients psychiatriques pour les case managers luxembourgeois. Conçue pour le suivi des dossiers, la coordination des soins et la gestion des transitions entre boards cliniques.
 
 ![DigiBoard Login](screenshots/board-view.jpg)
@@ -19,12 +21,13 @@ Application web de gestion de patients psychiatriques pour les case managers lux
 7. [Régions ACT](#régions-act)
 8. [Statistiques](#statistiques)
 9. [Paramètres & Administration](#paramètres--administration)
-10. [Sauvegarde & Restauration](#sauvegarde--restauration)
-11. [Sécurité & Authentification](#sécurité--authentification)
-12. [Stack technique](#stack-technique)
-13. [Installation](#installation)
-14. [Architecture & API](#architecture--api)
-15. [Développement](#développement)
+10. [Langues (i18n)](#langues-i18n)
+11. [Sauvegarde & Restauration](#sauvegarde--restauration)
+12. [Sécurité & Authentification](#sécurité--authentification)
+13. [Stack technique](#stack-technique)
+14. [Installation](#installation)
+15. [Architecture & API](#architecture--api)
+16. [Développement](#développement)
 
 ---
 
@@ -256,10 +259,12 @@ Toutes les listes sont stockées dans la table `settings` (clé/valeur, `value` 
 
 ### Codes CIM-10
 La base contient **381 codes CIM-10** (chapitre F, troubles mentaux) pré-chargés avec pour chacun :
-- **Code** et **libellé** officiel
-- **Description** clinique (optionnelle)
-- **Risques cliniques** : synthèse concise en français des risques associés au diagnostic — affichés dans la fiche patient et dans les paramètres
+- **Code** et **libellé** officiel — désormais en **4 langues** (FR, EN, DE, NL — titres officiels OMS / ICD-10-GM)
+- **Description** clinique (optionnelle, traduite)
+- **Risques cliniques** : synthèse concise des risques associés au diagnostic (traduite) — affichés dans la fiche patient et dans les paramètres
 - **Favori** (★) : marquage pour accès rapide dans le formulaire de création/modification d'un patient
+
+Les traductions sont stockées dans des colonnes par langue (`title_en`, `title_de`, `title_nl`, etc. — migration `0011_icd10_translations`) avec repli automatique sur le français si une traduction manque (codes ajoutés manuellement par exemple).
 
 Depuis les Paramètres il est possible d'**ajouter**, **modifier** ou **supprimer** tout code, et de gérer les favoris. La séeding est réalisée par `seedIcd10Codes()` (`api-server/src/lib/seed.ts`) au premier démarrage.
 
@@ -272,6 +277,20 @@ Depuis les Paramètres il est possible d'**ajouter**, **modifier** ou **supprime
 
 ### Corbeille
 Restauration des patients supprimés (suppression douce) vers leur dernier board connu. Accessible uniquement aux administrateurs (`GET /api/patients/deleted` + `POST /api/patients/:id/restore`).
+
+---
+
+## Langues (i18n)
+
+L'application est entièrement disponible en **4 langues** : **English** (par défaut), **Français**, **Deutsch**, **Nederlands**.
+
+- **Choix de la langue** : réglage global défini par un administrateur dans **Paramètres → Langue** ; il s'applique à tous les utilisateurs, y compris à la page de connexion et à la création du premier compte (endpoint public `GET /api/language`, écriture réservée aux admins et validée `fr|en|de|nl`).
+- **Interface** : toutes les pages, formulaires, toasts et messages sont traduits (dictionnaires dans `artifacts/factboard/src/i18n/`).
+- **Questionnaires cliniques** :
+  - **HoNOS** : libellés officiels — RCPsych (EN), HoNOS-D / ANQ (DE), Trimbos (NL), glossaire français (FR)
+  - **I•ROC** : version originale Penumbra (EN) et version française ; les versions DE/NL sont des traductions fidèles (pas de version officielle existante)
+- **Codes CIM-10** : titres, descriptions et risques traduits (voir section CIM-10).
+- Les **valeurs métier** (noms des boards, données patients) restent stockées en français en base — seule l'affichage est traduit.
 
 ---
 
