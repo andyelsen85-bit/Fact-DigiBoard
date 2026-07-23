@@ -85,7 +85,7 @@ export default function BoardPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background" style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+    <div className="h-screen overflow-hidden flex flex-col bg-background" style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <header className="h-12 border-b bg-card flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-4">
           <h1
