@@ -1,5 +1,5 @@
 FROM node:22-alpine AS base
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.26.1 --activate
 
 # ────────────────────────────────────────────
 # Stage 1: Build
@@ -33,7 +33,7 @@ RUN cp -r lib/db/drizzle artifacts/api-server/dist/drizzle
 # Stage 3: Production runtime image
 # ────────────────────────────────────────────
 FROM node:22-alpine AS runner
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.26.1 --activate
 WORKDIR /app
 
 ENV NODE_ENV=production

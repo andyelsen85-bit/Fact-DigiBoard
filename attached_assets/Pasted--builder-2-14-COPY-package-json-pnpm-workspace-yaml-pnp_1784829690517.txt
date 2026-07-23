@@ -1,0 +1,71 @@
+ => [builder  2/14] COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./                                                                   0.1s
+ => [builder  3/14] COPY lib/db/package.json                    lib/db/                                                                       0.1s
+ => [builder  4/14] COPY lib/api-client-react/package.json      lib/api-client-react/                                                         0.1s
+ => [builder  5/14] COPY lib/api-zod/package.json               lib/api-zod/                                                                  0.1s
+ => [builder  6/14] COPY artifacts/api-server/package.json      artifacts/api-server/                                                         0.1s
+ => [builder  7/14] COPY artifacts/factboard/package.json       artifacts/factboard/                                                          0.1s
+ => ERROR [builder  8/14] RUN pnpm install                                                                                                   24.6s
+ => [runner 10/12] RUN pnpm install --frozen-lockfile --prod --ignore-scripts                                                                11.1s
+------                                                                                                                                             
+ > [builder  8/14] RUN pnpm install:                                                                                                               
+1.365 [WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.supportedArchitectures". See https://pnpm.io/settings for the new home of each setting.                                                                                               
+1.445 Scope: all 6 workspace projects                                                                                                              
+1.787 ? Verifying lockfile against supply-chain policies (495 entries)...                                                                          
+2.676 Progress: resolved 1, reused 0, downloaded 0, added 0                                                                                        
+3.708 Progress: resolved 21, reused 0, downloaded 13, added 0                                                                                      
+4.774 Progress: resolved 32, reused 0, downloaded 26, added 0                                                                                      
+6.024 Progress: resolved 35, reused 0, downloaded 28, added 0                                                                                      
+7.011 Progress: resolved 36, reused 0, downloaded 28, added 0                                                                                      
+7.478 artifacts/factboard                      | [WARN] deprecated recharts@2.15.4                                                                 
+8.068 Progress: resolved 46, reused 0, downloaded 36, added 0
+9.065 Progress: resolved 54, reused 0, downloaded 39, added 0
+10.13 Progress: resolved 60, reused 0, downloaded 45, added 0
+11.08 Progress: resolved 69, reused 0, downloaded 49, added 0
+11.46 [WARN] Request took 10005ms: https://registry.npmjs.org/pnpm
+12.10 Progress: resolved 78, reused 0, downloaded 76, added 0
+12.12 [WARN] Request took 10072ms: https://registry.npmjs.org/@types%2Fnode
+13.10 Progress: resolved 82, reused 0, downloaded 80, added 0
+13.22 [WARN] Request took 11201ms: https://registry.npmjs.org/typescript
+14.22 Progress: resolved 84, reused 0, downloaded 83, added 0
+15.21 ✓ Lockfile passes supply-chain policies (495 entries in 13.4s)
+15.23 Progress: resolved 85, reused 0, downloaded 84, added 0
+16.23 Progress: resolved 85, reused 0, downloaded 85, added 0
+17.86 Progress: resolved 86, reused 0, downloaded 85, added 0
+18.88 Progress: resolved 178, reused 0, downloaded 115, added 0
+19.91 Progress: resolved 225, reused 0, downloaded 169, added 0
+20.91 Progress: resolved 371, reused 0, downloaded 208, added 0
+21.19 Packages: +366
+21.19 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+21.91 Progress: resolved 371, reused 0, downloaded 238, added 4
+22.91 Progress: resolved 371, reused 0, downloaded 366, added 165
+23.50 Progress: resolved 371, reused 0, downloaded 366, added 366, done
+24.00 . preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm instead" >&2; exit 1 ;; esac'
+24.04 . preinstall: Done
+24.11 
+24.11 devDependencies:
+24.11 + prettier 3.8.1 (3.9.6 is available)
+24.11 + typescript 5.9.3 (7.0.2 is available)
+24.11 
+24.18 [ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: bcrypt@6.0.0, esbuild@0.27.3
+24.18 
+24.18 Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+------
+[+] build 0/1
+ ⠙ Image fact-digiboard-app Building                                                                                                          28.4s
+Dockerfile:17
+
+--------------------
+
+  15 |     COPY artifacts/factboard/package.json       artifacts/factboard/
+
+  16 |     
+
+  17 | >>> RUN pnpm install
+
+  18 |     
+
+  19 |     COPY . .
+
+--------------------
+
+failed to solve: process "/bin/sh -c pnpm install" did not complete successfully: exit code: 1
