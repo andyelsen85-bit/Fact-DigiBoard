@@ -57,9 +57,39 @@ if (process.env["NODE_ENV"] === "production") {
 const migrationsFolder = process.env["NODE_ENV"] === "production"
   ? path.resolve(__dirname, "./drizzle")
   : path.resolve(__dirname, "../../../lib/db/drizzle");
-runMigrations(migrationsFolder)
-  .then(() => logger.info("Database migrations applied"))
-  .then(() => seedDatabase())
-  .catch((err) => logger.error({ err }, "Startup DB error"));
+
+// Kubernetes-safe startup: Postgres may not be ready when this pod starts
+// (no depends_on ordering like Docker Compose). Retry migrations with
+// backoff; if the DB never becomes ready, exit so the orchestrator restarts us
+// instead of serving a broken app with no tables.
+const MIGRATION_MAX_ATTEMPTS = 30;
+const MIGRATION_RETRY_DELAY_MS = 2000;
+
+export async function initDatabase(): Promise<void> {
+  for (let attempt = 1; attempt <= MIGRATION_MAX_ATTEMPTS; attempt++) {
+    try {
+      await runMigrations(migrationsFolder);
+      logger.info("Database migrations applied");
+      await seedDatabase();
+      logger.info("Database seeded");
+      return;
+    } catch (err) {
+      if (attempt === MIGRATION_MAX_ATTEMPTS) {
+        logger.error(
+          { err, attempt },
+          "Startup DB error: giving up after final attempt, exiting",
+        );
+        process.exit(1);
+      }
+      logger.warn(
+        { err, attempt, retryInMs: MIGRATION_RETRY_DELAY_MS },
+        "Startup DB not ready yet, retrying",
+      );
+      await new Promise((resolve) =>
+        setTimeout(resolve, MIGRATION_RETRY_DELAY_MS),
+      );
+    }
+  }
+}
 
 export default app;
