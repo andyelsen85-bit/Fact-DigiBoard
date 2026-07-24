@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { FORM_OPTIONS_QUERY_KEY } from "@/hooks/use-form-options";
 import { useIcd10Codes, useCreateIcd10Code, useUpdateIcd10Code, useDeleteIcd10Code, type Icd10Code } from "@/hooks/use-icd10";
 import { useT, useLang, LANG_LABELS, SUPPORTED_LANGS, type Lang } from "@/i18n";
 import { icdText } from "@/i18n/icd";
@@ -783,6 +784,76 @@ function LanguageSection() {
   );
 }
 
+function IrocSection() {
+  const { toast } = useToast();
+  const t = useT();
+  const queryClient = useQueryClient();
+  const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
+  const updateSetting = useUpdateSetting();
+  const enabled = ((settings as any)?.irocEnabled ?? false) === true;
+
+  function handleChange(value: boolean) {
+    updateSetting.mutate(
+      { key: "irocEnabled", data: { value: value ? "true" : "false" } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: FORM_OPTIONS_QUERY_KEY });
+          toast({ title: t("settingsPage.irocUpdated") });
+        },
+        onError: () => toast({ title: t("common.error"), description: t("settingsPage.errorSaveIroc"), variant: "destructive" }),
+      }
+    );
+  }
+
+  return (
+    <div className="bg-card border rounded-lg p-4">
+      <div className="mb-3">
+        <p className="text-sm font-medium">{t("settingsPage.irocCardTitle")}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{t("settingsPage.irocCardDesc")}</p>
+      </div>
+      <div className="flex gap-2 mb-3">
+        <button
+          onClick={() => handleChange(false)}
+          disabled={updateSetting.isPending}
+          data-testid="button-iroc-disabled"
+          className={`px-4 py-1.5 rounded border text-sm font-medium transition-colors ${
+            !enabled
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-card text-foreground border-border hover:bg-muted"
+          }`}
+        >
+          {t("settingsPage.irocDisabledLabel")}
+        </button>
+        <button
+          onClick={() => handleChange(true)}
+          disabled={updateSetting.isPending}
+          data-testid="button-iroc-enabled"
+          className={`px-4 py-1.5 rounded border text-sm font-medium transition-colors ${
+            enabled
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-card text-foreground border-border hover:bg-muted"
+          }`}
+        >
+          {t("settingsPage.irocEnabledLabel")}
+        </button>
+      </div>
+      <div className="text-xs text-muted-foreground border-t pt-3">
+        <p>{t("settingsPage.irocLicenseNote")}</p>
+        <a
+          href="https://irocwellbeing.com/our-licences.aspx"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary underline hover:no-underline mt-1 inline-block"
+          data-testid="link-iroc-license"
+        >
+          {t("settingsPage.irocLicenseLink")} ↗
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { user, logout } = useAuth();
   const t = useT();
@@ -905,6 +976,13 @@ export default function SettingsPage() {
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("settingsPage.sectionLanguage")}</h3>
             <LanguageSection />
           </div>
+
+          {user?.role === "admin" && (
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("settingsPage.sectionIroc")}</h3>
+              <IrocSection />
+            </div>
+          )}
 
           {user?.role === "admin" && (
             <div>

@@ -9,6 +9,8 @@ const SETTING_KEYS = ["psychiatrists", "casemanagers", "medecinsfamille", "artic
 const SETTING_SCALAR_DEFAULTS: Record<string, string> = {
   defaultStatsPeriod: "6m",
   language: "en",
+  // I.ROC requires a licence from Penumbra / I.ROC wellbeing — disabled by default on fresh installs.
+  irocEnabled: "false",
 };
 
 const SUPPORTED_LANGUAGES = ["fr", "en", "de", "nl"];
@@ -67,7 +69,9 @@ router.get("/form-options", requireAuth, async (_req, res) => {
     }
   }
   const icd10Codes = await db.select().from(icd10CodesTable).orderBy(icd10CodesTable.code);
-  res.json({ ...result, icd10Codes });
+  const irocRows = await db.select().from(settingsTable).where(eq(settingsTable.key, "irocEnabled")).limit(1);
+  const irocEnabled = (irocRows[0]?.value ?? "false") === "true";
+  res.json({ ...result, icd10Codes, irocEnabled });
 });
 
 router.put("/settings/:key", requireAuth, requireAdmin, async (req, res) => {
@@ -75,7 +79,13 @@ router.put("/settings/:key", requireAuth, requireAdmin, async (req, res) => {
   const { value } = req.body as { value: unknown };
 
   if (key === "language" && !isValidLanguage(value)) {
-    return res.status(400).json({ error: "Invalid language. Supported: fr, en, de, nl" });
+    res.status(400).json({ error: "Invalid language. Supported: fr, en, de, nl" });
+    return;
+  }
+
+  if (key === "irocEnabled" && value !== "true" && value !== "false" && typeof value !== "boolean") {
+    res.status(400).json({ error: "Invalid value for irocEnabled. Expected true or false" });
+    return;
   }
 
   const serialized = typeof value === "string" ? value : JSON.stringify(value);

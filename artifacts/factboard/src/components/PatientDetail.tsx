@@ -102,6 +102,7 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
     query: { queryKey: getGetPatientQueryKey(patientId) },
   });
   const { data: formOptions } = useFormOptions();
+  const irocEnabled = formOptions?.irocEnabled === true;
   const icd10Codes = formOptions?.icd10Codes ?? [];
   const { data: notes = [] } = useListPatientNotes(patientId, {
     query: { queryKey: getListPatientNotesQueryKey(patientId) },
@@ -371,15 +372,17 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
             <Button size="sm" variant="destructive" onClick={handleDelete} data-testid="button-delete-patient">
               {t("common.delete")}
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-blue-300 text-blue-700 hover:bg-blue-50"
-              onClick={() => setEvalModal({ type: "I•ROC" })}
-              data-testid="button-irock"
-            >
-              I•ROC
-            </Button>
+            {irocEnabled && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                onClick={() => setEvalModal({ type: "I•ROC" })}
+                data-testid="button-irock"
+              >
+                I•ROC
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
@@ -687,12 +690,12 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
       </div>
 
       {/* Evaluations history */}
-      {(irockEvals.length > 0 || honosEvals.length > 0) && (
+      {((irocEnabled && irockEvals.length > 0) || honosEvals.length > 0) && (
         <div className="bg-card border rounded-lg p-4">
           <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">{t("patients.evaluations")}</h3>
           <div className="space-y-2">
             {[
-              ...irockEvals.map((e) => ({ ...e, type: "I•ROC" as const })),
+              ...(irocEnabled ? irockEvals.map((e) => ({ ...e, type: "I•ROC" as const })) : []),
               ...honosEvals.map((e) => ({ ...e, type: "HoNOS" as const })),
             ]
               .sort((a, b) => b.date.localeCompare(a.date))

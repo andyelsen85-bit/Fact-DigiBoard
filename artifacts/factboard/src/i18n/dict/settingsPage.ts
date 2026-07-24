@@ -37,6 +37,17 @@ const settingsPage: Dict = {
     languageUpdated: "Langue mise à jour",
     errorSaveLanguage: "Impossible de changer la langue",
 
+    // I.ROC feature card
+    sectionIroc: "Fonctionnalité I•ROC",
+    irocCardTitle: "Évaluations I•ROC",
+    irocCardDesc: "Active ou désactive la fonctionnalité I•ROC (bouton d'évaluation, graphiques et statistiques).",
+    irocLicenseNote: "L'utilisation d'I.ROC nécessite une licence officielle de Penumbra / I•ROC wellbeing (licence « Organisation », renouvelée annuellement). N'activez cette fonctionnalité qu'après l'obtention d'une licence.",
+    irocLicenseLink: "Informations sur les licences I•ROC",
+    irocEnabledLabel: "Activé",
+    irocDisabledLabel: "Désactivé",
+    irocUpdated: "Fonctionnalité I•ROC mise à jour",
+    errorSaveIroc: "Impossible de modifier la fonctionnalité I•ROC",
+
     // Default period
     periodTitle: "Période par défaut des statistiques et KPI",
     periodDesc: "Période appliquée par défaut à l'ouverture des vues Statistiques et Client KPI.",
@@ -180,6 +191,17 @@ const settingsPage: Dict = {
     languageUpdated: "Language updated",
     errorSaveLanguage: "Unable to change the language",
 
+    // I.ROC feature card
+    sectionIroc: "I•ROC feature",
+    irocCardTitle: "I•ROC evaluations",
+    irocCardDesc: "Enables or disables the I•ROC feature (evaluation button, charts and statistics).",
+    irocLicenseNote: "Using I.ROC requires an official licence from Penumbra / I•ROC wellbeing (an \"Organisation\" licence, renewed yearly). Only enable this feature after a licence has been obtained.",
+    irocLicenseLink: "I•ROC licensing information",
+    irocEnabledLabel: "Enabled",
+    irocDisabledLabel: "Disabled",
+    irocUpdated: "I•ROC feature updated",
+    errorSaveIroc: "Unable to change the I•ROC feature",
+
     periodTitle: "Default period for statistics and KPIs",
     periodDesc: "Period applied by default when opening the Statistics and Client KPI views.",
     period1m: "1 month",
@@ -316,6 +338,17 @@ const settingsPage: Dict = {
     languageUpdated: "Sprache aktualisiert",
     errorSaveLanguage: "Sprache konnte nicht geändert werden",
 
+    // I.ROC feature card
+    sectionIroc: "I•ROC-Funktion",
+    irocCardTitle: "I•ROC-Bewertungen",
+    irocCardDesc: "Aktiviert oder deaktiviert die I•ROC-Funktion (Bewertungsschaltfläche, Diagramme und Statistiken).",
+    irocLicenseNote: "Die Nutzung von I.ROC erfordert eine offizielle Lizenz von Penumbra / I•ROC wellbeing (eine jährlich zu erneuernde „Organisation“-Lizenz). Aktivieren Sie diese Funktion erst nach Erhalt einer Lizenz.",
+    irocLicenseLink: "Informationen zur I•ROC-Lizenzierung",
+    irocEnabledLabel: "Aktiviert",
+    irocDisabledLabel: "Deaktiviert",
+    irocUpdated: "I•ROC-Funktion aktualisiert",
+    errorSaveIroc: "I•ROC-Funktion konnte nicht geändert werden",
+
     periodTitle: "Standardzeitraum für Statistiken und KPIs",
     periodDesc: "Standardmäßig angewandter Zeitraum beim Öffnen der Ansichten Statistiken und Klienten-KPI.",
     period1m: "1 Monat",
@@ -451,6 +484,17 @@ const settingsPage: Dict = {
     languageCardDesc: "Standaardtaal die in de hele applicatie wordt gebruikt.",
     languageUpdated: "Taal bijgewerkt",
     errorSaveLanguage: "Kan de taal niet wijzigen",
+
+    // I.ROC feature card
+    sectionIroc: "I•ROC-functie",
+    irocCardTitle: "I•ROC-evaluaties",
+    irocCardDesc: "Schakelt de I•ROC-functie in of uit (evaluatieknop, grafieken en statistieken).",
+    irocLicenseNote: "Het gebruik van I.ROC vereist een officiële licentie van Penumbra / I•ROC wellbeing (een jaarlijks te verlengen \"Organisation\"-licentie). Schakel deze functie pas in nadat een licentie is verkregen.",
+    irocLicenseLink: "Informatie over I•ROC-licenties",
+    irocEnabledLabel: "Ingeschakeld",
+    irocDisabledLabel: "Uitgeschakeld",
+    irocUpdated: "I•ROC-functie bijgewerkt",
+    errorSaveIroc: "Kan de I•ROC-functie niet wijzigen",
 
     periodTitle: "Standaardperiode voor statistieken en KPI's",
     periodDesc: "Periode die standaard wordt toegepast bij het openen van de weergaven Statistieken en Cliënt-KPI.",

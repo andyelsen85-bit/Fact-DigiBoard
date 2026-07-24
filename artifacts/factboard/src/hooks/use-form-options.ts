@@ -30,6 +30,7 @@ export interface FormOptions {
     isFavorite: boolean;
     createdAt: string;
   }>;
+  irocEnabled: boolean;
 }
 
 const EMPTY: FormOptions = {
@@ -40,7 +41,14 @@ const EMPTY: FormOptions = {
   curatelles: [],
   icd10favorites: [],
   icd10Codes: [],
+  irocEnabled: false,
 };
+
+/** Whether the I.ROC evaluation feature is enabled (requires a Penumbra licence; off by default). */
+export function useIrocEnabled(): boolean {
+  const { data } = useFormOptions();
+  return data?.irocEnabled === true;
+}
 
 export function useFormOptions() {
   return useQuery<FormOptions>({

@@ -9,6 +9,7 @@ import {
 } from "@/hooks/use-evaluations";
 import { useGetSettings, getGetSettingsQueryKey } from "@workspace/api-client-react";
 import { type StatsPeriod, periodToSince } from "@/hooks/use-stats";
+import { useIrocEnabled } from "@/hooks/use-form-options";
 import { useT } from "@/i18n";
 import "@/i18n/dict/views";
 
@@ -260,6 +261,7 @@ function SpiderPanel({ title, subtitle, data, questionKeys, domains, color, yMax
 
 function KpiContent({ patientId, period }: { patientId: number; period: StatsPeriod }) {
   const t = useT();
+  const irocEnabled = useIrocEnabled();
   const { data: irockRaw = [], isLoading: irockLoading } = useListIrock(patientId);
   const { data: honosRaw = [], isLoading: honosLoading } = useListHonos(patientId);
   const { data: kpi, isLoading: kpiLoading } = usePatientKpi(patientId);
@@ -335,6 +337,7 @@ function KpiContent({ patientId, period }: { patientId: number; period: StatsPer
       </div>
 
       {/* I•ROC spider */}
+      {irocEnabled && (
       <div>
         <h3 className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
           {t("views.kpi.irockTitle", { count: irockData.length })}
@@ -350,6 +353,7 @@ function KpiContent({ patientId, period }: { patientId: number; period: StatsPer
           qCount={12}
         />
       </div>
+      )}
 
       {/* HoNOS spider */}
       <div>

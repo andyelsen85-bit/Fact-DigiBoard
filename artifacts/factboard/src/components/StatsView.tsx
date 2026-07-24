@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useGetSettings, getGetSettingsQueryKey } from "@workspace/api-client-react";
 import { useStats, type StatsPeriod } from "@/hooks/use-stats";
+import { useIrocEnabled } from "@/hooks/use-form-options";
 import { useT } from "@/i18n";
 import "@/i18n/dict/views";
 
@@ -39,6 +40,7 @@ const AGE_ORDER = ["0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", 
 
 export function StatsView() {
   const t = useT();
+  const irocEnabled = useIrocEnabled();
   const { data: settings } = useGetSettings({ query: { queryKey: getGetSettingsQueryKey() } });
   const defaultPeriod = ((settings as any)?.defaultStatsPeriod as StatsPeriod) ?? "6m";
 
@@ -121,7 +123,8 @@ export function StatsView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className={`grid gap-4 ${irocEnabled ? "grid-cols-2" : "grid-cols-1"}`}>
+        {irocEnabled && (
         <div className="bg-card border rounded-lg p-4 flex items-center gap-4">
           <div className="flex-1">
             <div className="text-3xl font-light font-mono text-blue-700">{stats.irockCount ?? 0}</div>
@@ -129,6 +132,7 @@ export function StatsView() {
           </div>
           <span className="text-2xl font-semibold text-blue-200">I•ROC</span>
         </div>
+        )}
         <div className="bg-card border rounded-lg p-4 flex items-center gap-4">
           <div className="flex-1">
             <div className="text-3xl font-light font-mono text-red-700">{stats.honosCount ?? 0}</div>
