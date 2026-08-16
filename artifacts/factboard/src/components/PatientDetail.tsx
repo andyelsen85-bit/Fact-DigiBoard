@@ -402,6 +402,8 @@ export function PatientDetail({ patientId, onDeleted }: PatientDetailProps) {
           {patient.dob && <InfoRow label={t("patients.dob")} value={patient.dob} />}
           {patient.sexe && <InfoRow label={t("patients.sexe")} value={patient.sexe} />}
           {patient.tel && <InfoRow label={t("patients.tel")} value={patient.tel} />}
+          {patient.email && <InfoRow label={t("patients.email")} value={patient.email} />}
+          {patient.demandeur && <InfoRow label={t("patients.demandeur")} value={patient.demandeur} />}
           {patient.adresse && <InfoRow label={t("patients.adresse")} value={patient.adresse} col3 />}
           {patient.medecinFamille && <InfoRow label={t("patients.medecinFamille")} value={patient.medecinFamille} />}
           {patient.psy && <InfoRow label={t("patients.psy")} value={patient.psy} />}

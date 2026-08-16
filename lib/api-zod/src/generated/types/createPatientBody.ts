@@ -16,6 +16,10 @@ export interface CreatePatientBody {
   /** @nullable */
   tel?: string | null;
   /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  demandeur?: string | null;
+  /** @nullable */
   sexe?: string | null;
   /** @nullable */
   medecinFamille?: string | null;

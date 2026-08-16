@@ -27,6 +27,8 @@ const patientSchema = z.object({
   dob: z.string().optional(),
   adresse: z.string().optional(),
   tel: z.string().optional(),
+  email: z.string().optional(),
+  demandeur: z.string().optional(),
   sexe: z.string().optional(),
   medecinFamille: z.string().optional(),
   pathos: z.array(z.string()).default([]),
@@ -66,6 +68,8 @@ function buildDefaults(initialValues?: Partial<PatientFormValues & { clientNum?:
     dob: initialValues?.dob ?? "",
     adresse: initialValues?.adresse ?? "",
     tel: initialValues?.tel ?? "",
+    email: initialValues?.email ?? "",
+    demandeur: initialValues?.demandeur ?? "",
     sexe: initialValues?.sexe ?? "",
     medecinFamille: initialValues?.medecinFamille ?? "",
     pathos: Array.isArray(initialValues?.pathos) && initialValues.pathos!.length > 0
@@ -246,6 +250,21 @@ export function PatientModal({ open, onClose, onSave, isPending, initialValues, 
                 <FormItem>
                   <FormLabel>{t("patients.adresse")}</FormLabel>
                   <FormControl><Input data-testid="input-adresse" {...field} /></FormControl>
+                </FormItem>
+              )} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("patients.email")}</FormLabel>
+                  <FormControl><Input type="email" data-testid="input-email" {...field} /></FormControl>
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="demandeur" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("patients.demandeur")}</FormLabel>
+                  <FormControl><Input data-testid="input-demandeur" {...field} /></FormControl>
                 </FormItem>
               )} />
             </div>

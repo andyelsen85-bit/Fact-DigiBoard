@@ -996,6 +996,10 @@ components:
           type: ["string", "null"]
         tel:
           type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        demandeur:
+          type: ["string", "null"]
         sexe:
           type: ["string", "null"]
         medecinFamille:
@@ -1065,6 +1069,10 @@ components:
           type: ["string", "null"]
         tel:
           type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        demandeur:
+          type: ["string", "null"]
         sexe:
           type: ["string", "null"]
         medecinFamille:
@@ -1111,6 +1119,10 @@ components:
         adresse:
           type: ["string", "null"]
         tel:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        demandeur:
           type: ["string", "null"]
         sexe:
           type: ["string", "null"]

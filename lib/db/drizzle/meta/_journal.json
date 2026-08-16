@@ -85,6 +85,13 @@
       "when": 1777190000000,
       "tag": "0011_icd10_translations",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1777200000000,
+      "tag": "0012_patient_email_demandeur",
+      "breakpoints": true
     }
   ]
 }

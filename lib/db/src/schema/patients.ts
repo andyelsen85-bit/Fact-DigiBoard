@@ -10,6 +10,8 @@ export const patientsTable = pgTable("patients", {
   dob: text("dob"),
   adresse: text("adresse"),
   tel: text("tel"),
+  email: text("email"),
+  demandeur: text("demandeur"),
   sexe: text("sexe"),
   medecinFamille: text("medecin_famille"),
   patho: text("patho"),
